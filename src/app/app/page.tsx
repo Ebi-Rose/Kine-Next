@@ -9,6 +9,7 @@ import { DAY_LABELS } from "@/data/constants";
 import { getCurrentPhase } from "@/lib/cycle";
 import { getCurrentPhase as getTrainingPhase } from "@/lib/periodisation";
 import Button from "@/components/Button";
+import BottomSheet from "@/components/BottomSheet";
 import SessionRearrange from "@/components/SessionRearrange";
 import { toast } from "@/components/Toast";
 import Link from "next/link";
@@ -107,7 +108,7 @@ function WeekView({
   onRebuild: () => void;
   loading: boolean;
 }) {
-  const { cycleType, cycle, progressDB } = useKineStore();
+  const { cycleType, cycle, setCycle, progressDB } = useKineStore();
   const [showRearrange, setShowRearrange] = useState(false);
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
@@ -146,13 +147,49 @@ function WeekView({
         </div>
       </div>
 
-      {/* Cycle phase */}
+      {/* Cycle phase + #13: Period quick-log */}
       {phase && (
         <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-text">◐ {phase.label} phase · Day {phase.day}</span>
+            <button
+              onClick={() => {
+                const today = new Date().toISOString().split("T")[0];
+                const lastLog = cycle.periodLog[cycle.periodLog.length - 1];
+                const type = lastLog?.type === "start" ? "end" : "start";
+                setCycle({
+                  ...cycle,
+                  periodLog: [...cycle.periodLog, { date: today, type }],
+                });
+                toast(`Period ${type} logged`, "success");
+              }}
+              className="text-[10px] text-accent hover:underline"
+            >
+              Log period {cycle.periodLog[cycle.periodLog.length - 1]?.type === "start" ? "end" : "start"}
+            </button>
           </div>
           <p className="mt-1 text-[10px] text-muted2">{phase.trainingNote}</p>
+        </div>
+      )}
+      {/* Period quick-log when no cycle phase (cycle type is regular but no log yet) */}
+      {cycleType === "regular" && !phase && (
+        <div className="mb-4 rounded-[var(--radius-default)] border border-border/50 bg-surface/50 p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted2">No period logged yet</span>
+            <button
+              onClick={() => {
+                const today = new Date().toISOString().split("T")[0];
+                setCycle({
+                  ...cycle,
+                  periodLog: [...cycle.periodLog, { date: today, type: "start" }],
+                });
+                toast("Period start logged", "success");
+              }}
+              className="text-[10px] text-accent hover:underline"
+            >
+              Log period start
+            </button>
+          </div>
         </div>
       )}
 
@@ -268,11 +305,33 @@ function WeekView({
 
 // ── Day Card ──
 
+// ── Rest day recovery messages ──
+const REST_DAY_MESSAGES = [
+  "Your muscles grow during rest, not during training.",
+  "Recovery is where the work becomes results.",
+  "Active recovery — a walk, stretch, or gentle movement helps.",
+  "Sleep and nutrition do the heavy lifting today.",
+  "Rest days prevent injury and keep you consistent long-term.",
+  "Trust the process — rest is part of the programme.",
+];
+
+function getRestMessage(dayIdx: number): string {
+  return REST_DAY_MESSAGES[dayIdx % REST_DAY_MESSAGES.length];
+}
+
 function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false }: {
   day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean;
 }) {
   const router = useRouter();
+  const { progressDB, setProgressDB } = useKineStore();
+  const [showSessionReview, setShowSessionReview] = useState(false);
   const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
+
+  // Find completed session log for this day
+  const completedSession = isCompleted
+    ? (progressDB.sessions as { weekNum?: number; dayIdx?: number; logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string }[])
+        .find((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === dayIdx)
+    : null;
 
   if (day.isRest) {
     return (
@@ -304,6 +363,12 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             )}
           </div>
         </div>
+        {/* #9: Rest day recovery message */}
+        {(isToday || (!isPast && expanded)) && (
+          <p className="mt-2 text-[10px] text-muted font-light leading-relaxed">
+            {getRestMessage(dayIdx)}
+          </p>
+        )}
       </div>
     );
   }
@@ -376,15 +441,171 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
               </div>
             ))}
           </div>
-          <div className="mt-4">
-            <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
-              onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
-              {isToday ? "Start session" : "View session"}
-            </Button>
+          <div className="mt-4 flex gap-2">
+            {isCompleted ? (
+              <>
+                <Button className="flex-1" size="sm" variant="secondary"
+                  onClick={() => setShowSessionReview(true)}>
+                  View results
+                </Button>
+                <Button className="flex-1" size="sm" variant="ghost"
+                  onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
+                  Redo
+                </Button>
+              </>
+            ) : (
+              <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
+                onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
+                {isToday ? "Start session" : "View session"}
+              </Button>
+            )}
           </div>
         </>
       )}
+
+      {/* #6: Session replay/amendment bottom sheet */}
+      {completedSession && (
+        <SessionReviewSheet
+          open={showSessionReview}
+          onClose={() => setShowSessionReview(false)}
+          session={completedSession}
+          dayIdx={dayIdx}
+        />
+      )}
     </div>
+  );
+}
+
+// ── Session Review/Edit Sheet ──
+
+function SessionReviewSheet({ open, onClose, session, dayIdx }: {
+  open: boolean;
+  onClose: () => void;
+  session: { logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string; weekNum?: number; dayIdx?: number };
+  dayIdx: number;
+}) {
+  const { progressDB, setProgressDB } = useKineStore();
+  const [editing, setEditing] = useState(false);
+  const [editLogs, setEditLogs] = useState<Record<string, { reps: string; weight: string }[]>>({});
+
+  const logs = session.logs || {};
+  const effortLabels = ["", "Too easy", "Moderate", "Hard", "Max effort"];
+  const sorenessLabels = ["", "Fresh", "A little sore", "Pretty sore", "Beat up"];
+
+  function startEdit() {
+    const initial: Record<string, { reps: string; weight: string }[]> = {};
+    Object.entries(logs).forEach(([key, ex]) => {
+      initial[key] = ex.actual.map((s) => ({ reps: s.reps, weight: s.weight }));
+    });
+    setEditLogs(initial);
+    setEditing(true);
+  }
+
+  function saveEdits() {
+    // Update the session in progressDB
+    const updatedSessions = progressDB.sessions.map((s: unknown) => {
+      const sess = s as { weekNum?: number; dayIdx?: number; logs?: Record<number, unknown> };
+      if (sess.weekNum === session.weekNum && sess.dayIdx === session.dayIdx) {
+        const updatedLogs = { ...sess.logs };
+        Object.entries(editLogs).forEach(([key, sets]) => {
+          const existing = (updatedLogs as Record<string, { name: string; actual: { reps: string; weight: string }[] }>)[key];
+          if (existing) {
+            (updatedLogs as Record<string, { name: string; actual: { reps: string; weight: string }[] }>)[key] = { ...existing, actual: sets };
+          }
+        });
+        return { ...sess, logs: updatedLogs };
+      }
+      return s;
+    });
+
+    setProgressDB({ ...progressDB, sessions: updatedSessions });
+    setEditing(false);
+    toast("Session updated", "success");
+  }
+
+  return (
+    <BottomSheet open={open} onClose={onClose} title={session.title || "Session Review"}>
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-xs text-muted2">
+          Effort: <span className="text-text">{effortLabels[session.effort || 0]}</span>
+        </span>
+        <span className="text-xs text-muted2">
+          Feeling: <span className="text-text">{sorenessLabels[session.soreness || 0]}</span>
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {Object.entries(logs).map(([key, ex]) => {
+          if (!ex.saved && ex.actual.length === 0) return null;
+          const skipped = ex.saved && ex.actual.length === 0;
+
+          return (
+            <div key={key} className="rounded-lg border border-border bg-bg p-3">
+              <p className={`text-sm font-medium mb-1.5 ${skipped ? "text-muted line-through" : "text-text"}`}>
+                {ex.name}
+              </p>
+              {skipped ? (
+                <span className="text-[10px] text-muted">Skipped</span>
+              ) : editing ? (
+                <div className="flex flex-col gap-1.5">
+                  {(editLogs[key] || ex.actual).map((set, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className="text-muted w-10">Set {i + 1}</span>
+                      <input
+                        type="number" inputMode="numeric" placeholder="reps"
+                        value={(editLogs[key]?.[i]?.reps) || ""}
+                        onChange={(e) => {
+                          const updated = { ...editLogs };
+                          if (!updated[key]) updated[key] = ex.actual.map(s => ({ ...s }));
+                          updated[key][i] = { ...updated[key][i], reps: e.target.value };
+                          setEditLogs(updated);
+                        }}
+                        className="w-14 rounded border border-border bg-surface px-2 py-1 text-center text-xs text-text outline-none focus:border-accent"
+                      />
+                      <span className="text-muted">x</span>
+                      <input
+                        type="number" inputMode="decimal" placeholder="kg"
+                        value={(editLogs[key]?.[i]?.weight) || ""}
+                        onChange={(e) => {
+                          const updated = { ...editLogs };
+                          if (!updated[key]) updated[key] = ex.actual.map(s => ({ ...s }));
+                          updated[key][i] = { ...updated[key][i], weight: e.target.value };
+                          setEditLogs(updated);
+                        }}
+                        className="w-14 rounded border border-border bg-surface px-2 py-1 text-center text-xs text-text outline-none focus:border-accent"
+                      />
+                      <span className="text-[10px] text-muted">kg</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-0.5">
+                  {ex.actual.filter((s) => s.reps || s.weight).map((set, i) => (
+                    <span key={i} className="text-xs text-muted2">
+                      Set {i + 1}: {set.reps} reps x {set.weight || "BW"} kg
+                    </span>
+                  ))}
+                </div>
+              )}
+              {ex.note && !editing && (
+                <p className="mt-1 text-[10px] text-muted italic">{ex.note}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        {editing ? (
+          <>
+            <Button size="sm" className="flex-1" onClick={saveEdits}>Save changes</Button>
+            <Button size="sm" variant="ghost" className="flex-1" onClick={() => setEditing(false)}>Cancel</Button>
+          </>
+        ) : (
+          <Button size="sm" variant="secondary" className="w-full" onClick={startEdit}>Edit session log</Button>
+        )}
+      </div>
+    </BottomSheet>
   );
 }
 
