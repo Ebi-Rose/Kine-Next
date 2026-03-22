@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
-import { EXERCISE_LIBRARY, findExercise } from "@/data/exercise-library";
+import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
-import Button from "@/components/Button";
 
 // ── Phase coaching notes ──
 const PHASE_NOTES: Record<string, Record<CyclePhase, { body: string }>> = {
@@ -56,6 +55,7 @@ export default function PreSessionPage() {
   const day = week?.days?.[dayIdx];
 
   // ── Local state ──
+  const [mounted, setMounted] = useState(false);
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [duration, setDuration] = useState<number | null>(null);
   const [coaching, setCoaching] = useState<CoachLevel>(eduMode);
@@ -64,10 +64,24 @@ export default function PreSessionPage() {
   const [swapIdx, setSwapIdx] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Redirect if invalid
-  if (!day || day.isRest) {
-    router.replace("/app");
-    return null;
+  // Wait one tick after mount for Zustand persist to hydrate
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && (!day || day.isRest)) {
+      router.replace("/app");
+    }
+  }, [mounted, day, router]);
+
+  if (!mounted || !day || day.isRest) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
   }
 
   const exercises = day.exercises || [];

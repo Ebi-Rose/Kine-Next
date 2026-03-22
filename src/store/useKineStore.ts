@@ -225,6 +225,14 @@ export const useKineStore = create<KineState>()(
     }),
     {
       name: "kine_v2",
+      onRehydrateStorage: () => () => {
+        useKineStore.setState({ _hasHydrated: true } as Partial<KineState>);
+      },
     }
   )
 );
+
+/** Returns true once Zustand has finished hydrating from localStorage */
+export function useStoreHydrated(): boolean {
+  return useKineStore((s) => (s as KineState & { _hasHydrated?: boolean })._hasHydrated ?? false);
+}
