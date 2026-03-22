@@ -7,7 +7,8 @@ import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
 import CollapsibleSection from "@/components/CollapsibleSection";
-import { trimSessionToTime } from "@/lib/time-budget";
+import { trimSessionToTime, estimateSessionTime } from "@/lib/time-budget";
+import { EXERCISE_LIBRARY } from "@/data/exercise-library";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
 
 // ── Phase coaching notes ──
@@ -413,14 +414,52 @@ export default function PreSessionPage() {
                       Session fits {duration} min — nothing cut.
                     </p>
                   )
-                ) : (
-                  <div className="text-[10px] leading-snug">
-                    <span className="text-accent/80 font-display tracking-wider">EXTENDED TO ~{duration} MIN</span>
-                    <p className="text-muted2 font-light mt-1">
-                      More time for rest between heavy sets and additional volume.
-                    </p>
-                  </div>
-                )}
+                ) : (() => {
+                  // Check if there's significant extra time beyond the full programme
+                  const fullTime = estimateSessionTime(exercises);
+                  const extraMin = duration - fullTime;
+
+                  if (extraMin >= 8) {
+                    // Suggest additional exercises that fit the session focus
+                    const sessionMuscles = analysis.muscleGroups;
+                    const existingNames = new Set(exercises.map(e => e.name.toLowerCase()));
+                    const suggestions = (EXERCISE_LIBRARY || [])
+                      .filter(ex => {
+                        if (existingNames.has(ex.name.toLowerCase())) return false;
+                        if (!ex.equip.some(e => useKineStore.getState().equip.includes(e))) return false;
+                        if (!sessionMuscles.includes(ex.muscle)) return false;
+                        return true;
+                      })
+                      .slice(0, 3);
+
+                    return (
+                      <div className="text-[10px] leading-snug">
+                        <span className="text-accent/80 font-display tracking-wider">~{extraMin} MIN SPARE</span>
+                        <p className="text-muted2 font-light mt-1">
+                          Full programme loaded.
+                          {suggestions.length > 0 && (
+                            <> You could add: {suggestions.map((s, i) => (
+                              <span key={s.name}>
+                                <strong className="text-text font-normal">{s.name}</strong>
+                                <span className="text-muted"> ({s.muscle})</span>
+                                {i < suggestions.length - 1 ? ', ' : ''}
+                              </span>
+                            ))}.</>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="text-[10px] leading-snug">
+                      <span className="text-accent/80 font-display tracking-wider">EXTENDED TO ~{duration} MIN</span>
+                      <p className="text-muted2 font-light mt-1">
+                        More time for rest between heavy sets and additional volume.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
