@@ -229,20 +229,42 @@ export default function PreSessionPage() {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="text-[13px] text-muted hover:text-text transition-colors mb-2.5 flex items-center gap-1.5"
+        className="text-[13px] text-muted hover:text-text transition-colors mb-3 flex items-center gap-1.5"
       >
-        ← Back to week
+        ← Back
       </button>
 
-      {/* Header */}
-      <div className="text-[11px] tracking-[0.5px] text-muted font-light mb-1">
-        {(dayNames[dayIdx] || "").toUpperCase()} — {sessionNum.toUpperCase()}
-      </div>
-      <h1 className="text-[clamp(20px,5.5vw,26px)] font-semibold leading-[1.15] -tracking-[0.3px] mb-0.5">
-        {day.sessionTitle || "Session"}
-      </h1>
-      <div className="text-xs text-muted font-light mb-2">
-        ~{currentDuration} min · {activeExercises.length} exercise{activeExercises.length !== 1 ? "s" : ""} · Week {weekNum}
+      {/* Hero header card */}
+      <div
+        className="rounded-2xl p-5 mb-4 relative overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, rgba(196,144,152,0.12) 0%, rgba(196,144,152,0.04) 50%, var(--color-surface) 100%)",
+          border: "1px solid rgba(196,144,152,0.15)",
+        }}
+      >
+        <div className="text-[10px] tracking-[0.5px] text-accent/70 font-light mb-1.5 uppercase">
+          {(dayNames[dayIdx] || "")} — {sessionNum}
+        </div>
+        <h1 className="font-display text-[clamp(22px,6vw,30px)] tracking-wide text-text leading-[1.1] mb-1">
+          {day.sessionTitle || "Session"}
+        </h1>
+        <div className="flex items-center gap-2 text-[11px] text-muted2 font-light">
+          <span>~{currentDuration} min</span>
+          <span className="text-border">·</span>
+          <span>{activeExercises.length} exercise{activeExercises.length !== 1 ? "s" : ""}</span>
+          <span className="text-border">·</span>
+          <span>Week {weekNum}</span>
+        </div>
+        {phaseInfo && (
+          <div className="mt-2.5 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="text-[10px] text-accent/80 font-light">
+              {phaseInfo.phase.charAt(0).toUpperCase() + phaseInfo.phase.slice(1)} phase · Day {phaseInfo.day}
+            </span>
+          </div>
+        )}
+        {/* Subtle glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
       </div>
 
       {/* ── Section 0: Your notes ── */}
