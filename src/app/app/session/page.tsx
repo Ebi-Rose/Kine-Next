@@ -7,7 +7,12 @@ import type { WeekData } from "@/lib/week-builder";
 import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult, ExerciseFeedback } from "@/lib/session-analysis";
 import { apiFetchStreaming } from "@/lib/api";
+import { findExercise } from "@/data/exercise-library";
+import { getBreathingCue } from "@/data/education";
+import { getSkillPath, hasSkillPath } from "@/data/skill-paths";
+import { suggestNextWeight } from "@/lib/progression";
 import Button from "@/components/Button";
+import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
 
 interface SetLog {
@@ -378,38 +383,120 @@ function ExerciseCard({
         <span className="text-muted2 text-sm">{expanded ? "▾" : "▸"}</span>
       </button>
 
-      {expanded && !log.saved && (
-        <div className="border-t border-border px-4 pb-4 pt-3">
-          <p className="mb-3 text-[10px] tracking-wider text-muted uppercase">Log your sets</p>
-          <div className="flex flex-col gap-2">
-            {log.actual.map((set, setIdx) => (
-              <div key={setIdx} className="flex items-center gap-2 text-sm">
-                <span className="w-12 text-xs text-muted">Set {setIdx + 1}</span>
-                <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
-                  onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                  className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                <span className="text-muted">×</span>
-                <input type="number" inputMode="decimal" placeholder="kg" value={set.weight}
-                  onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
-                  className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                <span className="text-xs text-muted">kg</span>
+      {expanded && !log.saved && (() => {
+        const exInfo = findExercise(exercise.name);
+        const logType = exInfo?.logType || "weighted";
+        const breathCue = getBreathingCue(exercise.name);
+        const weightSuggestion = suggestNextWeight(exercise.name);
+        const skillPath = hasSkillPath(exercise.name) ? getSkillPath(exercise.name, []) : null;
+
+        return (
+          <div className="border-t border-border px-4 pb-4 pt-3">
+            {/* Breathing cue */}
+            {breathCue && (
+              <p className="mb-3 text-[10px] text-accent italic">{breathCue}</p>
+            )}
+
+            {/* Weight suggestion */}
+            {weightSuggestion && logType.startsWith("weighted") && (
+              <p className="mb-2 text-[10px] text-muted2">Last time: {weightSuggestion}</p>
+            )}
+
+            <p className="mb-3 text-[10px] tracking-wider text-muted uppercase">Log your sets</p>
+            <div className="flex flex-col gap-2">
+              {log.actual.map((set, setIdx) => (
+                <div key={setIdx} className="flex items-center gap-2 text-sm">
+                  <span className="w-12 text-xs text-muted">Set {setIdx + 1}</span>
+
+                  {/* Weighted: reps × weight */}
+                  {(logType === "weighted" || logType === "weighted_unilateral") && (
+                    <>
+                      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
+                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
+                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <span className="text-muted">×</span>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => {
+                          const cur = parseFloat(set.weight) || 0;
+                          const inc = logType.includes("unilateral") ? 2 : 2.5;
+                          if (cur >= inc) onUpdateSet(index, setIdx, "weight", String(cur - inc));
+                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+                        <input type="number" inputMode="decimal" placeholder="kg" value={set.weight}
+                          onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
+                          className="w-14 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                        <button onClick={() => {
+                          const cur = parseFloat(set.weight) || 0;
+                          const inc = logType.includes("unilateral") ? 2 : 2.5;
+                          onUpdateSet(index, setIdx, "weight", String(cur + inc));
+                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+                      </div>
+                      <span className="text-[10px] text-muted">{logType === "weighted_unilateral" ? "kg/side" : "kg"}</span>
+                    </>
+                  )}
+
+                  {/* Bodyweight: reps only */}
+                  {(logType === "bodyweight" || logType === "bodyweight_unilateral") && (
+                    <>
+                      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
+                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
+                        className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <span className="text-xs text-muted">{logType === "bodyweight_unilateral" ? "reps/side" : "reps"}</span>
+                    </>
+                  )}
+
+                  {/* Timed: seconds */}
+                  {logType === "timed" && (
+                    <>
+                      <input type="number" inputMode="numeric" placeholder="sec" value={set.reps}
+                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
+                        className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <span className="text-xs text-muted">sec</span>
+                    </>
+                  )}
+
+                  {/* Cardio: minutes + distance */}
+                  {logType === "cardio" && setIdx === 0 && (
+                    <>
+                      <input type="number" inputMode="numeric" placeholder="min" value={set.reps}
+                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
+                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <span className="text-xs text-muted">min</span>
+                      <input type="number" inputMode="numeric" placeholder="m" value={set.weight}
+                        onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
+                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <span className="text-xs text-muted">m</span>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <textarea placeholder="Notes (optional)" value={log.note}
+              onChange={(e) => onUpdateNote(index, e.target.value)} rows={2}
+              className="mt-3 w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none" />
+
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" className="flex-1" onClick={() => onSave(index)}>Save</Button>
+              <Button size="sm" variant="ghost" onClick={() => onSkip(index)}>Skip</Button>
+              <Button size="sm" variant="ghost" onClick={() => onSwap(index)} disabled={swapLoading}>
+                {swapLoading ? "..." : "Swap"}
+              </Button>
+            </div>
+
+            {/* Skill path hint */}
+            {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
+              <div className="mt-3 flex gap-2 text-[10px]">
+                {skillPath.easier.length > 0 && (
+                  <span className="text-muted2">Easier: {skillPath.easier.slice(-1)[0]}</span>
+                )}
+                {skillPath.harder.length > 0 && (
+                  <span className="text-muted2">Harder: {skillPath.harder[0]}</span>
+                )}
               </div>
-            ))}
+            )}
           </div>
-
-          <textarea placeholder="Notes (optional)" value={log.note}
-            onChange={(e) => onUpdateNote(index, e.target.value)} rows={2}
-            className="mt-3 w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none" />
-
-          <div className="mt-3 flex gap-2">
-            <Button size="sm" className="flex-1" onClick={() => onSave(index)}>Save</Button>
-            <Button size="sm" variant="ghost" onClick={() => onSkip(index)}>Skip</Button>
-            <Button size="sm" variant="ghost" onClick={() => onSwap(index)} disabled={swapLoading}>
-              {swapLoading ? "..." : "Swap"}
-            </Button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {expanded && log.saved && !skipped && (
         <div className="border-t border-border px-4 pb-4 pt-3">

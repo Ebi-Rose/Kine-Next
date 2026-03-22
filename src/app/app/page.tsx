@@ -165,11 +165,69 @@ function WeekView({
         </div>
       )}
 
+      {/* Gap reentry */}
+      {(() => {
+        const lastSession = (progressDB.sessions as { date?: string }[]).slice(-1)[0];
+        if (lastSession?.date) {
+          const daysSince = Math.floor((Date.now() - new Date(lastSession.date).getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSince >= 7) {
+            return (
+              <div className="mb-4 rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim p-4">
+                <p className="text-sm font-medium text-text">Welcome back</p>
+                <p className="text-xs text-muted2 mt-1">
+                  It&apos;s been {daysSince} days. {progressDB.sessions.length} session{progressDB.sessions.length > 1 ? "s" : ""} completed so far.
+                  No guilt — just pick up where you left off.
+                </p>
+              </div>
+            );
+          }
+          if (daysSince >= 4) {
+            return (
+              <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-3">
+                <p className="text-xs text-muted2">
+                  {daysSince} days since your last session. Ready when you are.
+                </p>
+              </div>
+            );
+          }
+        }
+        return null;
+      })()}
+
+      {/* Session completion summary */}
+      {(() => {
+        const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+          .filter((s) => s.weekNum === progressDB.currentWeek);
+        const trainingDayCount = week.days.filter((d) => !d.isRest).length;
+        if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
+          return (
+            <p className="mb-3 text-xs text-muted2">
+              {weekSessions.length}/{trainingDayCount} sessions done this week
+            </p>
+          );
+        }
+        if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+          return (
+            <div className="mb-4 rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim p-3 text-center">
+              <p className="text-xs text-accent font-medium">Week {progressDB.currentWeek} complete</p>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       {/* Days */}
       <div className="flex flex-col gap-3">
-        {week.days.map((day, i) => (
-          <DayCard key={i} day={day} dayIdx={i} isToday={i === todayIdx} />
-        ))}
+        {week.days.map((day, i) => {
+          // Check if this day's session is completed
+          const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+            .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === i);
+          const isPast = i < todayIdx;
+
+          return (
+            <DayCard key={i} day={day} dayIdx={i} isToday={i === todayIdx} isCompleted={isCompleted} isPast={isPast} />
+          );
+        })}
       </div>
 
       {/* Actions */}
@@ -189,7 +247,9 @@ function WeekView({
 
 // ── Day Card ──
 
-function DayCard({ day, dayIdx, isToday }: { day: WeekDay; dayIdx: number; isToday: boolean }) {
+function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false }: {
+  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean;
+}) {
   const router = useRouter();
   const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
 
@@ -197,9 +257,9 @@ function DayCard({ day, dayIdx, isToday }: { day: WeekDay; dayIdx: number; isTod
     return (
       <div
         className={`rounded-[var(--radius-default)] border px-4 py-3 ${
-          isToday
-            ? "border-accent/30 bg-accent-dim"
-            : "border-border/50 bg-surface/50"
+          isToday ? "border-accent/30 bg-accent-dim"
+          : isPast ? "border-border/30 bg-surface/30 opacity-60"
+          : "border-border/50 bg-surface/50"
         }`}
       >
         <div className="flex items-center justify-between">
@@ -220,9 +280,10 @@ function DayCard({ day, dayIdx, isToday }: { day: WeekDay; dayIdx: number; isTod
   return (
     <div
       className={`rounded-[var(--radius-default)] border p-4 transition-all ${
-        isToday
-          ? "border-accent bg-surface"
-          : "border-border bg-surface hover:border-border-active"
+        isCompleted ? "border-accent/30 bg-accent-dim/30"
+        : isToday ? "border-accent bg-surface"
+        : isPast ? "border-border/50 bg-surface/50 opacity-60"
+        : "border-border bg-surface hover:border-border-active"
       }`}
     >
       {/* Day header */}
@@ -232,6 +293,11 @@ function DayCard({ day, dayIdx, isToday }: { day: WeekDay; dayIdx: number; isTod
           {isToday && (
             <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
               Today
+            </span>
+          )}
+          {isCompleted && (
+            <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
+              ✓ done
             </span>
           )}
         </div>
