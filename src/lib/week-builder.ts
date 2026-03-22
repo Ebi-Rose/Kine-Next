@@ -146,6 +146,27 @@ function buildUserPrompt(): string {
     historyCtx = `\n\nRecent sessions:\n${histLines.join("\n")}`;
   }
 
+  // #11: Week check-in feedback for AI adaptation
+  let weekFeedbackCtx = "";
+  if (progressDB.weekFeedbackHistory.length > 0) {
+    const energyLabels = ["", "Drained", "Low", "Normal", "High"];
+    const motivationLabels = ["", "Struggling", "Flat", "Steady", "Fired up"];
+    const recentFeedback = progressDB.weekFeedbackHistory.slice(-2);
+    const feedbackLines = recentFeedback.map((f) =>
+      `Week ${f.weekNum}: energy=${energyLabels[f.effort] || f.effort}/4, motivation=${motivationLabels[f.soreness] || f.soreness}/4${f.notes ? `, notes: "${f.notes}"` : ""}`
+    );
+    weekFeedbackCtx = `\n\nWeek check-in feedback (adjust volume/intensity accordingly):\n${feedbackLines.join("\n")}`;
+
+    // If most recent feedback shows low energy or motivation, add explicit guidance
+    const latest = recentFeedback[recentFeedback.length - 1];
+    if (latest.effort <= 2 || latest.soreness <= 2) {
+      weekFeedbackCtx += `\nNote: User reported low energy or motivation last week. Consider reducing volume or intensity slightly. Prioritise consistency over progression this week.`;
+    }
+    if (latest.effort >= 4 && latest.soreness >= 4) {
+      weekFeedbackCtx += `\nNote: User feeling great — good window to maintain or slightly increase challenge.`;
+    }
+  }
+
   return `Generate a Week ${weekNum} training program structure as compact JSON.
 
 Trainee:
@@ -157,7 +178,7 @@ Trainee:
 - Program: ${prog}
 - Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance for upper body accessories.${bodyCtx}${dayDurCtx}
 ${cycleCtx}
-${phaseCtx}${historyCtx}
+${phaseCtx}${historyCtx}${weekFeedbackCtx}
 
 PRESCRIPTION GUIDE:
 - Strength: Primary compounds 4-5 sets, 3-6 reps, 3-5 min rest. Accessories 3 sets, 8-12 reps, 90s rest.
