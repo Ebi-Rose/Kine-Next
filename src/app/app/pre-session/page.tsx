@@ -364,27 +364,37 @@ export default function PreSessionPage() {
         </div>
 
         {/* Duration control */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-border mt-2">
-          <div className="text-xs">
-            Session length <span className="text-muted font-light text-[11px]">· adjusts exercises</span>
+        <div className="pt-2.5 border-t border-border mt-2">
+          <div className="flex items-center justify-between">
+            <div className="text-xs">
+              Session length <span className="text-muted font-light text-[11px]">· adjusts exercises</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="w-[26px] h-[26px] rounded-full bg-white/[0.06] text-muted2 text-sm flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
+                onClick={() => adjustDuration(-5)}
+              >
+                −
+              </button>
+              <span className="font-display text-base tracking-wider min-w-[50px] text-center">
+                {currentDuration} MIN
+              </span>
+              <button
+                className="w-[26px] h-[26px] rounded-full bg-white/[0.06] text-muted2 text-sm flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
+                onClick={() => adjustDuration(5)}
+              >
+                +
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="w-[26px] h-[26px] rounded-full bg-white/[0.06] text-muted2 text-sm flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
-              onClick={() => adjustDuration(-5)}
-            >
-              −
-            </button>
-            <span className="font-display text-base tracking-wider min-w-[50px] text-center">
-              {currentDuration} MIN
-            </span>
-            <button
-              className="w-[26px] h-[26px] rounded-full bg-white/[0.06] text-muted2 text-sm flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
-              onClick={() => adjustDuration(5)}
-            >
-              +
-            </button>
-          </div>
+          {/* Duration change note */}
+          {duration !== null && duration !== defaultDuration && (
+            <div className="mt-2 text-[10px] text-accent/80 font-light leading-snug animate-fade-up">
+              {duration < defaultDuration
+                ? `Shortened by ${defaultDuration - duration} min — accessories will be trimmed to fit. Compounds stay.`
+                : `Extended by ${duration - defaultDuration} min — more time for rest between sets and additional volume.`}
+            </div>
+          )}
         </div>
       </CollapsibleSection>
 
@@ -419,21 +429,41 @@ export default function PreSessionPage() {
               );
             }
 
+            // Colour map for left borders
+            const borderColors: Record<string, string> = {
+              push: "border-l-cat-push", pull: "border-l-cat-pull",
+              legs: "border-l-cat-legs", hinge: "border-l-cat-hinge",
+              core: "border-l-cat-core", cardio: "border-l-cat-cardio",
+            };
+            const bgColors: Record<string, string> = {
+              push: "bg-cat-push/[0.05]", pull: "bg-cat-pull/[0.05]",
+              legs: "bg-cat-legs/[0.05]", hinge: "bg-cat-hinge/[0.05]",
+              core: "bg-cat-core/[0.05]", cardio: "bg-cat-cardio/[0.05]",
+            };
+            const labelColors: Record<string, string> = {
+              push: "text-cat-push", pull: "text-cat-pull",
+              legs: "text-cat-legs", hinge: "text-cat-hinge",
+              core: "text-cat-core", cardio: "text-cat-cardio",
+            };
+            const muscle = lib?.muscle || "";
+            const borderColor = borderColors[muscle] || "border-l-muted";
+            const bgColor = bgColors[muscle] || "";
+            const labelColor = labelColors[muscle] || "text-muted";
+
             return (
               <div
                 key={i}
-                className="flex items-center gap-2 py-2.5 border-b border-white/[0.04] last:border-b-0"
+                className={`flex items-center gap-3 py-2.5 px-3 mb-1.5 rounded-lg border-l-[3px] ${borderColor} ${bgColor}`}
               >
-                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${muscleColor}`} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs truncate">
+                  <div className="text-[12px] font-medium truncate text-text">
                     {ex.name}
-                    <span className="text-[10px] text-muted font-light ml-1">
-                      · {lib?.tags.includes("Compound") ? "Compound" : "Isolation"}
-                    </span>
+                  </div>
+                  <div className={`text-[9px] tracking-wider uppercase font-light ${labelColor}`}>
+                    {muscle.toUpperCase()} · {lib?.tags.includes("Compound") ? "Compound" : "Isolation"}
                   </div>
                 </div>
-                <span className="font-display text-xs tracking-wider text-muted2 shrink-0">
+                <span className="font-display text-[13px] tracking-wider text-muted2 shrink-0">
                   {ex.sets}×{ex.reps}
                 </span>
                 <button
