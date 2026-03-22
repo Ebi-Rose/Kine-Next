@@ -7,6 +7,7 @@ import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import { trimSessionToTime } from "@/lib/time-budget";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
 
 // ── Phase coaching notes ──
@@ -387,26 +388,42 @@ export default function PreSessionPage() {
               </button>
             </div>
           </div>
-          {/* Duration change note + regenerate */}
-          {duration !== null && duration !== defaultDuration && (
-            <div className="mt-2 animate-fade-up">
-              <p className="text-[10px] text-accent/80 font-light leading-snug">
-                {duration < defaultDuration
-                  ? `Shortened by ${defaultDuration - duration} min — accessories will be trimmed to fit. Compounds stay.`
-                  : `Extended by ${duration - defaultDuration} min — more time for rest between sets and additional volume.`}
-              </p>
-              <button
-                onClick={() => {
-                  setSessionTimeBudgets({ ...sessionTimeBudgets, [dayIdx]: duration });
-                  useKineStore.getState().setWeekData(null);
-                  router.push("/app");
-                }}
-                className="mt-2 w-full rounded-lg border border-accent/30 bg-accent/10 py-2 text-[11px] text-accent font-medium hover:bg-accent/20 transition-all"
-              >
-                Regenerate session for {duration} min
-              </button>
-            </div>
-          )}
+          {/* Duration change context */}
+          {duration !== null && duration !== defaultDuration && (() => {
+            // Smart trim: remove isolations first, then compounds, then reduce sets
+            const trimResult = trimSessionToTime(exercises, duration);
+            const removedCount = exercises.length - trimResult.exercises.length;
+            const removedNames = exercises
+              .filter(ex => !trimResult.exercises.some(te => te.name === ex.name))
+              .map(ex => ex.name);
+
+            return (
+              <div className="mt-2 animate-fade-up">
+                {duration < defaultDuration ? (
+                  removedCount > 0 ? (
+                    <div className="text-[10px] leading-snug">
+                      <span className="text-accent/80 font-display tracking-wider">TRIMMED TO ~{duration} MIN</span>
+                      <p className="text-muted2 font-light mt-1">
+                        Cut: {removedNames.map(n => <strong key={n} className="text-text font-normal">{n}</strong>).reduce((a, b, i) => i === 0 ? [b] : [...a, ', ', b], [] as React.ReactNode[])}
+                        <span className="text-muted"> (least critical)</span>. Compounds kept.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-muted2 font-light">
+                      Session fits {duration} min — nothing cut.
+                    </p>
+                  )
+                ) : (
+                  <div className="text-[10px] leading-snug">
+                    <span className="text-accent/80 font-display tracking-wider">EXTENDED TO ~{duration} MIN</span>
+                    <p className="text-muted2 font-light mt-1">
+                      More time for rest between heavy sets and additional volume.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </CollapsibleSection>
 

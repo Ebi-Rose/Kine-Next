@@ -1,71 +1,112 @@
 // ── Time Budget System ──
-// Trims exercises from a session to fit within a time constraint.
+// Smart session trimming: removes isolations first, then least-important compounds, then reduces sets.
 
-import type { Exercise } from "@/lib/week-builder";
+import { findExercise } from "@/data/exercise-library";
 
-// Average time per exercise type (in minutes)
-const TIME_ESTIMATES: Record<string, number> = {
-  compound_heavy: 12,    // Squat, deadlift, bench (warmup sets + working sets)
-  compound_light: 8,     // Lunges, rows, presses
-  isolation: 5,          // Curls, extensions, raises
-  timed: 4,              // Planks, holds
-  cardio: 10,            // Cardio blocks
-  bodyweight: 5,         // Push-ups, pull-ups
-};
+export interface Exercise {
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+}
 
-function estimateExerciseTime(exercise: Exercise): number {
-  const name = exercise.name.toLowerCase();
-  const sets = parseInt(exercise.sets) || 3;
+export interface TrimResult {
+  exercises: Exercise[];
+  trimmed: boolean;
+  removedNames: { name: string; isIsolation: boolean }[];
+  estimatedMin: number;
+}
 
-  // Heavy compounds
-  if (name.includes("squat") || name.includes("deadlift") || name.includes("bench press")) {
-    return TIME_ESTIMATES.compound_heavy;
-  }
-  // Light compounds
-  if (name.includes("row") || name.includes("press") || name.includes("lunge") || name.includes("thrust")) {
-    return TIME_ESTIMATES.compound_light;
-  }
-  // Cardio
-  if (name.includes("treadmill") || name.includes("bike") || name.includes("rowing machine")) {
-    return TIME_ESTIMATES.cardio;
-  }
-  // Timed
-  if (name.includes("plank") || name.includes("hold") || name.includes("hang")) {
-    return TIME_ESTIMATES.timed;
-  }
-  // Isolation (fewer sets = less time)
-  if (sets <= 3) return TIME_ESTIMATES.isolation;
+function isCompound(ex: Exercise): boolean {
+  const lib = findExercise(ex.name);
+  if (!lib) return true; // unknown → treat as compound to avoid over-cutting
+  return !lib.tags.includes("Isolation");
+}
 
-  return TIME_ESTIMATES.compound_light;
+function estimateExerciseMinutes(ex: Exercise): number {
+  const sets = parseInt(ex.sets) || 3;
+  const reps = parseInt(ex.reps) || 8;
+  const lib = findExercise(ex.name);
+  const logType = lib?.logType || "weighted";
+  const isIso = !isCompound(ex);
+
+  let setTimeSec: number;
+  if (logType === "timed") setTimeSec = reps; // reps field holds seconds
+  else if (logType === "cardio") setTimeSec = reps * 60; // reps field holds minutes
+  else if (logType === "bodyweight" || logType === "bodyweight_unilateral") setTimeSec = reps * 4;
+  else if (isIso) setTimeSec = reps * 4;
+  else setTimeSec = reps * 5 + 8; // compounds: ~5s/rep + rack/unrack/brace
+
+  const restSec = isIso ? 75 : 150;
+  const transitionSec = isIso ? 60 : 90;
+  return Math.ceil((sets * (setTimeSec + restSec) + transitionSec) / 60);
 }
 
 /**
- * Estimate total session time for a list of exercises (in minutes).
+ * Estimate total session time (in minutes).
  */
 export function estimateSessionTime(exercises: Exercise[]): number {
-  return exercises.reduce((total, ex) => total + estimateExerciseTime(ex), 0) + 5; // +5 for warmup
+  return exercises.reduce((total, ex) => total + estimateExerciseMinutes(ex), 0);
 }
 
 /**
- * Trim exercises from a session to fit within a time budget.
- * Removes from the end (accessories) first, preserving compound movements.
+ * Smart session trimming:
+ * 1. Remove isolation exercises from the end
+ * 2. If still over, remove least-important compounds from the end
+ * 3. If still over, reduce sets on remaining exercises
  */
-export function applyTimeBudget(
-  exercises: Exercise[],
-  budgetMinutes: number
-): Exercise[] {
-  if (budgetMinutes <= 0) return exercises;
-
-  const result = [...exercises];
-  let totalTime = estimateSessionTime(result);
-
-  // Remove exercises from the end until we fit
-  while (totalTime > budgetMinutes && result.length > 2) {
-    result.pop();
-    totalTime = estimateSessionTime(result);
+export function trimSessionToTime(exercises: Exercise[], budgetMinutes: number): TrimResult {
+  if (!exercises.length || !budgetMinutes) {
+    return { exercises, trimmed: false, removedNames: [], estimatedMin: estimateSessionTime(exercises) };
   }
 
-  return result;
+  let totalMin = estimateSessionTime(exercises);
+
+  if (totalMin <= budgetMinutes) {
+    return { exercises, trimmed: false, removedNames: [], estimatedMin: totalMin };
+  }
+
+  // Step 1: Separate compounds and isolations
+  const compounds = exercises.filter((ex) => isCompound(ex));
+  const isolations = exercises.filter((ex) => !isCompound(ex));
+  const removedNames: { name: string; isIsolation: boolean }[] = [];
+
+  // Remove isolations from the end
+  const isoList = [...isolations];
+  while (isoList.length > 0 && totalMin > budgetMinutes) {
+    const removed = isoList.pop()!;
+    removedNames.push({ name: removed.name, isIsolation: true });
+    totalMin -= estimateExerciseMinutes(removed);
+  }
+
+  let trimmed = [...compounds, ...isoList];
+
+  // Step 2: Remove least-important compounds from the end
+  while (trimmed.length > 1 && totalMin > budgetMinutes) {
+    const removed = trimmed.pop()!;
+    removedNames.push({ name: removed.name, isIsolation: false });
+    totalMin -= estimateExerciseMinutes(removed);
+  }
+
+  // Step 3: Reduce sets on remaining exercises
+  if (totalMin > budgetMinutes) {
+    trimmed = trimmed.map((ex) => {
+      if (totalMin <= budgetMinutes) return ex;
+      const currentSets = parseInt(ex.sets) || 3;
+      if (currentSets <= 2) return ex;
+      const newSets = currentSets - 1;
+      const timeSaved = estimateExerciseMinutes(ex) - estimateExerciseMinutes({ ...ex, sets: String(newSets) });
+      totalMin -= timeSaved;
+      return { ...ex, sets: String(newSets) };
+    });
+  }
+
+  return {
+    exercises: trimmed,
+    trimmed: true,
+    removedNames,
+    estimatedMin: Math.round(totalMin),
+  };
 }
 
 /**
