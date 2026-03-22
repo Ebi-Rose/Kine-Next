@@ -387,12 +387,24 @@ export default function PreSessionPage() {
               </button>
             </div>
           </div>
-          {/* Duration change note */}
+          {/* Duration change note + regenerate */}
           {duration !== null && duration !== defaultDuration && (
-            <div className="mt-2 text-[10px] text-accent/80 font-light leading-snug animate-fade-up">
-              {duration < defaultDuration
-                ? `Shortened by ${defaultDuration - duration} min — accessories will be trimmed to fit. Compounds stay.`
-                : `Extended by ${duration - defaultDuration} min — more time for rest between sets and additional volume.`}
+            <div className="mt-2 animate-fade-up">
+              <p className="text-[10px] text-accent/80 font-light leading-snug">
+                {duration < defaultDuration
+                  ? `Shortened by ${defaultDuration - duration} min — accessories will be trimmed to fit. Compounds stay.`
+                  : `Extended by ${duration - defaultDuration} min — more time for rest between sets and additional volume.`}
+              </p>
+              <button
+                onClick={() => {
+                  setSessionTimeBudgets({ ...sessionTimeBudgets, [dayIdx]: duration });
+                  useKineStore.getState().setWeekData(null);
+                  router.push("/app");
+                }}
+                className="mt-2 w-full rounded-lg border border-accent/30 bg-accent/10 py-2 text-[11px] text-accent font-medium hover:bg-accent/20 transition-all"
+              >
+                Regenerate session for {duration} min
+              </button>
             </div>
           )}
         </div>
