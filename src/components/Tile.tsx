@@ -16,11 +16,14 @@ export default function Tile({
   return (
     <button
       type="button"
-      onClick={() => { hapticLight(); onClick?.(); }}
-      className={`rounded-[var(--radius-default)] border px-4 py-3 text-left text-sm transition-all ${
+      onClick={() => {
+        hapticLight();
+        onClick?.();
+      }}
+      className={`rounded-xl border px-4 py-3.5 text-left text-[13px] transition-all duration-200 ease-out ${
         selected
-          ? "border-accent bg-accent-dim text-text"
-          : "border-border bg-surface text-muted2 hover:border-border-active hover:text-text"
+          ? "border-accent bg-accent-dim text-text shadow-[0_0_0_1px_rgba(196,144,152,0.3)]"
+          : "border-border bg-surface text-muted2 hover:border-border-active hover:text-text hover:bg-surface2"
       } ${className}`}
     >
       {children}

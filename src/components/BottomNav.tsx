@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { hapticLight } from "@/lib/haptics";
 
 const NAV_ITEMS = [
   { href: "/app", label: "Home", icon: "⬡" },
@@ -13,8 +14,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[var(--container-max)] items-center justify-around py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-bg/92 backdrop-blur-lg">
+      <div className="mx-auto flex max-w-[var(--container-max)] items-center justify-around py-1.5 pb-[max(8px,env(safe-area-inset-bottom))]">
         {NAV_ITEMS.map(({ href, label, icon }) => {
           const isActive =
             href === "/app"
@@ -25,12 +26,13 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-0.5 px-4 py-1 text-xs transition-colors ${
-                isActive ? "text-accent" : "text-muted2 hover:text-text"
+              onClick={() => hapticLight()}
+              className={`flex flex-col items-center gap-0.5 px-5 py-1.5 text-[10px] tracking-[0.5px] transition-colors duration-200 ${
+                isActive ? "text-accent" : "text-muted hover:text-muted2"
               }`}
             >
-              <span className="text-lg">{icon}</span>
-              <span>{label}</span>
+              <span className="text-[17px] leading-none">{icon}</span>
+              <span className="font-light">{label}</span>
             </Link>
           );
         })}

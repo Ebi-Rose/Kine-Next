@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useKineStore } from "@/store/useKineStore";
+import { useKineStore, useStoreHydrated } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
@@ -54,8 +54,9 @@ export default function PreSessionPage() {
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
 
+  const hydrated = useStoreHydrated();
+
   // ── Local state ──
-  const [mounted, setMounted] = useState(false);
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [duration, setDuration] = useState<number | null>(null);
   const [coaching, setCoaching] = useState<CoachLevel>(eduMode);
@@ -64,19 +65,13 @@ export default function PreSessionPage() {
   const [swapIdx, setSwapIdx] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Wait one tick after mount for Zustand persist to hydrate
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (mounted && (!day || day.isRest)) {
+    if (hydrated && (!day || day.isRest)) {
       router.replace("/app");
     }
-  }, [mounted, day, router]);
+  }, [hydrated, day, router]);
 
-  if (!mounted || !day || day.isRest) {
+  if (!hydrated || !day || day.isRest) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />

@@ -9,10 +9,8 @@ interface ToastMessage {
 }
 
 let toastId = 0;
-let addToastFn: ((text: string, type?: ToastMessage["type"]) => void) | null =
-  null;
+let addToastFn: ((text: string, type?: ToastMessage["type"]) => void) | null = null;
 
-/** Show a toast from anywhere in the app */
 export function toast(text: string, type: ToastMessage["type"] = "info") {
   addToastFn?.(text, type);
 }
@@ -26,31 +24,29 @@ export default function ToastContainer() {
       setToasts((prev) => [...prev, { id, text, type }]);
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 3000);
+      }, 3500);
     },
     []
   );
 
   useEffect(() => {
     addToastFn = addToast;
-    return () => {
-      addToastFn = null;
-    };
+    return () => { addToastFn = null; };
   }, [addToast]);
 
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 left-1/2 z-[999] flex -translate-x-1/2 flex-col gap-2">
+    <div className="fixed top-4 left-1/2 z-[999] flex -translate-x-1/2 flex-col gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`rounded-lg px-4 py-2 text-sm shadow-lg animate-in fade-in slide-in-from-top-2 ${
+          className={`pointer-events-auto rounded-xl px-4 py-2.5 text-[13px] font-light shadow-lg backdrop-blur-md animate-slide-down ${
             t.type === "error"
-              ? "bg-red-900/90 text-red-100"
+              ? "bg-red-950/80 text-red-200 border border-red-800/30"
               : t.type === "success"
-                ? "bg-green-900/90 text-green-100"
-                : "bg-surface2 text-text"
+                ? "bg-green-950/80 text-green-200 border border-green-800/30"
+                : "bg-surface2/90 text-text border border-border/50"
           }`}
         >
           {t.text}
