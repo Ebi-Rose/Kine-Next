@@ -42,7 +42,7 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets } =
     useKineStore();
 
   const [logs, setLogs] = useState<Record<number, ExerciseLog>>({});
@@ -55,15 +55,29 @@ export default function SessionPage() {
   const [swapSheetIdx, setSwapSheetIdx] = useState<number | null>(null);
   const [showWarmup, setShowWarmup] = useState(true);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  // #14/#15: Video and skill path sheet state
+  const [videoSheetEx, setVideoSheetEx] = useState<string | null>(null);
+  const [skillPathEx, setSkillPathEx] = useState<string | null>(null);
 
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
 
-  // Initialize logs from exercises
+  // #12: Apply time budget trimming to exercises
+  const effectiveExercises = (() => {
+    if (!day || day.isRest) return [];
+    const budget = sessionTimeBudgets[dayIdx];
+    if (budget && budget < (parseInt(day.sessionDuration) || 50)) {
+      const trimmed = trimSessionToTime(day.exercises, budget);
+      return trimmed.exercises;
+    }
+    return day.exercises;
+  })();
+
+  // Initialize logs from exercises (using time-budget-trimmed list)
   useEffect(() => {
-    if (!day || day.isRest) return;
+    if (!day || day.isRest || effectiveExercises.length === 0) return;
     const initial: Record<number, ExerciseLog> = {};
-    day.exercises.forEach((ex, i) => {
+    effectiveExercises.forEach((ex, i) => {
       const numSets = parseInt(ex.sets) || 3;
       initial[i] = {
         name: ex.name,
@@ -74,7 +88,7 @@ export default function SessionPage() {
       };
     });
     setLogs(initial);
-  }, [day]);
+  }, [day, effectiveExercises.length]);
 
   const updateSet = useCallback(
     (exIdx: number, setIdx: number, field: "reps" | "weight", val: string) => {
@@ -306,6 +320,8 @@ export default function SessionPage() {
   }
 
   const warmupExercises = getWarmupForSession(day.sessionTitle);
+  const timeBudget = sessionTimeBudgets[dayIdx];
+  const isTrimmed = timeBudget && effectiveExercises.length < day.exercises.length;
 
   return (
     <div>
@@ -316,8 +332,20 @@ export default function SessionPage() {
         </button>
         <h1 className="mt-2 font-display text-2xl tracking-wide text-text">{day.sessionTitle}</h1>
         {day.coachNote && <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>}
-        <p className="mt-1 text-[10px] text-muted">{day.sessionDuration} · {day.exercises.length} exercises</p>
+        <p className="mt-1 text-[10px] text-muted">
+          {isTrimmed ? `~${timeBudget} min (trimmed)` : day.sessionDuration} · {effectiveExercises.length} exercises
+        </p>
       </div>
+
+      {/* #12: Time budget notice */}
+      {isTrimmed && (
+        <div className="mb-4 rounded-lg border border-accent/20 bg-accent-dim/30 p-3">
+          <p className="text-[10px] text-accent font-display tracking-wider">TRIMMED TO ~{timeBudget} MIN</p>
+          <p className="text-[10px] text-muted2 font-light mt-0.5">
+            {day.exercises.length - effectiveExercises.length} exercise{day.exercises.length - effectiveExercises.length > 1 ? "s" : ""} removed to fit your time budget. Compounds kept.
+          </p>
+        </div>
+      )}
 
       {/* Inline warmup */}
       {showWarmup && (
@@ -341,7 +369,7 @@ export default function SessionPage() {
 
       {/* Exercise list */}
       <div className="flex flex-col gap-3">
-        {day.exercises.map((ex, i) => (
+        {effectiveExercises.map((ex, i) => (
           <ExerciseCard
             key={`${ex.name}-${i}`}
             index={i}
@@ -356,6 +384,8 @@ export default function SessionPage() {
             onSwap={(idx) => setSwapSheetIdx(idx)}
             swapLoading={false}
             onVideoPlay={(url) => setVideoUrl(url)}
+            onVideoSheet={(name) => setVideoSheetEx(name)}
+            onSkillPath={(name) => setSkillPathEx(name)}
           />
         ))}
       </div>
@@ -372,9 +402,9 @@ export default function SessionPage() {
         <ExerciseSwapSheet
           open={true}
           onClose={() => setSwapSheetIdx(null)}
-          currentExercise={day.exercises[swapSheetIdx].name}
+          currentExercise={effectiveExercises[swapSheetIdx].name}
           sessionTitle={day.sessionTitle}
-          sessionExercises={day.exercises.map((e) => e.name)}
+          sessionExercises={effectiveExercises.map((e) => e.name)}
           onSwap={(newName) => {
             // Update weekData
             const store = useKineStore.getState();
@@ -382,7 +412,11 @@ export default function SessionPage() {
             const updatedDays = [...updatedWeek.days];
             const updatedDay = { ...updatedDays[dayIdx] };
             const updatedExercises = [...updatedDay.exercises];
-            updatedExercises[swapSheetIdx] = { ...updatedExercises[swapSheetIdx], name: newName };
+            // Find the index in the original exercises array
+            const origIdx = updatedExercises.findIndex(e => e.name === effectiveExercises[swapSheetIdx].name);
+            if (origIdx >= 0) {
+              updatedExercises[origIdx] = { ...updatedExercises[origIdx], name: newName };
+            }
             updatedDay.exercises = updatedExercises;
             updatedDays[dayIdx] = updatedDay;
             updatedWeek.days = updatedDays;
@@ -398,7 +432,54 @@ export default function SessionPage() {
         />
       )}
 
-      {/* Video player */}
+      {/* #14: Video sheet */}
+      {videoSheetEx && (
+        <VideoSheet
+          open={true}
+          onClose={() => setVideoSheetEx(null)}
+          exerciseName={videoSheetEx}
+        />
+      )}
+
+      {/* #15: Skill path sheet */}
+      {skillPathEx && (
+        <SkillPathSheet
+          open={true}
+          onClose={() => setSkillPathEx(null)}
+          exerciseName={skillPathEx}
+          onSelect={(newName) => {
+            // Find which exercise index this is
+            const idx = effectiveExercises.findIndex(e => e.name === skillPathEx);
+            if (idx < 0) return;
+
+            // Update weekData
+            const store = useKineStore.getState();
+            const updatedWeek = { ...week! };
+            const updatedDays = [...updatedWeek.days];
+            const updatedDay = { ...updatedDays[dayIdx] };
+            const updatedExercises = [...updatedDay.exercises];
+            const origIdx = updatedExercises.findIndex(e => e.name === skillPathEx);
+            if (origIdx >= 0) {
+              updatedExercises[origIdx] = { ...updatedExercises[origIdx], name: newName };
+            }
+            updatedDay.exercises = updatedExercises;
+            updatedDays[dayIdx] = updatedDay;
+            updatedWeek.days = updatedDays;
+            store.setWeekData(updatedWeek);
+
+            // Update logs
+            setLogs((prev) => ({
+              ...prev,
+              [idx]: { ...prev[idx], name: newName, saved: false, actual: prev[idx].actual.map(() => ({ reps: "", weight: "" })) },
+            }));
+
+            toast(`Switched to ${newName}`, "success");
+            setSkillPathEx(null);
+          }}
+        />
+      )}
+
+      {/* Video player (inline) */}
       {videoUrl && (
         <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4" onClick={() => setVideoUrl(null)}>
           <div className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
@@ -414,7 +495,7 @@ export default function SessionPage() {
 // ── Exercise Card ──
 
 function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay,
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath,
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -428,6 +509,8 @@ function ExerciseCard({
   onSwap: (exIdx: number) => void;
   swapLoading: boolean;
   onVideoPlay?: (url: string) => void;
+  onVideoSheet?: (name: string) => void;
+  onSkillPath?: (name: string) => void;
 }) {
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
