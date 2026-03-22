@@ -72,7 +72,11 @@ export default function ProgressPage() {
       )}
 
       {/* Tools */}
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex gap-2 flex-wrap">
+        <Link href="/app/photos"
+          className="inline-flex items-center rounded-[var(--radius-default)] border border-border bg-surface px-3 py-1.5 text-xs text-muted2 hover:border-border-active transition-all">
+          Photos
+        </Link>
         <Button variant="secondary" size="sm" onClick={() => setShowORM(true)}>
           1RM Calculator
         </Button>
