@@ -8,9 +8,12 @@ import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult, ExerciseFeedback } from "@/lib/session-analysis";
 import { apiFetchStreaming } from "@/lib/api";
 import { findExercise } from "@/data/exercise-library";
-import { getBreathingCue } from "@/data/education";
-import { getSkillPath, hasSkillPath } from "@/data/skill-paths";
+import { getBreathingCue, getMuscleTags, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
+import { getSkillPath, hasSkillPath, SKILL_HINTS } from "@/data/skill-paths";
+import { getVideoThumb, hasVideo, getVideoUrl } from "@/data/exercise-videos";
 import { suggestNextWeight } from "@/lib/progression";
+import { getWarmupForSession } from "@/data/warmup-data";
+import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
@@ -45,6 +48,9 @@ export default function SessionPage() {
   const [sessionStartTime] = useState(() => new Date().toISOString());
   const [swappingIdx, setSwappingIdx] = useState<number | null>(null);
   const [swapLoading, setSwapLoading] = useState(false);
+  const [swapSheetIdx, setSwapSheetIdx] = useState<number | null>(null);
+  const [showWarmup, setShowWarmup] = useState(true);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
@@ -295,6 +301,8 @@ export default function SessionPage() {
     );
   }
 
+  const warmupExercises = getWarmupForSession(day.sessionTitle);
+
   return (
     <div>
       {/* Header */}
@@ -304,8 +312,28 @@ export default function SessionPage() {
         </button>
         <h1 className="mt-2 font-display text-2xl tracking-wide text-text">{day.sessionTitle}</h1>
         {day.coachNote && <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>}
-        <p className="mt-1 text-[10px] text-muted">{day.sessionDuration}</p>
+        <p className="mt-1 text-[10px] text-muted">{day.sessionDuration} · {day.exercises.length} exercises</p>
       </div>
+
+      {/* Inline warmup */}
+      {showWarmup && (
+        <div className="mb-6 rounded-xl border border-border bg-surface p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
+            <button onClick={() => setShowWarmup(false)} className="text-[10px] text-muted2 hover:text-text">
+              Hide
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {warmupExercises.map((wu, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span className="text-text">{wu.name}</span>
+                <span className="text-muted">{wu.duration}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Exercise list */}
       <div className="flex flex-col gap-3">
@@ -321,8 +349,9 @@ export default function SessionPage() {
             onUpdateNote={updateNote}
             onSave={saveExercise}
             onSkip={skipExercise}
-            onSwap={handleSwap}
-            swapLoading={swapLoading && swappingIdx === i}
+            onSwap={(idx) => setSwapSheetIdx(idx)}
+            swapLoading={false}
+            onVideoPlay={(url) => setVideoUrl(url)}
           />
         ))}
       </div>
@@ -333,6 +362,47 @@ export default function SessionPage() {
           Complete session ✓
         </Button>
       </div>
+
+      {/* Swap sheet */}
+      {swapSheetIdx !== null && (
+        <ExerciseSwapSheet
+          open={true}
+          onClose={() => setSwapSheetIdx(null)}
+          currentExercise={day.exercises[swapSheetIdx].name}
+          sessionTitle={day.sessionTitle}
+          sessionExercises={day.exercises.map((e) => e.name)}
+          onSwap={(newName) => {
+            // Update weekData
+            const store = useKineStore.getState();
+            const updatedWeek = { ...week! };
+            const updatedDays = [...updatedWeek.days];
+            const updatedDay = { ...updatedDays[dayIdx] };
+            const updatedExercises = [...updatedDay.exercises];
+            updatedExercises[swapSheetIdx] = { ...updatedExercises[swapSheetIdx], name: newName };
+            updatedDay.exercises = updatedExercises;
+            updatedDays[dayIdx] = updatedDay;
+            updatedWeek.days = updatedDays;
+            store.setWeekData(updatedWeek);
+            // Update logs
+            setLogs((prev) => ({
+              ...prev,
+              [swapSheetIdx]: { ...prev[swapSheetIdx], name: newName, saved: false, actual: prev[swapSheetIdx].actual.map(() => ({ reps: "", weight: "" })) },
+            }));
+            toast(`Swapped to ${newName}`, "success");
+            setSwapSheetIdx(null);
+          }}
+        />
+      )}
+
+      {/* Video player */}
+      {videoUrl && (
+        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4" onClick={() => setVideoUrl(null)}>
+          <div className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <video src={videoUrl} controls autoPlay loop muted playsInline className="w-full rounded-xl" style={{ maxHeight: "60vh" }} />
+            <button onClick={() => setVideoUrl(null)} className="mt-3 w-full text-center text-xs text-muted2 hover:text-text">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -340,7 +410,7 @@ export default function SessionPage() {
 // ── Exercise Card ──
 
 function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading,
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay,
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -353,34 +423,70 @@ function ExerciseCard({
   onSkip: (exIdx: number) => void;
   onSwap: (exIdx: number) => void;
   swapLoading: boolean;
+  onVideoPlay?: (url: string) => void;
 }) {
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
+  const exInfo = findExercise(exercise.name);
+  const muscleTags = getMuscleTags(exercise.name);
+  const videoThumb = getVideoThumb(exercise.name);
+  const vidUrl = getVideoUrl(exercise.name);
 
   return (
-    <div className={`rounded-[var(--radius-default)] border transition-all ${
+    <div className={`rounded-xl border transition-all duration-200 ${
       skipped ? "border-border/50 bg-surface/50 opacity-50"
         : log.saved ? "border-accent/30 bg-accent-dim/50"
         : expanded ? "border-border-active bg-surface"
         : "border-border bg-surface"
     }`}>
-      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
-        <div className="flex-1">
+      {/* Header */}
+      <button onClick={onToggle} className="flex w-full items-center gap-3 p-4 text-left">
+        {/* Video thumbnail or muscle dot */}
+        {videoThumb ? (
+          <div
+            className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border"
+            onClick={(e) => { e.stopPropagation(); if (vidUrl && onVideoPlay) onVideoPlay(vidUrl); }}
+          >
+            <img src={videoThumb} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <span className="text-white text-[10px]">▶</span>
+            </div>
+          </div>
+        ) : (
+          <div className={`h-2 w-2 shrink-0 rounded-full ${
+            exInfo?.muscle === "push" ? "bg-cat-push"
+            : exInfo?.muscle === "pull" ? "bg-cat-pull"
+            : exInfo?.muscle === "legs" ? "bg-cat-legs"
+            : exInfo?.muscle === "hinge" ? "bg-cat-hinge"
+            : exInfo?.muscle === "core" ? "bg-cat-core"
+            : exInfo?.muscle === "cardio" ? "bg-cat-cardio"
+            : "bg-muted"
+          }`} />
+        )}
+
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${skipped ? "line-through text-muted" : "text-text"}`}>{exercise.name}</span>
+            <span className={`text-[13px] font-medium truncate ${skipped ? "line-through text-muted" : "text-text"}`}>{exercise.name}</span>
             {log.saved && !skipped && (
-              <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">✓ saved</span>
+              <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[9px] text-accent shrink-0">✓ saved</span>
             )}
             {skipped && (
-              <span className="rounded-full bg-border px-2 py-0.5 text-[10px] text-muted">skipped</span>
+              <span className="rounded-full bg-border px-2 py-0.5 text-[9px] text-muted shrink-0">skipped</span>
             )}
           </div>
-          <span className="text-xs text-muted2">
-            {exercise.sets}×{exercise.reps}
-            {exercise.rest !== "-" && ` · ${exercise.rest} rest`}
-          </span>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-[11px] text-muted2 font-light">
+              {exercise.sets}×{exercise.reps}
+              {exercise.rest !== "-" && ` · ${exercise.rest}`}
+            </span>
+            {exInfo && (
+              <span className="text-[10px] text-muted font-light">
+                · {exInfo.tags.includes("Compound") ? "Compound" : "Isolation"}
+              </span>
+            )}
+          </div>
         </div>
-        <span className="text-muted2 text-sm">{expanded ? "▾" : "▸"}</span>
+        <span className="text-muted text-[10px] shrink-0">{expanded ? "▾" : "▸"}</span>
       </button>
 
       {expanded && !log.saved && (() => {
@@ -483,15 +589,42 @@ function ExerciseCard({
               </Button>
             </div>
 
+            {/* Muscle tags */}
+            {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0) && (
+              <div className="mt-3 flex flex-wrap gap-1">
+                {muscleTags.primary.map((m) => (
+                  <span key={m} className="rounded-full bg-accent/10 px-2 py-0.5 text-[9px] text-accent">{m}</span>
+                ))}
+                {muscleTags.secondary.map((m) => (
+                  <span key={m} className="rounded-full bg-surface2 px-2 py-0.5 text-[9px] text-muted2">{m}</span>
+                ))}
+              </div>
+            )}
+
+            {/* Education cues */}
+            {isSquat(exercise.name) && (
+              <p className="mt-2 text-[10px] text-muted font-light">{KNEE_TRACKING_CUE}</p>
+            )}
+            {isHinge(exercise.name) && (
+              <p className="mt-2 text-[10px] text-muted font-light">{HIP_HINGE_FIRST}</p>
+            )}
+            {isCompound(exercise.name) && (
+              <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
+            )}
+
             {/* Skill path hint */}
             {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
-              <div className="mt-3 flex gap-2 text-[10px]">
-                {skillPath.easier.length > 0 && (
-                  <span className="text-muted2">Easier: {skillPath.easier.slice(-1)[0]}</span>
-                )}
-                {skillPath.harder.length > 0 && (
-                  <span className="text-muted2">Harder: {skillPath.harder[0]}</span>
-                )}
+              <div className="mt-3 rounded-lg bg-surface2/50 px-3 py-2">
+                <p className="text-[9px] tracking-wider text-muted uppercase mb-1">Difficulty</p>
+                {skillPath.hint && <p className="text-[10px] text-muted2 mb-1.5">{skillPath.hint}</p>}
+                <div className="flex gap-3 text-[10px]">
+                  {skillPath.easier.length > 0 && (
+                    <span className="text-green-400">← Easier: {skillPath.easier.slice(-1)[0]}</span>
+                  )}
+                  {skillPath.harder.length > 0 && (
+                    <span className="text-accent">Harder: {skillPath.harder[0]} →</span>
+                  )}
+                </div>
               </div>
             )}
           </div>
