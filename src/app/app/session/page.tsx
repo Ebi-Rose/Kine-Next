@@ -307,8 +307,8 @@ export default function SessionPage() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <button onClick={() => router.push("/app")} className="text-xs text-muted2 hover:text-text transition-colors">
-          ← Back to week
+        <button onClick={() => router.back()} className="text-xs text-muted2 hover:text-text transition-colors">
+          ← Back
         </button>
         <h1 className="mt-2 font-display text-2xl tracking-wide text-text">{day.sessionTitle}</h1>
         {day.coachNote && <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>}

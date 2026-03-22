@@ -41,6 +41,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Background texture ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("/hero-bg.JPG") center/cover no-repeat;
+  opacity: 0.035;
+  pointer-events: none;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

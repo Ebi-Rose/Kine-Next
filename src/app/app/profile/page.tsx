@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import type { EduMode, CycleType, PeriodLog } from "@/store/useKineStore";
-import { signOut } from "@/lib/auth";
+import { signOut, getSubscriptionStatus } from "@/lib/auth";
 import { getCurrentPhase } from "@/lib/cycle";
 import { syncNow } from "@/lib/sync";
 import Button from "@/components/Button";
@@ -17,9 +17,10 @@ import {
   DURATION_OPTIONS,
   DAY_LABELS,
   CYCLE_OPTIONS,
+  INJURY_OPTIONS,
 } from "@/data/constants";
 
-type Panel = "overview" | "personal" | "training" | "coaching" | "cycle" | "settings";
+type Panel = "overview" | "personal" | "training" | "coaching" | "cycle" | "subscription" | "settings";
 
 export default function ProfilePage() {
   const [panel, setPanel] = useState<Panel>("overview");
@@ -33,6 +34,7 @@ export default function ProfilePage() {
       {panel === "training" && <TrainingPanel onBack={() => setPanel("overview")} />}
       {panel === "coaching" && <CoachingPanel onBack={() => setPanel("overview")} />}
       {panel === "cycle" && <CyclePanel onBack={() => setPanel("overview")} />}
+      {panel === "subscription" && <SubscriptionPanel onBack={() => setPanel("overview")} />}
       {panel === "settings" && <SettingsPanel onBack={() => setPanel("overview")} />}
     </div>
   );
@@ -48,6 +50,7 @@ function OverviewPanel({ onNavigate }: { onNavigate: (p: Panel) => void }) {
     { id: "training", label: "Training", description: "Goal, equipment, schedule" },
     { id: "coaching", label: "Coaching", description: "Education mode, preferences" },
     { id: "cycle", label: "Cycle", description: "Period tracking, phase management" },
+    { id: "subscription", label: "Subscription", description: "Manage your plan" },
     { id: "settings", label: "Settings", description: "Units, account, data" },
   ];
 
@@ -81,12 +84,9 @@ function PersonalPanel({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState(personalProfile.name);
   const [weight, setWeight] = useState(personalProfile.weight);
   const [height, setHeight] = useState(personalProfile.height);
-  const [dob, setDob] = useState(personalProfile.dob);
-  const [trainingAge, setTrainingAge] = useState(personalProfile.trainingAge);
-  const [notes, setNotes] = useState(personalProfile.notes);
 
   function save() {
-    setPersonalProfile({ ...personalProfile, name, weight, height, dob, trainingAge, notes });
+    setPersonalProfile({ ...personalProfile, name, weight, height });
     toast("Profile saved", "success");
     onBack();
   }
@@ -99,13 +99,6 @@ function PersonalPanel({ onBack }: { onBack: () => void }) {
         <Input label="Name" value={name} onChange={setName} />
         <Input label="Weight (kg)" value={weight} onChange={setWeight} type="number" />
         <Input label="Height (cm)" value={height} onChange={setHeight} type="number" />
-        <Input label="Date of birth" value={dob} onChange={setDob} type="date" />
-        <Input label="Training age (years)" value={trainingAge} onChange={setTrainingAge} placeholder="e.g. 2" />
-        <div>
-          <label className="text-xs text-muted">Notes</label>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Anything relevant..."
-            className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent resize-none" />
-        </div>
         <Button onClick={save} className="w-full">Save</Button>
       </div>
     </div>
@@ -204,10 +197,58 @@ function TrainingPanel({ onBack }: { onBack: () => void }) {
         </div>
       </EditableRow>
 
-      {/* Injuries (read-only for now) */}
-      <div className="rounded-[var(--radius-default)] border border-border bg-surface p-4 mt-2">
-        <Row label="Injuries" value={injuries.length > 0 ? injuries.join(", ") : "None"} />
-      </div>
+      {/* Injuries */}
+      <EditableRow label="Injuries" value={injuries.length > 0 ? injuries.map(i => INJURY_OPTIONS.find(o => o.value === i)?.label || i).join(", ") : "None"} isEditing={editing === "injuries"} onEdit={() => setEditing("injuries")}>
+        <div className="flex flex-wrap gap-2">
+          {INJURY_OPTIONS.map((opt) => (
+            <button key={opt.value} onClick={() => {
+              const newInjuries = injuries.includes(opt.value)
+                ? injuries.filter((i) => i !== opt.value)
+                : [...injuries, opt.value];
+              setInjuries(newInjuries);
+            }}
+              className={`rounded-full border px-3 py-1.5 text-xs transition-all ${
+                injuries.includes(opt.value)
+                  ? "border-accent bg-accent-dim text-text"
+                  : "border-border text-muted2 hover:border-border-active"
+              }`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save injuries</Button>
+      </EditableRow>
+
+      {/* Per-day durations */}
+      {trainingDays.length > 0 && (
+        <EditableRow label="Per-day durations" value={trainingDays.map(d => `${DAY_LABELS[d]}: ${store.dayDurations[d] || "default"}`).join(", ")} isEditing={editing === "dayDurations"} onEdit={() => setEditing("dayDurations")}>
+          <div className="flex flex-col gap-2">
+            {trainingDays.map((dow) => (
+              <div key={dow} className="flex items-center justify-between">
+                <span className="text-xs text-text">{DAY_LABELS[dow]}</span>
+                <select
+                  value={store.dayDurations[dow] || ""}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    store.setDayDurations({ ...store.dayDurations, [dow]: val || undefined } as Record<number, number>);
+                  }}
+                  className="rounded border border-border bg-bg px-2 py-1 text-xs text-text outline-none"
+                >
+                  <option value="">Default</option>
+                  <option value="30">30 min</option>
+                  <option value="40">40 min</option>
+                  <option value="45">45 min</option>
+                  <option value="50">50 min</option>
+                  <option value="60">60 min</option>
+                  <option value="75">75 min</option>
+                  <option value="90">90 min</option>
+                </select>
+              </div>
+            ))}
+          </div>
+          <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save durations</Button>
+        </EditableRow>
+      )}
     </div>
   );
 }
@@ -336,6 +377,73 @@ function CyclePanel({ onBack }: { onBack: () => void }) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Subscription Panel ──
+
+function SubscriptionPanel({ onBack }: { onBack: () => void }) {
+  const [status, setStatus] = useState<{ active: boolean; status?: string; plan?: string; currentPeriodEnd?: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  useEffect(() => {
+    getSubscriptionStatus().then((s) => {
+      setStatus(s);
+      setLoading(false);
+    });
+  }, []);
+
+  async function openPortal() {
+    setPortalLoading(true);
+    try {
+      const { getUser } = await import("@/lib/auth");
+      const user = await getUser();
+      if (!user) { toast("Not logged in", "error"); setPortalLoading(false); return; }
+
+      const res = await fetch("/api/create-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else toast(data.error || "Could not open portal", "error");
+    } catch {
+      toast("Something went wrong", "error");
+    }
+    setPortalLoading(false);
+  }
+
+  return (
+    <div className="mt-4">
+      <BackButton onClick={onBack} />
+      <h2 className="mt-4 text-xs tracking-wider text-muted uppercase">Subscription</h2>
+
+      {loading ? (
+        <div className="mt-4 flex justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      ) : (
+        <div className="mt-4 rounded-xl border border-border bg-surface p-4">
+          <div className="flex flex-col gap-2">
+            <Row label="Status" value={status?.active ? "Active" : "Inactive"} />
+            {status?.plan && <Row label="Plan" value={status.plan} />}
+            {status?.status && <Row label="Billing status" value={status.status} />}
+            {status?.currentPeriodEnd && (
+              <Row label="Renews" value={new Date(status.currentPeriodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} />
+            )}
+          </div>
+
+          <Button variant="secondary" size="sm" className="mt-4 w-full" onClick={openPortal} disabled={portalLoading}>
+            {portalLoading ? "Loading..." : "Manage subscription"}
+          </Button>
+          <p className="mt-2 text-[10px] text-muted text-center">
+            Change plan, update payment, or cancel via Stripe.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
