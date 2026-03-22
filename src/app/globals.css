@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Kine design tokens */
+  --color-bg: #111111;
+  --color-surface: #191919;
+  --color-surface2: #212121;
+  --color-border: #252525;
+  --color-border-active: #c49098;
+  --color-accent: #c49098;
+  --color-accent-dim: rgba(196, 144, 152, 0.10);
+  --color-text: #f0f0f0;
+  --color-muted: #5a5a5a;
+  --color-muted2: #888888;
+
+  /* Category accents */
+  --color-cat-push: #c49098;
+  --color-cat-pull: #7b8fa8;
+  --color-cat-legs: #c4a962;
+  --color-cat-hinge: #c4a962;
+  --color-cat-core: #8ba88b;
+  --color-cat-cardio: #a87bb0;
+
+  /* Spacing & layout */
+  --radius-default: 10px;
+  --container-max: 480px;
+
+  /* Fonts */
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
