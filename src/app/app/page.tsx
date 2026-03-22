@@ -7,7 +7,9 @@ import { buildWeek } from "@/lib/week-builder";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS } from "@/data/constants";
 import { getCurrentPhase } from "@/lib/cycle";
+import { getCurrentPhase as getTrainingPhase } from "@/lib/periodisation";
 import Button from "@/components/Button";
+import SessionRearrange from "@/components/SessionRearrange";
 import { toast } from "@/components/Toast";
 import Link from "next/link";
 
@@ -105,10 +107,12 @@ function WeekView({
   onRebuild: () => void;
   loading: boolean;
 }) {
-  const { cycleType, cycle } = useKineStore();
+  const { cycleType, cycle, progressDB } = useKineStore();
+  const [showRearrange, setShowRearrange] = useState(false);
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
   const weekStart = getWeekDateRange();
+  const trainingPhase = getTrainingPhase(progressDB.currentWeek, progressDB.phaseOffset);
 
   // Cycle phase
   const phase = cycleType === "regular"
@@ -135,6 +139,11 @@ function WeekView({
             Standard programme — AI will personalise next time
           </p>
         )}
+        <div className="mt-1 flex items-center gap-2">
+          <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10px] text-muted2">
+            {trainingPhase.label} · {trainingPhase.weekInPhase}/{trainingPhase.totalWeeksInPhase}
+          </span>
+        </div>
       </div>
 
       {/* Cycle phase */}
@@ -163,17 +172,17 @@ function WeekView({
         ))}
       </div>
 
-      {/* Rebuild */}
-      <div className="mt-8 flex justify-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRebuild}
-          disabled={loading}
-        >
-          {loading ? "Rebuilding…" : "Regenerate week"}
+      {/* Actions */}
+      <div className="mt-8 flex justify-center gap-3">
+        <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)}>
+          Rearrange
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading}>
+          {loading ? "Rebuilding…" : "Regenerate"}
         </Button>
       </div>
+
+      <SessionRearrange open={showRearrange} onClose={() => setShowRearrange(false)} />
     </div>
   );
 }
