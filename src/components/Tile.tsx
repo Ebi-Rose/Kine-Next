@@ -1,3 +1,5 @@
+import { hapticLight } from "@/lib/haptics";
+
 interface TileProps {
   children: React.ReactNode;
   selected?: boolean;
@@ -14,7 +16,7 @@ export default function Tile({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => { hapticLight(); onClick?.(); }}
       className={`rounded-[var(--radius-default)] border px-4 py-3 text-left text-sm transition-all ${
         selected
           ? "border-accent bg-accent-dim text-text"
