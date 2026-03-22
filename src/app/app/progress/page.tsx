@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
-import { calculateORM, calculatePlates } from "@/lib/progression";
+import { calculateORM } from "@/lib/progression";
 import { formatRelativeDate } from "@/lib/date-utils";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
@@ -25,8 +25,6 @@ export default function ProgressPage() {
   const [showORM, setShowORM] = useState(false);
   const [ormWeight, setOrmWeight] = useState("");
   const [ormReps, setOrmReps] = useState("");
-  const [showPlates, setShowPlates] = useState(false);
-  const [plateTarget, setPlateTarget] = useState("");
   const [replaySession, setReplaySession] = useState<SessionRecord | null>(null);
 
   const totalSessions = sessions.length;
@@ -79,9 +77,6 @@ export default function ProgressPage() {
         </Link>
         <Button variant="secondary" size="sm" onClick={() => setShowORM(true)}>
           1RM Calculator
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => setShowPlates(true)}>
-          Plate Calculator
         </Button>
       </div>
 
@@ -194,25 +189,6 @@ export default function ProgressPage() {
             <p className="font-display text-3xl text-accent">
               {calculateORM(parseFloat(ormWeight), parseInt(ormReps))}kg
             </p>
-          </div>
-        )}
-      </BottomSheet>
-
-      {/* Plate Calculator */}
-      <BottomSheet open={showPlates} onClose={() => setShowPlates(false)} title="Plate Calculator">
-        <p className="text-xs text-muted2 mb-4">Enter target weight to see plates needed per side (assumes 20kg barbell).</p>
-        <input type="number" placeholder="Target weight (kg)" value={plateTarget} onChange={(e) => setPlateTarget(e.target.value)}
-          className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent mb-4" />
-        {plateTarget && parseFloat(plateTarget) > 20 && (
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-xs text-muted2 mb-2">Per side ({((parseFloat(plateTarget) - 20) / 2).toFixed(1)}kg):</p>
-            <div className="flex flex-wrap gap-2">
-              {calculatePlates(parseFloat(plateTarget)).map((p, i) => (
-                <span key={i} className="rounded-full bg-accent/20 px-3 py-1 text-xs text-accent">
-                  {p.count}× {p.plate}kg
-                </span>
-              ))}
-            </div>
           </div>
         )}
       </BottomSheet>

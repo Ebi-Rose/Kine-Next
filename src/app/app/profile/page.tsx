@@ -12,6 +12,7 @@ import { toast } from "@/components/Toast";
 import {
   GOAL_OPTIONS,
   EXP_OPTIONS,
+  ALL_EQUIPMENT,
   EQUIP_LABELS,
   DURATION_OPTIONS,
   DAY_LABELS,
@@ -114,26 +115,118 @@ function PersonalPanel({ onBack }: { onBack: () => void }) {
 // ── Training Panel ──
 
 function TrainingPanel({ onBack }: { onBack: () => void }) {
-  const { goal, exp, equip, trainingDays, duration, injuries } = useKineStore();
-  const goalLabel = GOAL_OPTIONS.find((g) => g.value === goal)?.label || goal;
-  const expLabel = EXP_OPTIONS.find((e) => e.value === exp)?.label || exp;
-  const durationLabel = DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration;
+  const store = useKineStore();
+  const { goal, exp, equip, trainingDays, duration, injuries, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setInjuries, setWeekData } = store;
+  const [editing, setEditing] = useState<string | null>(null);
+
+  function saveAndClearWeek() {
+    // Clear weekData so it regenerates with new settings
+    setWeekData(null);
+    setEditing(null);
+    toast("Settings updated — rebuild your week to apply", "success");
+  }
 
   return (
     <div className="mt-4">
       <BackButton onClick={onBack} />
       <h2 className="mt-4 text-xs tracking-wider text-muted uppercase">Training</h2>
-      <div className="mt-4 rounded-[var(--radius-default)] border border-border bg-surface p-4 flex flex-col gap-3">
-        <Row label="Goal" value={goalLabel || "—"} />
-        <Row label="Experience" value={expLabel || "—"} />
-        <Row label="Equipment" value={equip.map((e) => EQUIP_LABELS[e] || e).join(", ") || "—"} />
-        <Row label="Training days" value={trainingDays.map((d) => DAY_LABELS[d]).join(", ") || "—"} />
-        <Row label="Session length" value={durationLabel || "—"} />
+
+      {/* Goal */}
+      <EditableRow label="Goal" value={GOAL_OPTIONS.find((g) => g.value === goal)?.label || "—"} isEditing={editing === "goal"} onEdit={() => setEditing("goal")}>
+        <div className="flex flex-col gap-2">
+          {GOAL_OPTIONS.map((opt) => (
+            <button key={opt.value} onClick={() => { setGoal(opt.value as typeof goal); saveAndClearWeek(); }}
+              className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${goal === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </EditableRow>
+
+      {/* Experience */}
+      <EditableRow label="Experience" value={EXP_OPTIONS.find((e) => e.value === exp)?.label || "—"} isEditing={editing === "exp"} onEdit={() => setEditing("exp")}>
+        <div className="flex flex-col gap-2">
+          {EXP_OPTIONS.map((opt) => (
+            <button key={opt.value} onClick={() => { setExp(opt.value as typeof exp); saveAndClearWeek(); }}
+              className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${exp === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </EditableRow>
+
+      {/* Equipment */}
+      <EditableRow label="Equipment" value={equip.map((e) => EQUIP_LABELS[e] || e).join(", ") || "—"} isEditing={editing === "equip"} onEdit={() => setEditing("equip")}>
+        <div className="grid grid-cols-2 gap-2">
+          {ALL_EQUIPMENT.map((val) => (
+            <button key={val} onClick={() => {
+              const newEquip = equip.includes(val) ? equip.filter((e) => e !== val) : [...equip, val];
+              setEquip(newEquip);
+            }}
+              className={`rounded-lg border px-3 py-2 text-xs transition-all ${equip.includes(val) ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
+              {EQUIP_LABELS[val]}
+            </button>
+          ))}
+        </div>
+        <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save equipment</Button>
+      </EditableRow>
+
+      {/* Training days */}
+      <EditableRow label="Training days" value={trainingDays.map((d) => DAY_LABELS[d]).join(", ") || "—"} isEditing={editing === "days"} onEdit={() => setEditing("days")}>
+        <div className="flex gap-2">
+          {DAY_LABELS.map((label, i) => (
+            <button key={i} onClick={() => {
+              let newDays: number[];
+              if (trainingDays.includes(i)) newDays = trainingDays.filter((d) => d !== i);
+              else newDays = [...trainingDays, i].sort();
+              setTrainingDays(newDays);
+              setDays(String(newDays.length));
+            }}
+              className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-medium transition-all ${
+                trainingDays.includes(i) ? "bg-accent text-bg" : "bg-surface2 text-muted2 hover:text-text"
+              }`}>
+              {label.slice(0, 2)}
+            </button>
+          ))}
+        </div>
+        <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save days</Button>
+      </EditableRow>
+
+      {/* Duration */}
+      <EditableRow label="Session length" value={DURATION_OPTIONS.find((d) => d.value === duration)?.label || "—"} isEditing={editing === "duration"} onEdit={() => setEditing("duration")}>
+        <div className="grid grid-cols-2 gap-2">
+          {DURATION_OPTIONS.map((opt) => (
+            <button key={opt.value} onClick={() => { setDuration(opt.value as typeof duration); saveAndClearWeek(); }}
+              className={`rounded-lg border px-3 py-2 text-xs transition-all ${duration === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </EditableRow>
+
+      {/* Injuries (read-only for now) */}
+      <div className="rounded-[var(--radius-default)] border border-border bg-surface p-4 mt-2">
         <Row label="Injuries" value={injuries.length > 0 ? injuries.join(", ") : "None"} />
       </div>
-      <p className="mt-3 text-center text-[10px] text-muted">
-        To change these, re-run onboarding from Settings.
-      </p>
+    </div>
+  );
+}
+
+function EditableRow({ label, value, isEditing, onEdit, children }: {
+  label: string; value: string; isEditing: boolean; onEdit: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-[var(--radius-default)] border border-border bg-surface p-4 mt-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-xs text-muted">{label}</span>
+          {!isEditing && <p className="text-xs text-text mt-0.5">{value}</p>}
+        </div>
+        {!isEditing && (
+          <button onClick={onEdit} className="text-[10px] text-accent hover:underline">Edit</button>
+        )}
+      </div>
+      {isEditing && <div className="mt-3">{children}</div>}
     </div>
   );
 }

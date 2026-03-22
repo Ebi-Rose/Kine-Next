@@ -217,18 +217,36 @@ function WeekView({
       })()}
 
       {/* Days */}
-      <div className="flex flex-col gap-3">
-        {week.days.map((day, i) => {
-          // Check if this day's session is completed
-          const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+      {(() => {
+        // Find next active session (first non-rest, non-completed, today or future)
+        const nextActiveIdx = week.days.findIndex((d, i) => {
+          if (d.isRest) return false;
+          const completed = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
             .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === i);
-          const isPast = i < todayIdx;
+          return !completed && i >= todayIdx;
+        });
 
-          return (
-            <DayCard key={i} day={day} dayIdx={i} isToday={i === todayIdx} isCompleted={isCompleted} isPast={isPast} />
-          );
-        })}
-      </div>
+        return (
+          <div className="flex flex-col gap-2">
+            {week.days.map((day, i) => {
+              const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === i);
+              const isPast = i < todayIdx;
+              const isNextActive = i === nextActiveIdx;
+
+              return (
+                <DayCard
+                  key={i} day={day} dayIdx={i}
+                  isToday={i === todayIdx}
+                  isCompleted={isCompleted}
+                  isPast={isPast}
+                  expanded={isNextActive || i === todayIdx}
+                />
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Actions */}
       <div className="mt-8 flex justify-center gap-3">
@@ -250,8 +268,8 @@ function WeekView({
 
 // ── Day Card ──
 
-function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false }: {
-  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean;
+function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false }: {
+  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean;
 }) {
   const router = useRouter();
   const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
@@ -322,37 +340,35 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false }: 
         {day.sessionTitle}
       </h3>
 
-      {/* Coach note */}
-      {day.coachNote && (
-        <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>
+      {/* Collapsed: summary only */}
+      {!expanded && (
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-xs text-muted2 truncate flex-1">{day.exercises.length} exercises · {day.sessionDuration}</p>
+          <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
+            className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
+        </div>
       )}
 
-      {/* Exercise preview */}
-      <div className="mt-3 flex flex-col gap-1">
-        {day.exercises.map((ex, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between text-xs"
-          >
-            <span className="text-text/80">{ex.name}</span>
-            <span className="text-muted">
-              {ex.sets}×{ex.reps}
-            </span>
+      {/* Expanded: full details */}
+      {expanded && (
+        <>
+          {day.coachNote && <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>}
+          <div className="mt-3 flex flex-col gap-1">
+            {day.exercises.map((ex, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span className="text-text/80">{ex.name}</span>
+                <span className="text-muted">{ex.sets}×{ex.reps}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* CTAs */}
-      <div className="mt-4 flex gap-2">
-        <Button
-          className="flex-1"
-          size="sm"
-          variant={isToday ? "primary" : "secondary"}
-          onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
-        >
-          {isToday ? "Start session" : "View session"}
-        </Button>
-      </div>
+          <div className="mt-4">
+            <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
+              onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
+              {isToday ? "Start session" : "View session"}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
