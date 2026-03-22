@@ -6,8 +6,10 @@ import { useKineStore } from "@/store/useKineStore";
 import { buildWeek } from "@/lib/week-builder";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS } from "@/data/constants";
+import { getCurrentPhase } from "@/lib/cycle";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
+import Link from "next/link";
 
 const LOADING_MESSAGES = [
   "Analysing your training profile…",
@@ -103,19 +105,28 @@ function WeekView({
   onRebuild: () => void;
   loading: boolean;
 }) {
-  const today = new Date().getDay(); // 0=Sun, 1=Mon...
-  // Convert to our 0=Mon format
+  const { cycleType, cycle } = useKineStore();
+  const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
-
   const weekStart = getWeekDateRange();
+
+  // Cycle phase
+  const phase = cycleType === "regular"
+    ? getCurrentPhase(cycle.periodLog, cycle.avgLength)
+    : null;
 
   return (
     <div>
       {/* Header */}
       <div className="mb-6">
-        <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
-          Week {week._weekNum || 1} · {weekStart}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
+            Week {week._weekNum || 1} · {weekStart}
+          </p>
+          <Link href="/app/calendar" className="text-[10px] text-muted2 hover:text-accent transition-colors">
+            Calendar →
+          </Link>
+        </div>
         <h1 className="mt-1 font-display text-2xl tracking-wide text-text">
           {week.programName}
         </h1>
@@ -125,6 +136,16 @@ function WeekView({
           </p>
         )}
       </div>
+
+      {/* Cycle phase */}
+      {phase && (
+        <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-text">◐ {phase.label} phase · Day {phase.day}</span>
+          </div>
+          <p className="mt-1 text-[10px] text-muted2">{phase.trainingNote}</p>
+        </div>
+      )}
 
       {/* Coach note */}
       {week.weekCoachNote && (
@@ -233,15 +254,25 @@ function DayCard({ day, dayIdx, isToday }: { day: WeekDay; dayIdx: number; isTod
         ))}
       </div>
 
-      {/* CTA */}
-      <Button
-        className="mt-4 w-full"
-        size="sm"
-        variant={isToday ? "primary" : "secondary"}
-        onClick={() => router.push(`/app/session?day=${dayIdx}`)}
-      >
-        {isToday ? "Start session" : "View session"}
-      </Button>
+      {/* CTAs */}
+      <div className="mt-4 flex gap-2">
+        <Button
+          className="flex-1"
+          size="sm"
+          variant="ghost"
+          onClick={() => router.push(`/app/warmup?day=${dayIdx}`)}
+        >
+          Warm up
+        </Button>
+        <Button
+          className="flex-1"
+          size="sm"
+          variant={isToday ? "primary" : "secondary"}
+          onClick={() => router.push(`/app/session?day=${dayIdx}`)}
+        >
+          {isToday ? "Start session" : "View session"}
+        </Button>
+      </div>
     </div>
   );
 }
