@@ -29,6 +29,8 @@ export interface WeekDay {
   sessionTitle: string;
   sessionDuration: string;
   coachNote: string;
+  sessionWhy?: string;
+  sessionContext?: string;
   exercises: Exercise[];
 }
 

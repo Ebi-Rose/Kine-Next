@@ -3,6 +3,7 @@
 import AuthGuard from "@/components/AuthGuard";
 import BottomNav from "@/components/BottomNav";
 import ToastContainer from "@/components/Toast";
+import SyncProvider from "@/components/SyncProvider";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
         <BottomNav />
         <ToastContainer />
+        <SyncProvider />
       </div>
     </AuthGuard>
   );

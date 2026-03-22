@@ -347,16 +347,8 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false }: 
         <Button
           className="flex-1"
           size="sm"
-          variant="ghost"
-          onClick={() => router.push(`/app/warmup?day=${dayIdx}`)}
-        >
-          Warm up
-        </Button>
-        <Button
-          className="flex-1"
-          size="sm"
           variant={isToday ? "primary" : "secondary"}
-          onClick={() => router.push(`/app/session?day=${dayIdx}`)}
+          onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
         >
           {isToday ? "Start session" : "View session"}
         </Button>

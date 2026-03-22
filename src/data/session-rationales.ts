@@ -1,0 +1,45 @@
+// @ts-nocheck
+// ── Session Rationales ──
+// Pre-written contextual explanations for each session title.
+// Consumed by renderSessionEducation() in session.js.
+// Voice: Revelation, not correction. Context → Gap → Action.
+
+export const SESSION_RATIONALES = {
+  'Full Body A': 'You\'re training your whole body today - legs, back, chest, everything. It might sound like a lot but the idea is that each muscle gets a signal to adapt, not that you completely destroy each one. Leave a little in the tank and come back next session ready to do more.',
+  'Full Body B': 'Same idea as last session but with different exercises hitting the same areas. Your body gets used to specific movements quickly - swapping the exercises while keeping the same structure means you keep making progress without burning out.',
+  'Full Body C': 'Third session of the week. You\'re probably feeling it a bit by now, and that\'s fine. The sessions later in the week are actually where a lot of the real work happens - it\'s easy to train when you\'re fresh.',
+  'Lower Body - Strength': 'Legs today, going heavy. This is probably the most important session of your week. Heavy leg training does more for your overall body - strength, shape, energy - than almost anything else. Warm up properly and don\'t rush the sets.',
+  'Lower Body - Volume': 'Legs again, but more sets and reps at slightly less weight. If the strength session builds the foundation, this one builds the house on top of it. They work together.',
+  'Lower - Strength': 'Heavy lower body day. Squats and deadlifts are the main thing - everything else is just filling in around them. Save your energy for those.',
+  'Lower - Volume': 'More sets, more reps for your legs. The heavier work earlier in the week gets your muscles stronger; this session builds the size and shape on top.',
+  'Upper Body - Strength': 'Upper body, going heavy. Pressing and rowing movements while you\'re fresh. The order matters - whatever you do first is what you\'ll improve fastest on.',
+  'Upper Body - Volume': 'Upper body with more sets and variety. Most women underdo upper body work - this session is designed around fixing that. You won\'t bulk up; you\'ll look and feel stronger.',
+  'Upper - Strength': 'Heavy upper body. Keep it simple - two or three main movements done hard, with a bit of accessory work after. More isn\'t better here.',
+  'Upper - Volume': 'Upper body volume. Slower reps with control, especially on the way down. That controlled lowering is actually doing a lot of the work.',
+  'Push - Chest & Shoulders': 'Everything today involves pushing - chest, shoulders, triceps. They all work together on pressing movements, so training them together makes sense. Your back gets a proper rest today so it\'s ready for pull day.',
+  'Push B - Upper Chest': 'Focusing more on the upper part of your chest today with incline exercises. It\'s an area most programs neglect, and developing it changes the whole shape of your upper body.',
+  'Pull - Back & Biceps': 'Everything today involves pulling - back and biceps. Back training is honestly the thing most women get the least of, and it makes a bigger difference than most people realise. Better posture, stronger shoulders, more shape. Your biceps will get plenty of work just from the back exercises.',
+  'Pull B - Lat Width': 'Pulling from overhead today rather than rowing. These vertical pulling movements - pulldowns, pull-ups - develop the width in your back that rows can\'t give you in the same way.',
+  'Legs - Quads & Glutes': 'Leg day, with more focus on the front of your legs and your glutes. Your glutes are the biggest and strongest muscle you have - training them heavy changes how everything looks and feels, not just in the gym.',
+  'Legs - Quad Focus': 'Quad emphasis today. Go deep on squats and leg press - the bottom of the movement is where most of the work actually happens. Cutting it short is leaving half the exercise on the table.',
+  'Legs C - Full Lower Body': 'Third lower body session. Squats and deadlifts in the same session \u2014 the two most effective movements for developing your legs and glutes. Together they cover the complete range.',
+  'Push & Pull - Upper': 'Upper body day covering push and pull together. Everything in one session \u2014 chest, shoulders, back, biceps. Efficient, so the rest of the week can prioritise lower body.',
+  'Glutes & Posterior Chain': 'Hinge day. The RDL and hip thrust are the two exercises that develop your glutes most effectively \u2014 one loads the muscle when it is stretched, the other when it is squeezed. Both together is the complete stimulus.',
+  'Glutes & Hamstrings B': 'Second hinge session this week. The conventional deadlift and hip thrust approach the glutes from different angles \u2014 this builds on what you did earlier in the week.',
+  'Upper Body': 'Upper body session \u2014 pushing and pulling balanced. Chest, shoulders, back. The back work here is as important as the pressing. Most people underdo it and feel the imbalance eventually.',
+  'Lower Body': 'Lower body session. Squat and hinge are the two fundamental patterns \u2014 they develop your legs and glutes from different angles. Keep the weight honest and focus on moving well.',
+  'Upper Body B': 'Second upper body session this week. Different angles and exercises to what you did before \u2014 the variety is intentional. Notice which movements feel more familiar now.',
+  'Shoulders & Upper Back': 'Shoulder and upper back day together. The width you build here changes the shape of your upper body and improves how your waist looks through proportion.',
+  'Legs B - Glutes and Hamstrings': 'The back of your legs today - hamstrings and glutes. Most people are stronger from the front than the back, and that imbalance causes problems over time. This session is the fix.',
+  'Legs - Posterior': 'Hamstrings and glutes. Deadlift variations and hip thrusts. These movements feel less natural than squatting but they\'re just as important - probably more so for most women.',
+  'Squat Focus': 'Everything today is built around your squat. Warm-up, mobility, accessories - all exists to set up the best squat you can do today. Treat the warm-up sets seriously, not as something to rush through.',
+  'Press Focus': 'Pressing movements are the priority today. Bench or overhead press, done properly with real effort. Women who invest in upper body pressing end up stronger everywhere.',
+  'Deadlift Focus': 'Deadlift day. This lift works more of your body at once than almost anything else. Rest fully between sets - you need it. Don\'t rush this one.',
+  'Upper Accessory': 'Smaller, targeted upper body work - arms, rear shoulders, the muscles that bigger exercises miss. These sessions aren\'t flashy but they prevent injuries and build the specific shapes you\'re working toward.',
+  'Lower Accessory': 'Smaller, targeted lower body work - glute isolations, hamstring curls. The main exercises do most of the work; this session fills the gaps.',
+  'Shoulders & Arms': 'Arms and shoulders specifically. Lateral raises - the side-of-shoulder exercise - are best done with lighter weights and full control. The cheat is to go heavy; the result is to go lighter and feel it properly.',
+  'Chest & Triceps': 'Chest and the back of your arms together. Your triceps are already working hard during all the chest pressing, so finishing with direct tricep work gets the most out of one session.',
+  'Back & Biceps': 'Back and biceps together. Your biceps are already working in every back exercise, so they get trained properly without needing dedicated sets at the start. Do the back work first.',
+  'Full Body - Athletic': 'More explosive and varied today - some power work, carries, less conventional movements. Different kind of fitness to the regular strength days, and worth having.',
+  'Full Body - Conditioning': 'Shorter rests, more continuous work, heart rate up. This kind of training makes recovery between regular sessions faster. It doesn\'t replace the strength work - it makes the strength work better.',
+};
