@@ -18,6 +18,7 @@ import {
   INJURY_OPTIONS,
   PROGRAM_MAP,
 } from "@/data/constants";
+import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
 
 type Step = "welcome" | "goal" | "experience" | "equipment" | "schedule" | "cycle" | "injuries" | "summary";
 
@@ -65,6 +66,21 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-bg px-5 py-8">
       <div className="mx-auto max-w-[var(--container-max)]">
+        {/* Progress dots */}
+        {step !== "welcome" && (
+          <div className="mb-6 flex justify-center gap-1.5">
+            {STEP_ORDER.filter(s => s !== "welcome").map((s, i) => (
+              <div
+                key={s}
+                className={`h-1.5 rounded-full transition-all ${
+                  STEP_ORDER.indexOf(s) <= stepIndex
+                    ? "w-6 bg-accent"
+                    : "w-1.5 bg-border"
+                }`}
+              />
+            ))}
+          </div>
+        )}
         {step === "welcome" && <WelcomeStep onNext={next} />}
         {step === "goal" && <GoalStep onNext={next} numberedStep={numberedStep} />}
         {step === "experience" && <ExperienceStep onNext={next} numberedStep={numberedStep} />}
@@ -248,7 +264,7 @@ function ScheduleStep({
   onNext: () => void;
   numberedStep: number;
 }) {
-  const { trainingDays, setTrainingDays, setDays, duration, setDuration } =
+  const { trainingDays, setTrainingDays, setDays, duration, setDuration, goal, exp, equip } =
     useKineStore();
 
   function toggleDay(dow: number) {
@@ -263,6 +279,8 @@ function ScheduleStep({
   }
 
   const canContinue = trainingDays.length > 0 && duration !== null;
+  const scheduleFeedback = evaluateSchedule(trainingDays, exp);
+  const durationFeedback = evaluateDurationContext(duration, trainingDays, exp, goal, equip);
 
   return (
     <div>
@@ -290,6 +308,17 @@ function ScheduleStep({
         ))}
       </div>
 
+      {/* Schedule feedback */}
+      {scheduleFeedback && (
+        <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${
+          scheduleFeedback.type === "warning" ? "bg-red-900/20 text-red-300"
+          : scheduleFeedback.type === "positive" ? "bg-green-900/20 text-green-300"
+          : "bg-surface2 text-muted2"
+        }`}>
+          {scheduleFeedback.message}
+        </div>
+      )}
+
       <p className="mt-6 text-xs text-muted2 uppercase tracking-wider">
         Session length
       </p>
@@ -304,6 +333,16 @@ function ScheduleStep({
           </Tile>
         ))}
       </div>
+
+      {/* Duration feedback */}
+      {durationFeedback && (
+        <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${
+          durationFeedback.type === "warning" ? "bg-red-900/20 text-red-300"
+          : "bg-surface2 text-muted2"
+        }`}>
+          {durationFeedback.message}
+        </div>
+      )}
 
       <div className="mt-8">
         <Button onClick={onNext} disabled={!canContinue} className="w-full">
@@ -463,54 +502,91 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
 // ── Step 6: Summary ──
 
 function SummaryStep({ onFinish }: { onFinish: () => void }) {
-  const { goal, exp, equip, trainingDays, duration, injuries, cycleType } =
-    useKineStore();
+  const store = useKineStore();
+  const { goal, exp, equip, trainingDays, duration, injuries, cycleType, dayDurations, setDayDurations, personalProfile, setPersonalProfile } = store;
+  const [showLifts, setShowLifts] = useState(false);
+  const [lifts, setLifts] = useState<Record<string, string>>({});
+  const [startDate, setStartDate] = useState<"today" | "monday">("today");
 
-  const programName =
-    PROGRAM_MAP[goal || "general"]?.[exp || "new"] || "Custom Program";
+  const programName = PROGRAM_MAP[goal || "general"]?.[exp || "new"] || "Custom Program";
+  const durationLabel = DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration;
+
+  // Lift assessment fields based on equipment
+  const liftFields = getLiftFields(equip, goal);
+
+  function handleFinish() {
+    // Save lifts to profile
+    if (showLifts && Object.keys(lifts).length > 0) {
+      const currentLifts: Record<string, number> = {};
+      Object.entries(lifts).forEach(([name, val]) => {
+        const num = parseFloat(val);
+        if (num > 0) currentLifts[name] = num;
+      });
+      setPersonalProfile({ ...personalProfile, currentLifts });
+    }
+
+    // Set start date
+    const today = new Date();
+    let startStr: string;
+    if (startDate === "monday") {
+      const dayOfWeek = today.getDay();
+      const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + daysUntilMonday);
+      startStr = monday.toISOString().split("T")[0];
+    } else {
+      startStr = today.toISOString().split("T")[0];
+    }
+
+    store.setProgressDB({
+      ...store.progressDB,
+      programStartDate: startStr,
+      currentWeek: 1,
+    });
+
+    onFinish();
+  }
+
+  function updateDayDuration(dow: number, mins: number) {
+    setDayDurations({ ...dayDurations, [dow]: mins });
+  }
 
   return (
     <div>
-      <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
-        Your program
-      </p>
+      <p className="text-[10px] tracking-[0.3em] text-accent uppercase">Your program</p>
       <h2 className="mt-2 font-display text-2xl tracking-wide text-text">
         Here&apos;s what we&apos;ve built.
       </h2>
+      <p className="mt-1 text-xs text-muted2">
+        {goal === "strength" ? "Built around progressive strength development." :
+         goal === "muscle" ? "Built to develop your body through consistent, intelligent training." :
+         "Built to fit your life and keep you coming back."}
+        {" "}Adjust anything before you start.
+      </p>
 
+      {/* Program card */}
       <div className="mt-6 rounded-[var(--radius-default)] border border-border bg-surface p-5">
-        <h3 className="font-display text-xl tracking-wide text-accent">
-          {programName}
-        </h3>
+        <h3 className="font-display text-xl tracking-wide text-accent">{programName}</h3>
 
         <div className="mt-4 flex flex-col gap-2 text-xs">
           <div className="flex items-center gap-2 text-muted2">
             <span>📅</span>
-            <span>
-              {trainingDays.length} days/week —{" "}
-              {trainingDays.map((d) => DAY_LABELS[d]).join(", ")}
-            </span>
+            <span>{trainingDays.length} days/week — {trainingDays.map((d) => DAY_LABELS[d]).join(", ")}</span>
           </div>
-
           <div className="flex items-center gap-2 text-muted2">
             <span>⏱</span>
-            <span>
-              {DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration}
-            </span>
+            <span>{durationLabel}</span>
           </div>
-
           <div className="flex items-center gap-2 text-muted2">
             <span>↗</span>
             <span>{equip.map((e) => EQUIP_LABELS[e]).join(", ")}</span>
           </div>
-
           {injuries.length > 0 && (
             <div className="flex items-center gap-2 text-muted2">
               <span>⚠</span>
               <span>Modified for {injuries.join(", ")}</span>
             </div>
           )}
-
           {cycleType && cycleType !== "na" && (
             <div className="flex items-center gap-2 text-muted2">
               <span>◐</span>
@@ -520,13 +596,133 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
         </div>
       </div>
 
+      {/* Per-day duration editing */}
+      <div className="mt-6">
+        <p className="mb-2 text-xs tracking-wider text-muted uppercase">Session durations</p>
+        <div className="flex flex-col gap-2">
+          {trainingDays.map((dow) => (
+            <div key={dow} className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
+              <span className="text-xs text-text">{DAY_LABELS[dow]}</span>
+              <select
+                value={dayDurations[dow] || (duration === "short" ? 40 : duration === "medium" ? 50 : duration === "long" ? 75 : 90)}
+                onChange={(e) => updateDayDuration(dow, parseInt(e.target.value))}
+                className="rounded border border-border bg-bg px-2 py-1 text-xs text-text outline-none"
+              >
+                <option value={30}>30 min</option>
+                <option value={40}>40 min</option>
+                <option value={45}>45 min</option>
+                <option value={50}>50 min</option>
+                <option value={60}>60 min</option>
+                <option value={75}>75 min</option>
+                <option value={90}>90 min</option>
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Lift assessment */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between">
+          <p className="text-xs tracking-wider text-muted uppercase">Current lifts · optional</p>
+          <button onClick={() => setShowLifts(!showLifts)} className="text-xs text-accent hover:underline">
+            {showLifts ? "skip for now" : "add lifts"}
+          </button>
+        </div>
+
+        {showLifts && (
+          <div className="mt-3 flex flex-col gap-2">
+            {liftFields.map((field) => (
+              <div key={field.name} className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
+                <span className="text-xs text-text">{field.name}</span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder={field.placeholder}
+                    value={lifts[field.name] || ""}
+                    onChange={(e) => setLifts({ ...lifts, [field.name]: e.target.value })}
+                    className="w-16 rounded border border-border bg-bg px-2 py-1 text-center text-xs text-text outline-none focus:border-accent"
+                  />
+                  <span className="text-[10px] text-muted">{field.unit}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Start date */}
+      <div className="mt-6">
+        <p className="mb-2 text-xs tracking-wider text-muted uppercase">When do you want to start?</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Tile selected={startDate === "today"} onClick={() => setStartDate("today")}>
+            <div className="text-center">
+              <div className="text-sm font-medium">Today</div>
+              <div className="text-[10px] text-muted2">{new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</div>
+            </div>
+          </Tile>
+          <Tile selected={startDate === "monday"} onClick={() => setStartDate("monday")}>
+            <div className="text-center">
+              <div className="text-sm font-medium">Next Monday</div>
+              <div className="text-[10px] text-muted2">{getNextMonday()}</div>
+            </div>
+          </Tile>
+        </div>
+      </div>
+
       <div className="mt-8">
-        <Button onClick={onFinish} className="w-full" size="lg">
+        <Button onClick={handleFinish} className="w-full" size="lg">
           Start Week 1 →
         </Button>
       </div>
     </div>
   );
+}
+
+function getLiftFields(equip: string[], goal: string | null): { name: string; placeholder: string; unit: string }[] {
+  if (equip.includes("barbell")) {
+    if (goal === "muscle") {
+      return [
+        { name: "Back Squat", placeholder: "kg", unit: "kg" },
+        { name: "Romanian Deadlift", placeholder: "kg", unit: "kg" },
+        { name: "Bench Press", placeholder: "kg", unit: "kg" },
+      ];
+    }
+    return [
+      { name: "Back Squat", placeholder: "1×5", unit: "kg" },
+      { name: "Deadlift", placeholder: "1×5", unit: "kg" },
+      { name: "Bench Press", placeholder: "1×5", unit: "kg" },
+      { name: "Overhead Press", placeholder: "1×5", unit: "kg" },
+    ];
+  }
+  if (equip.includes("dumbbells")) {
+    return [
+      { name: "Goblet Squat", placeholder: "kg", unit: "kg" },
+      { name: "DB Romanian Deadlift", placeholder: "kg", unit: "kg" },
+      { name: "DB Shoulder Press", placeholder: "kg", unit: "kg" },
+    ];
+  }
+  if (equip.includes("machines")) {
+    return [
+      { name: "Leg Press", placeholder: "kg", unit: "kg" },
+      { name: "Lat Pulldown", placeholder: "kg", unit: "kg" },
+      { name: "Chest Press", placeholder: "kg", unit: "kg" },
+    ];
+  }
+  return [
+    { name: "Pull-Ups", placeholder: "max", unit: "reps" },
+    { name: "Push-Ups", placeholder: "max", unit: "reps" },
+  ];
+}
+
+function getNextMonday(): string {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + daysUntilMonday);
+  return monday.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 }
 
 // ── Shared: Step label ──

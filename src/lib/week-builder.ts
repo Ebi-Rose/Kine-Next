@@ -10,6 +10,8 @@ import {
   PROGRAM_MAP,
   INJURY_OPTIONS,
 } from "@/data/constants";
+import { getCycleContext } from "./cycle";
+import { getPhaseContext } from "./periodisation";
 
 // ── Types ──
 
@@ -70,7 +72,10 @@ function buildUserPrompt(): string {
     injuries,
     injuryNotes,
     cycleType,
+    cycle,
     progressDB,
+    personalProfile,
+    dayDurations,
   } = store;
 
   const goalLabel =
@@ -102,9 +107,41 @@ function buildUserPrompt(): string {
 
   const weekNum = progressDB.currentWeek || 1;
 
-  let cycleContext = "";
-  if (cycleType && cycleType !== "na") {
-    cycleContext = `\nCycle: ${cycleType}. Adapt intensity and recovery accordingly.`;
+  // Cycle context
+  const cycleCtx = getCycleContext(cycleType, cycle.periodLog, cycle.avgLength);
+
+  // Phase context
+  const phaseCtx = getPhaseContext(weekNum, progressDB.phaseOffset);
+
+  // Weight/body context
+  let bodyCtx = "";
+  if (personalProfile.weight) bodyCtx += `\n- Bodyweight: ${personalProfile.weight}kg`;
+  if (personalProfile.currentLifts && Object.keys(personalProfile.currentLifts).length > 0) {
+    const liftsStr = Object.entries(personalProfile.currentLifts)
+      .map(([name, w]) => `${name}: ${w}kg`)
+      .join(", ");
+    bodyCtx += `\n- Current lifts: ${liftsStr}`;
+  }
+
+  // Per-day duration context
+  let dayDurCtx = "";
+  if (Object.keys(dayDurations).length > 0) {
+    const durParts = trainingDays.map((d) => {
+      const mins = dayDurations[d];
+      return mins ? `${DAY_LABELS[d]}: ${mins} min` : null;
+    }).filter(Boolean);
+    if (durParts.length > 0) dayDurCtx = `\n- Per-day durations: ${durParts.join(", ")}`;
+  }
+
+  // Recent session context (last 3 sessions for adaptation)
+  let historyCtx = "";
+  if (progressDB.sessions.length > 0) {
+    const recent = (progressDB.sessions as { title?: string; effort?: number; soreness?: number }[])
+      .slice(-3);
+    const histLines = recent.map((s) =>
+      `${s.title || "Session"} (effort: ${s.effort || "?"}/4, soreness: ${s.soreness || "?"}/4)`
+    );
+    historyCtx = `\n\nRecent sessions:\n${histLines.join("\n")}`;
   }
 
   return `Generate a Week ${weekNum} training program structure as compact JSON.
@@ -116,7 +153,9 @@ Trainee:
 - Schedule: ${daysCount} days/week (${dayNames}), ${durationLabel}
 - Injuries: ${injuryStr}
 - Program: ${prog}
-- Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance for upper body accessories.${cycleContext}
+- Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance for upper body accessories.${bodyCtx}${dayDurCtx}
+${cycleCtx}
+${phaseCtx}${historyCtx}
 
 PRESCRIPTION GUIDE:
 - Strength: Primary compounds 4-5 sets, 3-6 reps, 3-5 min rest. Accessories 3 sets, 8-12 reps, 90s rest.
