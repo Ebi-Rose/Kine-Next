@@ -232,6 +232,9 @@ function WeekView({
 
       {/* Actions */}
       <div className="mt-8 flex justify-center gap-3">
+        <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+          Check-in
+        </Link>
         <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)}>
           Rearrange
         </Button>
@@ -271,7 +274,17 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false }: 
               </span>
             )}
           </div>
-          <span className="text-xs text-muted">Rest & Recovery</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted">Rest & Recovery</span>
+            {!isPast && (
+              <button
+                onClick={() => router.push(`/app/custom-builder?day=${dayIdx}`)}
+                className="text-[10px] text-muted2 hover:text-accent transition-colors"
+              >
+                + add session
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
