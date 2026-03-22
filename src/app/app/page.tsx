@@ -340,12 +340,27 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
         {day.sessionTitle}
       </h3>
 
-      {/* Collapsed: summary only */}
+      {/* Collapsed: summary with context */}
       {!expanded && (
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-muted2 truncate flex-1">{day.exercises.length} exercises · {day.sessionDuration}</p>
-          <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
-            className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
+        <div className="mt-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-muted2 font-light truncate flex-1">
+              {day.exercises.length} exercises · {day.sessionDuration}
+            </p>
+            <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
+              className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
+          </div>
+          {day.coachNote && (
+            <p className="mt-1 text-[10px] text-muted font-light truncate">{day.coachNote}</p>
+          )}
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {day.exercises.slice(0, 3).map((ex, i) => (
+              <span key={i} className="text-[9px] text-muted2 bg-surface2/50 rounded px-1.5 py-0.5">{ex.name}</span>
+            ))}
+            {day.exercises.length > 3 && (
+              <span className="text-[9px] text-muted">+{day.exercises.length - 3}</span>
+            )}
+          </div>
         </div>
       )}
 

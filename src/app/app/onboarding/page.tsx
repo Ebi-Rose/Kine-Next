@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import type { Goal, Experience, CycleType, Duration } from "@/store/useKineStore";
@@ -218,12 +218,29 @@ function EquipmentStep({
 }) {
   const { equip, setEquip } = useKineStore();
 
-  function toggleEquip(val: string) {
-    if (equip.includes(val)) {
-      setEquip(equip.filter((e) => e !== val));
-    } else {
-      setEquip([...equip, val]);
+  // Initialize with all equipment if empty (first visit)
+  useEffect(() => {
+    if (equip.length === 0) {
+      setEquip([...ALL_EQUIPMENT]);
     }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Inverted logic: excluded stores what user DOESN'T have
+  const [excluded, setExcluded] = useState<string[]>(() => {
+    if (equip.length === 0) return []; // all available
+    return ALL_EQUIPMENT.filter((e) => !equip.includes(e));
+  });
+
+  function toggleExclude(val: string) {
+    let newExcluded: string[];
+    if (excluded.includes(val)) {
+      newExcluded = excluded.filter((e) => e !== val);
+    } else {
+      newExcluded = [...excluded, val];
+    }
+    setExcluded(newExcluded);
+    // equip = everything NOT excluded
+    setEquip(ALL_EQUIPMENT.filter((e) => !newExcluded.includes(e)));
   }
 
   return (
@@ -233,14 +250,14 @@ function EquipmentStep({
         What equipment do you have?
       </h2>
       <p className="mt-1 text-xs text-muted2">
-        Select all that apply. We&apos;ll only program what you can actually do.
+        Everything is selected. Tap to remove what you don&apos;t have access to.
       </p>
       <div className="mt-6 grid grid-cols-2 gap-3">
         {ALL_EQUIPMENT.map((val) => (
           <Tile
             key={val}
-            selected={equip.includes(val)}
-            onClick={() => toggleEquip(val)}
+            selected={!excluded.includes(val)}
+            onClick={() => toggleExclude(val)}
           >
             {EQUIP_LABELS[val]}
           </Tile>

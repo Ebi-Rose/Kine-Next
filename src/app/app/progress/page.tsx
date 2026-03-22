@@ -70,14 +70,22 @@ export default function ProgressPage() {
       )}
 
       {/* Tools */}
-      <div className="mt-6 flex gap-2 flex-wrap">
+      <div className="mt-6 grid grid-cols-3 gap-2">
         <Link href="/app/photos"
-          className="inline-flex items-center rounded-[var(--radius-default)] border border-border bg-surface px-3 py-1.5 text-xs text-muted2 hover:border-border-active transition-all">
-          Photos
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
+          <span className="text-lg">📸</span>
+          <span className="text-[10px] text-muted2 font-light">Photos</span>
         </Link>
-        <Button variant="secondary" size="sm" onClick={() => setShowORM(true)}>
-          1RM Calculator
-        </Button>
+        <button onClick={() => setShowORM(true)}
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
+          <span className="text-lg">🏋️</span>
+          <span className="text-[10px] text-muted2 font-light">1RM Calc</span>
+        </button>
+        <Link href="/app/calendar"
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
+          <span className="text-lg">📅</span>
+          <span className="text-[10px] text-muted2 font-light">Calendar</span>
+        </Link>
       </div>
 
       {/* Lift tracking */}
