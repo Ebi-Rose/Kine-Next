@@ -73,19 +73,11 @@ export default function PreSessionPage() {
     }
   }, [mounted, week, day, router]);
 
-  if (!mounted || !week || !day || day.isRest) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
-  }
-
-  const exercises = day.exercises || [];
+  const exercises = day?.exercises || [];
 
   // ── Derived data ──
   const activeExercises = exercises.filter((_, i) => !skipped.has(i));
-  const defaultDuration = parseInt(day.sessionDuration) || 50;
+  const defaultDuration = parseInt(day?.sessionDuration || "50") || 50;
   const currentDuration = duration ?? defaultDuration;
 
   // Session number
@@ -222,6 +214,15 @@ export default function PreSessionPage() {
   // ── Day label ──
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const weekNum = progressDB.currentWeek || 1;
+
+  // ── Loading guard (after all hooks) ──
+  if (!mounted || !week || !day || day.isRest) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-28">
