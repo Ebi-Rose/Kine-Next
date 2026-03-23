@@ -139,7 +139,7 @@ function CycleArc({ cycleDay, cycleLength, logCount }: { cycleDay: number; cycle
 
   return (
     <div>
-      <p className="label-muted mb-1.5">
+      <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1.5">
         {logCount >= 2 ? `${L}-day cycle` : "Cycle (28-day default)"}
       </p>
       <div className="relative flex h-1 gap-0.5 rounded-sm">
@@ -332,7 +332,7 @@ function WeekView({
           const msg = WEEK_COMPLETE_MESSAGES[(progressDB.currentWeek - 1) % WEEK_COMPLETE_MESSAGES.length];
           return (
             <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
-              <p className="label-accent mb-1">Week {progressDB.currentWeek} complete</p>
+              <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {progressDB.currentWeek} complete</p>
               <p className="font-display text-xl tracking-wide text-text">
                 {weekSessions.length} sessions done
               </p>
@@ -387,7 +387,7 @@ function WeekView({
           const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
           return (
             <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4 text-center">
-              <p className="label-muted mb-1">Up next</p>
+              <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Up next</p>
               <p className="font-display text-lg tracking-wide text-text">
                 Week {nextWeekNum}
               </p>
@@ -515,7 +515,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             </span>
           )}
         </div>
-        <span className="label-muted">{day.sessionDuration}</span>
+        <span className="font-display text-[9px] tracking-[2px] text-muted uppercase">{day.sessionDuration}</span>
       </div>
 
       {/* Title */}

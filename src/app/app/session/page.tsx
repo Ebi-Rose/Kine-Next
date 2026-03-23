@@ -917,7 +917,7 @@ function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResu
           {prs.map((pr, i) => (
             <div key={i} className="rounded-[14px] border border-accent/30 bg-accent-dim p-4 flex items-center justify-between">
               <div>
-                <p className="label-accent mb-0.5">New PR</p>
+                <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-0.5">New PR</p>
                 <p className="text-sm font-medium text-text">{pr.name}</p>
                 <p className="text-xs text-muted2">{pr.weight}kg x {pr.reps} reps</p>
               </div>

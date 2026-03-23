@@ -393,7 +393,7 @@ function CycleStep({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="animate-fade-up">
-      <p className="label-accent mb-2">
+      <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
         Your cycle
       </p>
       <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
@@ -464,7 +464,7 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="animate-fade-up">
-      <p className="label-accent mb-2">
+      <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
         Limitations
       </p>
       <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
@@ -747,7 +747,7 @@ function getNextMonday(): string {
 function StepLabel({ step }: { step: number }) {
   if (step <= 0) return null;
   return (
-    <p className="label-accent mb-2">
+    <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
       Step {step} of 4
     </p>
   );
