@@ -64,7 +64,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg px-5 py-8">
+    <div className="min-h-screen bg-bg px-6 py-8" style={{ paddingLeft: 'max(24px, env(safe-area-inset-left))', paddingRight: 'max(24px, env(safe-area-inset-right))' }}>
       <div className="mx-auto max-w-[var(--container-max)]">
         {/* Progress dots */}
         {step !== "welcome" && (
@@ -137,15 +137,15 @@ function GoalStep({
   const { goal, setGoal } = useKineStore();
 
   return (
-    <div>
+    <div className="animate-fade-up">
       <StepLabel step={numberedStep} />
-      <h2 className="font-display text-2xl tracking-wide text-text">
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
         What do you want training to give you?
       </h2>
-      <p className="mt-1 text-xs text-muted2">
+      <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
         No wrong answer — all three build strength and change your body. This shapes the emphasis.
       </p>
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6 flex flex-col gap-3 stagger-fade-up">
         {GOAL_OPTIONS.map((opt) => (
           <Tile
             key={opt.value}
@@ -153,7 +153,7 @@ function GoalStep({
             onClick={() => setGoal(opt.value as Goal)}
           >
             <div className="font-medium text-text">{opt.label}</div>
-            <div className="mt-1 text-xs text-muted2">{opt.description}</div>
+            <div className="mt-1 text-xs text-muted2 font-light leading-relaxed">{opt.description}</div>
           </Tile>
         ))}
       </div>
@@ -179,12 +179,12 @@ function ExperienceStep({
   const goalKey = goal || "general";
 
   return (
-    <div>
+    <div className="animate-fade-up">
       <StepLabel step={numberedStep} />
-      <h2 className="font-display text-2xl tracking-wide text-text">
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
         Where are you right now?
       </h2>
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6 flex flex-col gap-3 stagger-fade-up">
         {EXP_OPTIONS.map((opt) => (
           <Tile
             key={opt.value}
@@ -192,7 +192,7 @@ function ExperienceStep({
             onClick={() => setExp(opt.value as Experience)}
           >
             <div className="font-medium text-text">{opt.label}</div>
-            <div className="mt-1 text-xs text-muted2">
+            <div className="mt-1 text-xs text-muted2 font-light leading-relaxed">
               {EXP_DESCRIPTIONS[goalKey]?.[opt.value] || ""}
             </div>
           </Tile>
@@ -244,15 +244,15 @@ function EquipmentStep({
   }
 
   return (
-    <div>
+    <div className="animate-fade-up">
       <StepLabel step={numberedStep} />
-      <h2 className="font-display text-2xl tracking-wide text-text">
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
         What equipment do you have?
       </h2>
-      <p className="mt-1 text-xs text-muted2">
+      <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
         Everything is selected. Tap to remove what you don&apos;t have access to.
       </p>
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 stagger-fade-up">
         {ALL_EQUIPMENT.map((val) => (
           <Tile
             key={val}
@@ -300,9 +300,9 @@ function ScheduleStep({
   const durationFeedback = evaluateDurationContext(duration, trainingDays, exp, goal, equip);
 
   return (
-    <div>
+    <div className="animate-fade-up">
       <StepLabel step={numberedStep} />
-      <h2 className="font-display text-2xl tracking-wide text-text">
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
         When can you train?
       </h2>
 
@@ -392,19 +392,19 @@ function CycleStep({ onNext }: { onNext: () => void }) {
   }
 
   return (
-    <div>
-      <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
+    <div className="animate-fade-up">
+      <p className="label-accent mb-2">
         Your cycle
       </p>
-      <h2 className="mt-2 font-display text-2xl tracking-wide text-text">
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
         How does your body work across the month?
       </h2>
-      <p className="mt-1 text-xs text-muted2">
+      <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
         Hormones affect how you recover, how strong you feel, and when to push
         hard. Kinē uses this quietly — it shapes your program, not your identity.
       </p>
 
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6 flex flex-col gap-3 stagger-fade-up">
         {CYCLE_OPTIONS.map((opt) => (
           <Tile
             key={opt.value}
@@ -463,14 +463,14 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
   }
 
   return (
-    <div>
-      <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
+    <div className="animate-fade-up">
+      <p className="label-accent mb-2">
         Limitations
       </p>
-      <h2 className="mt-2 font-display text-2xl tracking-wide text-text">
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
         Anything to work around?
       </h2>
-      <p className="mt-1 text-xs text-muted2">
+      <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
         Kinē programs around limitations, not through them. Select anything
         relevant — or skip if you&apos;re good to go.
       </p>
@@ -747,7 +747,7 @@ function getNextMonday(): string {
 function StepLabel({ step }: { step: number }) {
   if (step <= 0) return null;
   return (
-    <p className="mb-4 text-[10px] tracking-[0.3em] text-accent uppercase">
+    <p className="label-accent mb-2">
       Step {step} of 4
     </p>
   );
