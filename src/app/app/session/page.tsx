@@ -825,18 +825,14 @@ function ExerciseCard({
             )}
 
             {/* Education cues — full mode only */}
-            {eduMode === "full" && (
-              <>
-                {isSquat(exercise.name) && (
-                  <p className="mt-2 text-[10px] text-muted font-light">{KNEE_TRACKING_CUE}</p>
-                )}
-                {isHinge(exercise.name) && (
-                  <p className="mt-2 text-[10px] text-muted font-light">{HIP_HINGE_FIRST}</p>
-                )}
-                {isCompound(exercise.name) && (
-                  <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
-                )}
-              </>
+            {eduMode === "full" && isSquat(exercise.name) && (
+              <p className="mt-2 text-[10px] text-muted font-light">{KNEE_TRACKING_CUE}</p>
+            )}
+            {eduMode === "full" && isHinge(exercise.name) && (
+              <p className="mt-2 text-[10px] text-muted font-light">{HIP_HINGE_FIRST}</p>
+            )}
+            {eduMode === "full" && isCompound(exercise.name) && (
+              <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
             )}
             </>)}
 
