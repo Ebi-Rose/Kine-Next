@@ -226,7 +226,10 @@ export default function PreSessionPage() {
       setSessionTimeBudgets({ ...sessionTimeBudgets, [dayIdx]: duration });
     }
     setCurrentDayIdx(dayIdx);
-    router.push(`/app/session?day=${dayIdx}`);
+    // Small delay to ensure Zustand persist writes to localStorage before navigation
+    setTimeout(() => {
+      router.push(`/app/session?day=${dayIdx}`);
+    }, 50);
   }, [coaching, eduMode, setEduMode, timing, sessionMode, setSessionMode, compoundRest, isolationRest, restConfig, setRestConfig, duration, defaultDuration, dayIdx, sessionTimeBudgets, setSessionTimeBudgets, setCurrentDayIdx, router]);
 
   const handleStart = useCallback(() => {
