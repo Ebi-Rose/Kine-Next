@@ -126,6 +126,7 @@ function SignupView({ onSwitch }: { onSwitch: () => void }) {
             Log in
           </button>
         </p>
+
       </div>
     </div>
   );
