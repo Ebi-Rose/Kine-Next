@@ -11,11 +11,15 @@ export function isLocalDev(): boolean {
   );
 }
 
-/** True when ?demo=true or ?key=kine2026 */
+/** True when ?demo=true, ?key=kine2026, or demo was previously activated */
 export function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
-  return params.get("demo") === "true" || params.get("key") === DEMO_KEY;
+  if (params.get("demo") === "true" || params.get("key") === DEMO_KEY) {
+    localStorage.setItem("kine_demo", "true");
+    return true;
+  }
+  return localStorage.getItem("kine_demo") === "true";
 }
 
 /** True if dev bypass env var is set */
@@ -76,6 +80,7 @@ export async function signInWithOAuth(provider: "google" | "apple") {
 export async function signOut() {
   await supabase.auth.signOut();
   localStorage.removeItem("kine_v2");
+  localStorage.removeItem("kine_demo");
   window.location.href = "/";
 }
 
