@@ -388,12 +388,9 @@ export default function SessionPage() {
               Hide
             </button>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {warmupExercises.map((wu, i) => (
-              <div key={i} className="flex items-center justify-between text-xs">
-                <span className="text-text">{wu.name}</span>
-                <span className="text-muted">{wu.duration}</span>
-              </div>
+              <WarmupItem key={i} name={wu.name} duration={wu.duration} cue={wu.cue} category={wu.category} />
             ))}
           </div>
         </div>
@@ -1036,6 +1033,40 @@ function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResu
           Back to week →
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ── Warmup Item with "how to" popup ──
+
+function WarmupItem({ name, duration, cue, category }: { name: string; duration: string; cue: string; category: string }) {
+  const [showHow, setShowHow] = useState(false);
+
+  return (
+    <div>
+      <button
+        onClick={() => setShowHow(!showHow)}
+        className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left hover:bg-surface2/50 transition-all"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`shrink-0 rounded px-1 py-0.5 text-[7px] tracking-wider uppercase ${
+            category === "activation" ? "bg-accent/10 text-accent"
+            : category === "mobility" ? "bg-cat-pull/10 text-cat-pull"
+            : category === "dynamic" ? "bg-cat-legs/10 text-cat-legs"
+            : "bg-surface2 text-muted2"
+          }`}>{category.slice(0, 3)}</div>
+          <span className="text-xs text-text truncate">{name}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] text-muted">{duration}</span>
+          <span className="text-[9px] text-muted2">{showHow ? "▾" : "?"}</span>
+        </div>
+      </button>
+      {showHow && (
+        <div className="ml-8 mr-2 mb-1 px-2 py-1.5 rounded bg-surface2/30 text-[10px] text-muted2 font-light leading-relaxed animate-fade-up">
+          {cue}
+        </div>
+      )}
     </div>
   );
 }
