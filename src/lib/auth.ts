@@ -66,7 +66,7 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signInWithOAuth(provider: "google" | "apple") {
-  const redirectTo = window.location.origin + "/";
+  const redirectTo = window.location.origin + "/login";
   return supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo },
@@ -80,7 +80,7 @@ export async function signOut() {
 }
 
 export async function resetPassword(email: string) {
-  const redirectTo = window.location.origin + "/";
+  const redirectTo = window.location.origin + "/login";
   return supabase.auth.resetPasswordForEmail(email, { redirectTo });
 }
 
