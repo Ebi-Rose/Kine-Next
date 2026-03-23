@@ -16,6 +16,7 @@ import { getWarmupForSession } from "@/data/warmup-data";
 import { trimSessionToTime } from "@/lib/time-budget";
 import { getExerciseStallWeeks } from "@/lib/programme-age";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
+import ExerciseEduSheet from "@/components/ExerciseEduSheet";
 import MuscleDiagram from "@/components/MuscleDiagram";
 import SkillPathSheet from "@/components/SkillPathSheet";
 import VideoSheet from "@/components/VideoSheet";
@@ -55,6 +56,7 @@ export default function SessionPage() {
   const [swappingIdx, setSwappingIdx] = useState<number | null>(null);
   const [swapLoading, setSwapLoading] = useState(false);
   const [swapSheetIdx, setSwapSheetIdx] = useState<number | null>(null);
+  const [eduSheetIdx, setEduSheetIdx] = useState<number | null>(null);
   const [showWarmup, setShowWarmup] = useState(true);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [sessionPRs, setSessionPRs] = useState<{ name: string; weight: number; reps: number }[]>([]);
@@ -431,6 +433,7 @@ export default function SessionPage() {
             onVideoPlay={(url) => setVideoUrl(url)}
             onVideoSheet={(name) => setVideoSheetEx(name)}
             onSkillPath={(name) => setSkillPathEx(name)}
+            onEduSheet={(idx) => setEduSheetIdx(idx)}
           />
         ))}
       </div>
@@ -524,6 +527,19 @@ export default function SessionPage() {
         />
       )}
 
+      {/* Exercise education sheet */}
+      {eduSheetIdx !== null && effectiveExercises[eduSheetIdx] && (
+        <ExerciseEduSheet
+          open={true}
+          onClose={() => setEduSheetIdx(null)}
+          exerciseName={effectiveExercises[eduSheetIdx].name}
+          why={(effectiveExercises[eduSheetIdx] as { why?: string }).why}
+          feel={(effectiveExercises[eduSheetIdx] as { feel?: string }).feel}
+          context={(effectiveExercises[eduSheetIdx] as { context?: string }).context}
+          cues={(effectiveExercises[eduSheetIdx] as { cues?: string[] }).cues}
+        />
+      )}
+
       {/* Video player (inline) */}
       {videoUrl && (
         <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4" onClick={() => setVideoUrl(null)}>
@@ -540,7 +556,7 @@ export default function SessionPage() {
 // ── Exercise Card ──
 
 function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath,
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet,
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -556,6 +572,7 @@ function ExerciseCard({
   onVideoPlay?: (url: string) => void;
   onVideoSheet?: (name: string) => void;
   onSkillPath?: (name: string) => void;
+  onEduSheet?: (exIdx: number) => void;
 }) {
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -633,6 +650,15 @@ function ExerciseCard({
             </div>
           )}
         </div>
+        {/* Education "?" button */}
+        {onEduSheet && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEduSheet(index); }}
+            className="shrink-0 w-6 h-6 rounded-full bg-accent/8 border border-accent/25 text-accent text-[11px] flex items-center justify-center hover:bg-accent/15 transition-all"
+          >
+            ?
+          </button>
+        )}
         <span className="text-muted text-[10px] shrink-0">{expanded ? "▾" : "▸"}</span>
       </button>
 
