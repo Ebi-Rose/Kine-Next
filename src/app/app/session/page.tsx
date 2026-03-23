@@ -1041,6 +1041,7 @@ function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResu
 
 function WarmupItem({ name, duration, cue, category }: { name: string; duration: string; cue: string; category: string }) {
   const [showHow, setShowHow] = useState(false);
+  const steps = cue.split(/,\s+|;\s+/).filter(Boolean).map(s => s.trim());
 
   return (
     <div>
@@ -1059,12 +1060,22 @@ function WarmupItem({ name, duration, cue, category }: { name: string; duration:
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[10px] text-muted">{duration}</span>
-          <span className="text-[9px] text-muted2">{showHow ? "▾" : "?"}</span>
+          <span className={`text-[9px] rounded-full w-4 h-4 flex items-center justify-center ${
+            showHow ? "bg-accent/20 text-accent" : "bg-surface2 text-muted2"
+          }`}>{showHow ? "▾" : "?"}</span>
         </div>
       </button>
       {showHow && (
-        <div className="ml-8 mr-2 mb-1 px-2 py-1.5 rounded bg-surface2/30 text-[10px] text-muted2 font-light leading-relaxed animate-fade-up">
-          {cue}
+        <div className="ml-8 mr-2 mb-1.5 px-3 py-2 rounded-lg bg-surface2/30 animate-fade-up">
+          <p className="text-[9px] text-accent font-display tracking-wider mb-1.5">HOW TO</p>
+          <div className="flex flex-col gap-1">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-start gap-2 text-[10px]">
+                <span className="text-accent shrink-0 font-medium">{i + 1}.</span>
+                <span className="text-muted2 font-light leading-relaxed">{step}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

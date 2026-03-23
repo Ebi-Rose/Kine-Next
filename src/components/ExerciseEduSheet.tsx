@@ -47,21 +47,25 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
           </div>
         )}
 
-        {/* Why this exercise */}
-        {why && (
-          <div>
-            <p className="text-[10px] text-accent font-display tracking-wider mb-1">WHY THIS EXERCISE</p>
-            <p className="text-xs text-muted2 font-light leading-relaxed">{why}</p>
-          </div>
-        )}
+        {/* Why this exercise — always show something */}
+        <div>
+          <p className="text-[10px] text-accent font-display tracking-wider mb-1">WHY THIS EXERCISE</p>
+          <p className="text-xs text-muted2 font-light leading-relaxed">
+            {why || (lib
+              ? `A ${lib.tags.includes("Compound") ? "compound" : "isolation"} ${lib.muscle} exercise using ${lib.equip.join(" or ")}.`
+              : "Exercise information loading...")}
+          </p>
+        </div>
 
-        {/* What you should feel */}
-        {feel && (
-          <div>
-            <p className="text-[10px] text-accent font-display tracking-wider mb-1">WHAT YOU SHOULD FEEL</p>
-            <p className="text-xs text-muted2 font-light leading-relaxed">{feel}</p>
-          </div>
-        )}
+        {/* What you should feel — always show something */}
+        <div>
+          <p className="text-[10px] text-accent font-display tracking-wider mb-1">WHAT YOU SHOULD FEEL</p>
+          <p className="text-xs text-muted2 font-light leading-relaxed">
+            {feel || (muscleTags.primary.length > 0
+              ? `You should feel your ${muscleTags.primary.join(" and ").toLowerCase()} doing the work. If you feel it elsewhere, check your form.`
+              : "Focus on controlled movement through the full range of motion.")}
+          </p>
+        </div>
 
         {/* Context */}
         {context && (

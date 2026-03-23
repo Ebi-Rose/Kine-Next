@@ -141,13 +141,20 @@ export default function ExerciseSwapSheet({
                       )}
                     </div>
                   </div>
-                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] tracking-wider uppercase ${
-                    ex.fit === "ideal" ? "bg-green-900/30 text-green-400"
-                    : ex.fit === "acceptable" ? "bg-surface2 text-muted2"
-                    : "bg-red-900/20 text-red-300"
-                  }`}>
-                    {ex.fit}
-                  </span>
+                  <div className="flex flex-col items-end shrink-0 gap-0.5">
+                    <span className={`rounded-full px-1.5 py-0.5 text-[8px] tracking-wider uppercase ${
+                      ex.fit === "ideal" ? "bg-green-900/30 text-green-400"
+                      : ex.fit === "acceptable" ? "bg-surface2 text-muted2"
+                      : "bg-red-900/20 text-red-300"
+                    }`}>
+                      {ex.fit}
+                    </span>
+                    {ex.fit === "compromise" && currentEx && (
+                      <span className="text-[8px] text-red-300/70">
+                        loses {MUSCLE_LABELS[currentEx.muscle] || currentEx.muscle}
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
