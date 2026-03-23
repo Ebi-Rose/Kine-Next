@@ -2,7 +2,9 @@
 
 import { findExercise } from "@/data/exercise-library";
 import { getMuscleTags, getBreathingCue, isSquat, isHinge, isCompound, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, DEPTH_BEFORE_LOAD } from "@/data/education";
-import { getSkillPath, SKILL_HINTS } from "@/data/skill-paths";
+// @ts-ignore
+import { EXERCISE_EDU_LIBRARY } from "@/data/exercise-edu";
+import { getSkillPath } from "@/data/skill-paths";
 import BottomSheet from "@/components/BottomSheet";
 
 interface Props {
@@ -16,11 +18,18 @@ interface Props {
   cues?: string[];
 }
 
-export default function ExerciseEduSheet({ open, onClose, exerciseName, why, feel, context, cues }: Props) {
+export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp }: Props) {
   const lib = findExercise(exerciseName);
   const muscleTags = getMuscleTags(exerciseName);
   const breathCue = getBreathingCue(exerciseName);
   const skillPath = getSkillPath(exerciseName, []);
+
+  // Fall back to EXERCISE_EDU_LIBRARY when AI fields aren't provided
+  const eduData = (EXERCISE_EDU_LIBRARY as Record<string, { why?: string; feel?: string; context?: string; cues?: string[] }>)?.[exerciseName];
+  const why = whyProp || eduData?.why || null;
+  const feel = feelProp || eduData?.feel || null;
+  const context = contextProp || eduData?.context || null;
+  const cues = cuesProp || eduData?.cues || null;
 
   return (
     <BottomSheet open={open} onClose={onClose} title={exerciseName}>
