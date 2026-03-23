@@ -132,6 +132,70 @@ export default function DevPanel() {
           )}
         </Section>
 
+        <Section title="Cycle">
+          <div className="flex flex-wrap gap-2">
+            {(["regular", "irregular", "hormonal", "perimenopause", "na"] as const).map((type) => (
+              <button key={type} onClick={() => { store.setCycleType(type); toast(`Cycle: ${type}`, "success"); }}
+                className={`rounded-lg border px-2 py-1 text-[10px] transition-all ${store.cycleType === type ? "border-accent text-accent" : "border-border text-muted2"}`}>
+                {type}
+              </button>
+            ))}
+          </div>
+          <Button variant="secondary" size="sm" className="w-full mt-2" onClick={() => {
+            store.setCycle({ periodLog: [{ date: new Date().toISOString().split("T")[0], type: "start" }], avgLength: 28 });
+            toast("Period logged today", "success");
+          }}>
+            Log period start (today)
+          </Button>
+        </Section>
+
+        <Section title="Scenarios">
+          <Button variant="secondary" size="sm" className="w-full" onClick={() => {
+            // Perfect week: 3-4 sessions, effort 2-3, soreness 1-2
+            const planned = parseInt(store.days || "3");
+            for (let i = 0; i < planned; i++) {
+              store.setProgressDB({
+                ...store.progressDB,
+                sessions: [...store.progressDB.sessions, {
+                  dayIdx: i, date: new Date().toISOString().split("T")[0],
+                  weekNum: store.progressDB.currentWeek, title: `Session ${i + 1}`,
+                  logs: {}, effort: 2, soreness: 1, prs: [],
+                }],
+              });
+            }
+            toast("Perfect week simulated", "success");
+          }}>
+            Simulate perfect week
+          </Button>
+          <Button variant="secondary" size="sm" className="w-full mt-2" onClick={() => {
+            // Struggled week: 2 sessions, effort 4, soreness 3-4
+            for (let i = 0; i < 2; i++) {
+              store.setProgressDB({
+                ...store.progressDB,
+                sessions: [...store.progressDB.sessions, {
+                  dayIdx: i, date: new Date().toISOString().split("T")[0],
+                  weekNum: store.progressDB.currentWeek, title: `Session ${i + 1}`,
+                  logs: {}, effort: 4, soreness: 3 + i, prs: [],
+                }],
+              });
+            }
+            toast("Struggled week simulated", "success");
+          }}>
+            Simulate struggled week
+          </Button>
+          <Button variant="secondary" size="sm" className="w-full mt-2" onClick={() => {
+            // Gap return: advance 2 weeks with no sessions
+            store.setProgressDB({
+              ...store.progressDB,
+              currentWeek: store.progressDB.currentWeek + 2,
+            });
+            store.setWeekData(null);
+            toast("2-week gap simulated", "success");
+          }}>
+            Simulate 2-week gap
+          </Button>
+        </Section>
+
         <Section title="Reset">
           <Button variant="secondary" size="sm" className="w-full" onClick={resetEduFlags}>
             Reset education flags
