@@ -872,19 +872,36 @@ function ExerciseCard({
 function FeedbackScreen({ onSubmit }: { onSubmit: (effort: number, soreness: number) => void }) {
   const [effort, setEffort] = useState<number | null>(null);
   const [soreness, setSoreness] = useState<number | null>(null);
+  const { goal } = useKineStore();
 
-  const effortLabels = ["Too easy", "Moderate", "Hard", "Max effort"];
+  // Goal-aware labels
+  const effortLabels = goal === "strength"
+    ? ["Light", "Moderate", "Heavy", "Maximal"]
+    : goal === "muscle"
+      ? ["Easy", "Working", "Intense", "Failure"]
+      : ["Too easy", "Moderate", "Hard", "Max effort"];
+
+  const effortQuestion = goal === "strength"
+    ? "How heavy did it feel?"
+    : goal === "muscle"
+      ? "How hard did you push?"
+      : "How was the effort?";
+
   const sorenessLabels = ["Fresh", "A little sore", "Pretty sore", "Beat up"];
 
   return (
     <div className="flex min-h-[60vh] flex-col justify-center">
       <div className="text-center mb-8">
         <h2 className="font-display text-3xl tracking-wide text-accent">Session complete</h2>
-        <p className="mt-2 text-sm text-muted2">How did it go?</p>
+        <p className="mt-2 text-sm text-muted2">
+          {goal === "strength" ? "How did the bar move?"
+           : goal === "muscle" ? "Did you feel the muscles working?"
+           : "How did it go?"}
+        </p>
       </div>
 
       <div className="mb-6">
-        <p className="mb-2 text-xs tracking-wider text-muted uppercase">Effort</p>
+        <p className="mb-2 text-xs tracking-wider text-muted uppercase">{effortQuestion}</p>
         <div className="grid grid-cols-4 gap-2">
           {effortLabels.map((label, i) => (
             <button key={i} onClick={() => setEffort(i + 1)}
