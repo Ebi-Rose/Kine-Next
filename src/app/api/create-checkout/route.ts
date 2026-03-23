@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const siteUrl = process.env.SITE_URL || "https://kine-amber.vercel.app";
+    const siteUrl = process.env.SITE_URL || "https://kine-next.vercel.app";
     const sessionParams: Record<string, string> = {
       mode: "subscription",
       "payment_method_types[0]": "card",

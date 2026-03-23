@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.billingPortal.sessions.create({
       customer: sub.stripe_customer_id,
       return_url:
-        (process.env.SITE_URL || "https://kine-amber.vercel.app") + "/app/",
+        (process.env.SITE_URL || "https://kine-next.vercel.app") + "/app/",
     });
 
     return Response.json({ url: session.url });
