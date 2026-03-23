@@ -91,7 +91,11 @@ export default function SessionPage() {
       initial[i] = {
         name: ex.name,
         planned: { sets: ex.sets, reps: ex.reps },
-        actual: Array.from({ length: numSets }, () => ({ reps: "", weight: "" })),
+        actual: Array.from({ length: numSets }, () => {
+          // Pre-fill reps with lower end of planned range (e.g. "8-10" → "8")
+          const repMatch = ex.reps?.match(/^(\d+)/);
+          return { reps: repMatch ? repMatch[1] : "", weight: "" };
+        }),
         note: "",
         saved: false,
       };
