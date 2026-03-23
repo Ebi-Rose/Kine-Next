@@ -344,7 +344,7 @@ export const EXERCISE_FALLBACK_SVG = {
 
 // ── Lookup function ──
 // Returns { svg, img } for a given exercise name, falling back to muscle group icon
-import { EXERCISE_LIBRARY } from './exercise-library.js';
+import { EXERCISE_LIBRARY } from './exercise-library';
 
 export function getExerciseIllustration(name) {
   const style = window.__illustStyle || 'svg';

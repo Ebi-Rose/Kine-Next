@@ -596,9 +596,23 @@ function ExerciseCard({
       }`}
       style={{ borderLeftWidth: "3px", borderLeftColor: skipped ? "var(--color-border)" : catColor }}
     >
+      {/* Skip/Swap row at top (when expanded and not saved) */}
+      {expanded && !log.saved && !skipped && (
+        <div className="flex items-center justify-end gap-2 px-4 pt-3 pb-0">
+          <button onClick={(e) => { e.stopPropagation(); onSkip(index); }}
+            className="text-[10px] text-muted hover:text-text transition-colors px-2 py-1">Skip</button>
+          <button onClick={(e) => { e.stopPropagation(); onSwap(index); }}
+            className="text-[10px] text-muted border border-border rounded px-2 py-1 hover:border-border-active transition-all">Swap</button>
+          {hasSkillPath(exercise.name) && onSkillPath && (
+            <button onClick={(e) => { e.stopPropagation(); onSkillPath(exercise.name); }}
+              className="text-[10px] text-muted border border-border rounded px-2 py-1 hover:border-border-active transition-all">Easier/Harder</button>
+          )}
+        </div>
+      )}
+
       {/* Header */}
-      <button onClick={onToggle} className="flex w-full items-center gap-3 p-4 text-left">
-        {/* Video thumbnail or muscle dot */}
+      <button onClick={onToggle} className="flex w-full items-center gap-3 p-4 pt-2 text-left">
+        {/* Thumbnail placeholder */}
         {videoThumb ? (
           <div
             className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border"
@@ -610,15 +624,10 @@ function ExerciseCard({
             </div>
           </div>
         ) : (
-          <div className={`h-2 w-2 shrink-0 rounded-full ${
-            exInfo?.muscle === "push" ? "bg-cat-push"
-            : exInfo?.muscle === "pull" ? "bg-cat-pull"
-            : exInfo?.muscle === "legs" ? "bg-cat-legs"
-            : exInfo?.muscle === "hinge" ? "bg-cat-hinge"
-            : exInfo?.muscle === "core" ? "bg-cat-core"
-            : exInfo?.muscle === "cardio" ? "bg-cat-cardio"
-            : "bg-muted"
-          }`} />
+          <div className="h-10 w-10 shrink-0 rounded-lg border border-border flex items-center justify-center"
+            style={{ background: `${catColor}10` }}>
+            <div className="h-3 w-3 rounded-full" style={{ background: catColor }} />
+          </div>
         )}
 
         <div className="flex-1 min-w-0">
