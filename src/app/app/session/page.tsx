@@ -12,7 +12,8 @@ import { getBreathingCue, getMuscleTags, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, H
 import { getSkillPath, hasSkillPath, SKILL_HINTS } from "@/data/skill-paths";
 import { getVideoThumb, hasVideo, getVideoUrl } from "@/data/exercise-videos";
 import { suggestNextWeight } from "@/lib/progression";
-import { getWarmupForSession } from "@/data/warmup-data";
+import { buildWarmup, buildCooldown } from "@/lib/warmup-engine";
+import type { WarmupItem } from "@/data/warmup-data";
 import { trimSessionToTime } from "@/lib/time-budget";
 import { getExerciseStallWeeks } from "@/lib/programme-age";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
@@ -349,7 +350,8 @@ export default function SessionPage() {
     );
   }
 
-  const warmupExercises = getWarmupForSession(day.sessionTitle);
+  const { injuries, exp } = useKineStore();
+  const warmup = buildWarmup(day.sessionTitle, effectiveExercises, injuries, exp || "developing");
   const timeBudget = sessionTimeBudgets[dayIdx];
   const isTrimmed = timeBudget && effectiveExercises.length < day.exercises.length;
 
@@ -414,20 +416,77 @@ export default function SessionPage() {
       {showWarmup ? (
         <div className="mb-6 rounded-xl border border-border bg-surface p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
+            <div>
+              <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
+              <p className="text-[10px] text-muted2 mt-0.5">~{warmup.totalMin} min</p>
+            </div>
             <button onClick={() => setShowWarmup(false)} className="text-[10px] text-muted2 hover:text-text">
               Hide
             </button>
           </div>
-          <div className="flex flex-col gap-1.5">
-            {warmupExercises.map((wu, i) => (
-              <WarmupItem key={i} name={wu.name} duration={wu.duration} cue={wu.cue} category={wu.category} />
-            ))}
-          </div>
+
+          {/* General prep */}
+          {warmup.general.length > 0 && (
+            <div className="mb-2">
+              <p className="text-[8px] tracking-widest text-muted uppercase mb-1">General prep</p>
+              <div className="flex flex-col gap-1">
+                {warmup.general.map((wu, i) => (
+                  <FullWarmupItem key={`g-${i}`} item={wu} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Activation */}
+          {warmup.activation.length > 0 && (
+            <div className="mb-2">
+              <p className="text-[8px] tracking-widest text-muted uppercase mb-1">Activation</p>
+              <div className="flex flex-col gap-1">
+                {warmup.activation.map((wu, i) => (
+                  <FullWarmupItem key={`a-${i}`} item={wu} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Stabiliser prep */}
+          {warmup.stabiliserExtra && (
+            <div className="mb-2">
+              <p className="text-[8px] tracking-widest text-muted uppercase mb-1">Stabiliser prep</p>
+              <FullWarmupItem item={warmup.stabiliserExtra} />
+            </div>
+          )}
+
+          {/* Injury mods */}
+          {warmup.injuryItems.length > 0 && (
+            <div className="mb-2">
+              <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-1">For your injuries</p>
+              <div className="flex flex-col gap-1">
+                {warmup.injuryItems.map((wu, i) => (
+                  <FullWarmupItem key={`inj-${i}`} item={wu} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ramp-up sets */}
+          {warmup.rampSets.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-white/[0.04]">
+              <p className="text-[8px] tracking-widest text-muted uppercase mb-1.5">Ramp-up sets · {warmup.firstExName}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {warmup.rampSets.map((rs, i) => (
+                  <div key={i} className="rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px]">
+                    <span className="font-medium text-accent">{rs.label}</span>
+                    <span className="text-muted2 ml-1">{rs.spec}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <button onClick={() => setShowWarmup(true)} className="mb-6 w-full rounded-xl border border-border bg-surface px-4 py-3 text-[10px] text-muted2 hover:text-text transition-colors">
-          Show warm up
+          Show warm up · ~{warmup.totalMin} min
         </button>
       )}
 
@@ -1075,45 +1134,73 @@ function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResu
 
 // ── Warmup Item with "how to" popup ──
 
-function WarmupItem({ name, duration, cue, category }: { name: string; duration: string; cue: string; category: string }) {
-  const [showHow, setShowHow] = useState(false);
-  const steps = cue.split(/,\s+|;\s+/).filter(Boolean).map(s => s.trim());
+function FullWarmupItem({ item }: { item: WarmupItem }) {
+  const [checked, setChecked] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [showAlts, setShowAlts] = useState(false);
+  const [current, setCurrent] = useState(item);
 
   return (
-    <div>
-      <button
-        onClick={() => setShowHow(!showHow)}
-        className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left hover:bg-surface2/50 transition-all"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <div className={`shrink-0 rounded px-1 py-0.5 text-[7px] tracking-wider uppercase ${
-            category === "activation" ? "bg-accent/10 text-accent"
-            : category === "mobility" ? "bg-cat-pull/10 text-cat-pull"
-            : category === "dynamic" ? "bg-cat-legs/10 text-cat-legs"
-            : "bg-surface2 text-muted2"
-          }`}>{category.slice(0, 3)}</div>
-          <span className="text-xs text-text truncate">{name}</span>
+    <div className={`rounded-lg transition-all ${checked ? "opacity-50" : ""}`}>
+      <div className="flex items-start gap-2 px-2 py-1.5">
+        {/* Checkbox */}
+        <button
+          onClick={() => setChecked(!checked)}
+          className={`shrink-0 mt-0.5 w-4 h-4 rounded border transition-all flex items-center justify-center ${
+            checked ? "bg-accent border-accent" : "border-border hover:border-accent/50"
+          }`}
+        >
+          {checked && <span className="text-[8px] text-bg">✓</span>}
+        </button>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <button onClick={() => setExpanded(!expanded)} className="flex w-full items-center justify-between text-left">
+            <span className={`text-xs truncate ${checked ? "line-through text-muted" : "text-text"}`}>{current.name}</span>
+            <div className="flex items-center gap-1.5 shrink-0 ml-2">
+              {current._injuryProtective && (
+                <span className="text-[7px] bg-accent/10 text-accent px-1 py-0.5 rounded">protective</span>
+              )}
+              <span className="text-[10px] text-muted">{current.duration}</span>
+              <span className="text-[9px] text-muted2">{expanded ? "▾" : "▸"}</span>
+            </div>
+          </button>
+
+          {/* Expanded detail */}
+          {expanded && (
+            <div className="mt-1.5 animate-fade-up">
+              <p className="text-[10px] text-muted2 font-light leading-relaxed">{current.detail}</p>
+              {current._why && (
+                <p className="mt-1 text-[9px] text-accent/70 font-light italic leading-relaxed">{current._why}</p>
+              )}
+
+              {/* Alternatives */}
+              {current.alts && current.alts.length > 0 && (
+                <div className="mt-1.5">
+                  <button onClick={() => setShowAlts(!showAlts)} className="text-[9px] text-muted hover:text-accent transition-colors">
+                    {showAlts ? "Hide options" : `${current.alts.length} alternatives`}
+                  </button>
+                  {showAlts && (
+                    <div className="mt-1 flex flex-col gap-1">
+                      {current.alts.map((alt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { setCurrent({ ...alt, alts: current.alts }); setShowAlts(false); }}
+                          className="text-left rounded-lg bg-surface2/30 px-2 py-1.5 text-[10px] hover:bg-surface2/50 transition-all"
+                        >
+                          <span className="text-text">{alt.name}</span>
+                          <span className="text-muted2 ml-1">· {alt.duration}</span>
+                          <p className="text-muted2 font-light mt-0.5 text-[9px] leading-relaxed">{alt.detail}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] text-muted">{duration}</span>
-          <span className={`text-[9px] rounded-full w-4 h-4 flex items-center justify-center ${
-            showHow ? "bg-accent/20 text-accent" : "bg-surface2 text-muted2"
-          }`}>{showHow ? "▾" : "?"}</span>
-        </div>
-      </button>
-      {showHow && (
-        <div className="ml-8 mr-2 mb-1.5 px-3 py-2 rounded-lg bg-surface2/30 animate-fade-up">
-          <p className="text-[9px] text-accent font-display tracking-wider mb-1.5">HOW TO</p>
-          <div className="flex flex-col gap-1">
-            {steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-2 text-[10px]">
-                <span className="text-accent shrink-0 font-medium">{i + 1}.</span>
-                <span className="text-muted2 font-light leading-relaxed">{step}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

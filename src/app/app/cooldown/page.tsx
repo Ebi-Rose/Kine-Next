@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
-import { COOLDOWN_EXERCISES, type CooldownExercise } from "@/data/warmup-data";
+import { COOLDOWN_BREATH, type CooldownExercise } from "@/data/warmup-data";
 import { findExercise } from "@/data/exercise-library";
 import Button from "@/components/Button";
 
@@ -106,17 +106,15 @@ export default function CooldownPage() {
 
       {/* Core cooldown */}
       <div className="mt-6 flex flex-col gap-3">
-        {COOLDOWN_EXERCISES.map((ex, i) => (
+        {COOLDOWN_BREATH.map((ex, i) => (
           <div key={i} className="rounded-[var(--radius-default)] border border-border bg-surface p-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-text">{ex.name}</p>
-                  <span className="text-[9px] text-muted uppercase tracking-wider">
-                    {CATEGORY_LABELS[ex.category] || ex.category}
-                  </span>
+                  <span className="text-[9px] text-muted uppercase tracking-wider">Breathing</span>
                 </div>
-                <p className="text-xs text-muted2">{ex.cue}</p>
+                <p className="text-xs text-muted2">{ex.detail}</p>
               </div>
               <span className="text-xs text-accent">{ex.duration}</span>
             </div>
