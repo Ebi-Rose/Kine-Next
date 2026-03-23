@@ -5,6 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const { code } = await request.json();
     const accessCode = process.env.ACCESS_CODE || "kine2026";
+    const newCode = process.env.NEW_CODE || "kinenew";
     const demoCode = process.env.DEMO_CODE || "kinedemo";
     const trimmed = code?.trim().toLowerCase();
 
@@ -14,16 +15,28 @@ export async function POST(request: NextRequest) {
 
     const cookieStore = await cookies();
 
-    // Demo code — grants demo access (no login required)
+    // Demo code — pre-filled with seed data, no login
     if (trimmed === demoCode.toLowerCase()) {
       cookieStore.set("kine_access", "granted", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 7 * 24 * 60 * 60, // 7 days
+        maxAge: 7 * 24 * 60 * 60,
       });
       return Response.json({ ok: true, mode: "demo" });
+    }
+
+    // New user code — onboarding flow, no login
+    if (trimmed === newCode.toLowerCase()) {
+      cookieStore.set("kine_access", "granted", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+      return Response.json({ ok: true, mode: "new" });
     }
 
     // Full access code — requires login
@@ -33,7 +46,7 @@ export async function POST(request: NextRequest) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
+        maxAge: 30 * 24 * 60 * 60,
       });
       return Response.json({ ok: true, mode: "full" });
     }

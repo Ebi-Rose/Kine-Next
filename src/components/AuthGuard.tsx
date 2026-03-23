@@ -15,17 +15,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!ok) {
         router.replace("/");
       } else {
-        // Seed demo data if in demo mode and no goal set
         if (isDemoMode()) {
           const store = useKineStore.getState();
-          if (!store.goal) {
-            store.setGoal("muscle");
-            store.setExp("developing");
-            store.setEquip(["barbell", "dumbbells", "machines"]);
-            store.setDays("4");
-            store.setTrainingDays([0, 1, 3, 4]);
-            store.setDuration("medium");
-            store.setCycleType("na");
+          const params = new URLSearchParams(window.location.search);
+          const seedMode = params.get("seed");
+
+          if (seedMode === "full" && !store.progressDB.programStartDate) {
+            // kinedemo: seed with 5 weeks of data
+            import("@/lib/demo-seed").then(({ seedDemoStore }) => {
+              seedDemoStore(store);
+            });
+          } else if (!store.goal) {
+            // kinenew: go through onboarding
+            router.replace("/app/onboarding?demo=true");
           }
         }
         setAllowed(true);

@@ -24,6 +24,8 @@ export default function AccessPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.mode === "demo") {
+          router.push("/app?demo=true&seed=full");
+        } else if (data.mode === "new") {
           router.push("/app?demo=true");
         } else {
           router.push("/login");
