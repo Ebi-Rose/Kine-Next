@@ -407,7 +407,7 @@ export default function SessionPage() {
       )}
 
       {/* Inline warmup */}
-      {showWarmup && (
+      {showWarmup ? (
         <div className="mb-6 rounded-xl border border-border bg-surface p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
@@ -421,6 +421,10 @@ export default function SessionPage() {
             ))}
           </div>
         </div>
+      ) : (
+        <button onClick={() => setShowWarmup(true)} className="mb-6 w-full rounded-xl border border-border bg-surface px-4 py-3 text-[10px] text-muted2 hover:text-text transition-colors">
+          Show warm up
+        </button>
       )}
 
       {/* Muscle diagram */}

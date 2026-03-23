@@ -18,6 +18,20 @@ interface Props {
   cues?: string[];
 }
 
+/** Try exact match first, then partial/fuzzy match against the edu library keys */
+function findEduData(name: string, library: Record<string, unknown>): unknown {
+  if (library[name]) return library[name];
+  const lower = name.toLowerCase();
+  // Try matching by removing common prefixes/suffixes
+  for (const key of Object.keys(library)) {
+    const keyLower = key.toLowerCase();
+    if (lower.includes(keyLower) || keyLower.includes(lower)) {
+      return library[key];
+    }
+  }
+  return undefined;
+}
+
 export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp }: Props) {
   const lib = findExercise(exerciseName);
   const muscleTags = getMuscleTags(exerciseName);
@@ -25,7 +39,8 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
   const skillPath = getSkillPath(exerciseName, []);
 
   // Fall back to EXERCISE_EDU_LIBRARY when AI fields aren't provided
-  const eduData = (EXERCISE_EDU_LIBRARY as Record<string, { why?: string; feel?: string; context?: string; cues?: string[] }>)?.[exerciseName];
+  const eduLibrary = EXERCISE_EDU_LIBRARY as Record<string, { why?: string; feel?: string; context?: string; cues?: string[] }>;
+  const eduData = findEduData(exerciseName, eduLibrary) as typeof eduLibrary[string] | undefined;
   const why = whyProp || eduData?.why || null;
   const feel = feelProp || eduData?.feel || null;
   const context = contextProp || eduData?.context || null;

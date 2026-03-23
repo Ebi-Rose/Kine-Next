@@ -590,11 +590,6 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           Sync to cloud
         </Button>
 
-        {/* Re-run onboarding */}
-        <Button variant="ghost" size="sm" onClick={() => window.location.href = "/app/onboarding"}>
-          Re-run onboarding
-        </Button>
-
         {/* Reset */}
         <Button variant="ghost" size="sm" onClick={handleReset} className="text-red-400">
           Reset all data
