@@ -45,7 +45,7 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode } =
     useKineStore();
 
   const [logs, setLogs] = useState<Record<number, ExerciseLog>>({});
@@ -344,8 +344,8 @@ export default function SessionPage() {
         </p>
       </div>
 
-      {/* Set notation education — first encounter */}
-      {!useKineStore.getState().eduFlags.seen_set_notation && (
+      {/* Set notation education — first encounter, not in silent mode */}
+      {eduMode !== "silent" && !useKineStore.getState().eduFlags.seen_set_notation && (
         <div className="mb-4 rounded-xl border border-border bg-surface p-4">
           <p className="text-[10px] text-accent font-display tracking-wider mb-2">TRAINING SHORTHAND</p>
           <div className="flex flex-col gap-1 text-[11px]">
@@ -431,6 +431,7 @@ export default function SessionPage() {
             onVideoSheet={(name) => setVideoSheetEx(name)}
             onSkillPath={(name) => setSkillPathEx(name)}
             onEduSheet={(idx) => setEduSheetIdx(idx)}
+            eduMode={eduMode}
           />
         ))}
       </div>
@@ -553,7 +554,7 @@ export default function SessionPage() {
 // ── Exercise Card ──
 
 function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet,
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full",
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -570,6 +571,7 @@ function ExerciseCard({
   onVideoSheet?: (name: string) => void;
   onSkillPath?: (name: string) => void;
   onEduSheet?: (exIdx: number) => void;
+  eduMode?: string;
 }) {
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -677,6 +679,8 @@ function ExerciseCard({
 
         return (
           <div className="border-t border-border/50 px-4 pb-4 pt-3">
+            {/* Education — respects coaching mode */}
+            {eduMode === "silent" ? null : (<>
             {/* Breathing cue */}
             {breathCue && (
               <p className="mb-3 text-[10px] text-accent italic">{breathCue}</p>
@@ -820,16 +824,21 @@ function ExerciseCard({
               </div>
             )}
 
-            {/* Education cues */}
-            {isSquat(exercise.name) && (
-              <p className="mt-2 text-[10px] text-muted font-light">{KNEE_TRACKING_CUE}</p>
+            {/* Education cues — full mode only */}
+            {eduMode === "full" && (
+              <>
+                {isSquat(exercise.name) && (
+                  <p className="mt-2 text-[10px] text-muted font-light">{KNEE_TRACKING_CUE}</p>
+                )}
+                {isHinge(exercise.name) && (
+                  <p className="mt-2 text-[10px] text-muted font-light">{HIP_HINGE_FIRST}</p>
+                )}
+                {isCompound(exercise.name) && (
+                  <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
+                )}
+              </>
             )}
-            {isHinge(exercise.name) && (
-              <p className="mt-2 text-[10px] text-muted font-light">{HIP_HINGE_FIRST}</p>
-            )}
-            {isCompound(exercise.name) && (
-              <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
-            )}
+            </>)}
 
             {/* Skill path hint (inline preview) */}
             {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
