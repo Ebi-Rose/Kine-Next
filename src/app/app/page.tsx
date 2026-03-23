@@ -7,12 +7,28 @@ import { buildWeek } from "@/lib/week-builder";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS } from "@/data/constants";
 import { getCurrentPhase } from "@/lib/cycle";
-import { getCurrentPhase as getTrainingPhase } from "@/lib/periodisation";
+import { getCurrentPhaseInfo } from "@/lib/periodisation";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import SessionRearrange from "@/components/SessionRearrange";
 import { toast } from "@/components/Toast";
+import { findExercise } from "@/data/exercise-library";
+import type { MuscleGroup } from "@/data/exercise-library";
 import Link from "next/link";
+
+const CATEGORY_COLORS: Record<MuscleGroup, string> = {
+  push: "var(--color-cat-push)",
+  pull: "var(--color-cat-pull)",
+  legs: "var(--color-cat-legs)",
+  hinge: "var(--color-cat-hinge)",
+  core: "var(--color-cat-core)",
+  cardio: "var(--color-cat-cardio)",
+};
+
+function getCategoryColor(exerciseName: string): string {
+  const ex = findExercise(exerciseName);
+  return ex ? CATEGORY_COLORS[ex.muscle] : "var(--color-muted)";
+}
 
 const LOADING_MESSAGES = [
   "Analysing your training profile…",
@@ -97,6 +113,59 @@ export default function AppHome() {
   return <WeekView week={week} onRebuild={handleBuildWeek} loading={loading} />;
 }
 
+// ── Cycle Phase Colors ──
+
+const PHASE_COLORS: Record<string, string> = {
+  menstrual: "#b05a5a",
+  follicular: "#6a9a7a",
+  ovulatory: "#C49098",
+  luteal: "#8a7a5a",
+};
+
+// ── Cycle Arc Bar ──
+
+function CycleArc({ cycleDay, cycleLength, logCount }: { cycleDay: number; cycleLength: number; logCount: number }) {
+  const L = cycleLength;
+  const mEnd = 5;
+  const fEnd = Math.round(L * 0.46);
+  const oEnd = Math.round(L * 0.54);
+  const segs = [
+    { phase: "menstrual", days: mEnd },
+    { phase: "follicular", days: fEnd - mEnd },
+    { phase: "ovulatory", days: oEnd - fEnd },
+    { phase: "luteal", days: L - oEnd },
+  ];
+  const pct = Math.min(((cycleDay - 1) / L) * 100, 99);
+
+  return (
+    <div>
+      <p className="label-muted mb-1.5">
+        {logCount >= 2 ? `${L}-day cycle` : "Cycle (28-day default)"}
+      </p>
+      <div className="relative flex h-1 gap-0.5 rounded-sm">
+        {segs.map((s) => (
+          <div
+            key={s.phase}
+            className="rounded-sm"
+            style={{ flex: s.days, background: PHASE_COLORS[s.phase] }}
+          />
+        ))}
+        <div
+          className="absolute rounded-sm"
+          style={{
+            top: "-3px",
+            left: `calc(${pct}% - 1px)`,
+            width: "2px",
+            height: "10px",
+            background: "white",
+            opacity: 0.9,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Week View ──
 
 function WeekView({
@@ -113,7 +182,7 @@ function WeekView({
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
   const weekStart = getWeekDateRange();
-  const trainingPhase = getTrainingPhase(progressDB.currentWeek, progressDB.phaseOffset);
+  const trainingPhase = getCurrentPhaseInfo(progressDB.currentWeek, progressDB.phaseOffset);
 
   // Cycle phase
   const phase = cycleType === "regular"
@@ -142,16 +211,22 @@ function WeekView({
         )}
         <div className="mt-1 flex items-center gap-2">
           <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10px] text-muted2">
-            {trainingPhase.label} · {trainingPhase.weekInPhase}/{trainingPhase.totalWeeksInPhase}
+            Block {trainingPhase.blockNum} · {trainingPhase.label} · Week {trainingPhase.blockWeek}/4
           </span>
         </div>
       </div>
 
-      {/* Cycle phase + #13: Period quick-log */}
+      {/* Cycle phase arc + period quick-log */}
       {phase && (
-        <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-text">◐ {phase.label} phase · Day {phase.day}</span>
+        <div className="mb-4 rounded-[14px] border border-border bg-surface p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-[7px] h-[7px] rounded-full shrink-0" style={{ background: PHASE_COLORS[phase.phase] }} />
+              <span className="text-xs font-medium" style={{ color: PHASE_COLORS[phase.phase] }}>
+                Day {phase.day}
+              </span>
+              <span className="text-[10px] text-muted2">{phase.label} phase</span>
+            </div>
             <button
               onClick={() => {
                 const today = new Date().toISOString().split("T")[0];
@@ -168,7 +243,11 @@ function WeekView({
               Log period {cycle.periodLog[cycle.periodLog.length - 1]?.type === "start" ? "end" : "start"}
             </button>
           </div>
-          <p className="mt-1 text-[10px] text-muted2">{phase.trainingNote}</p>
+
+          {/* Cycle arc bar */}
+          <CycleArc cycleDay={phase.day} cycleLength={cycle.avgLength || 28} logCount={cycle.periodLog.filter(p => p.type === "start").length} />
+
+          <p className="mt-3 text-[10px] text-muted2 font-light leading-relaxed">{phase.trainingNote}</p>
         </div>
       )}
       {/* Period quick-log when no cycle phase (cycle type is regular but no log yet) */}
@@ -244,9 +323,22 @@ function WeekView({
           );
         }
         if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+          const WEEK_COMPLETE_MESSAGES = [
+            "Consistency beats intensity. You showed up.",
+            "Another week in the book. That's how progress works.",
+            "You did the work. Let recovery do the rest.",
+            "Week done. Strength isn't built in a day — it's built in weeks like this.",
+          ];
+          const msg = WEEK_COMPLETE_MESSAGES[(progressDB.currentWeek - 1) % WEEK_COMPLETE_MESSAGES.length];
           return (
-            <div className="mb-4 rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim p-3 text-center">
-              <p className="text-xs text-accent font-medium">Week {progressDB.currentWeek} complete</p>
+            <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
+              <p className="label-accent mb-1">Week {progressDB.currentWeek} complete</p>
+              <p className="font-display text-xl tracking-wide text-text">
+                {weekSessions.length} sessions done
+              </p>
+              <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
+                {msg}
+              </p>
             </div>
           );
         }
@@ -283,6 +375,32 @@ function WeekView({
             })}
           </div>
         );
+      })()}
+
+      {/* Next week preview — show when all sessions complete */}
+      {(() => {
+        const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+          .filter((s) => s.weekNum === progressDB.currentWeek);
+        const trainingDayCount = week.days.filter((d) => !d.isRest).length;
+        if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+          const nextWeekNum = (progressDB.currentWeek || 1) + 1;
+          const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
+          return (
+            <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4 text-center">
+              <p className="label-muted mb-1">Up next</p>
+              <p className="font-display text-lg tracking-wide text-text">
+                Week {nextWeekNum}
+              </p>
+              <p className="mt-1 text-[10px] text-muted2">
+                {nextPhase.label} · {nextPhase.description}
+              </p>
+              <Button variant="secondary" size="sm" className="mt-3" onClick={onRebuild} disabled={loading}>
+                Build Week {nextWeekNum} →
+              </Button>
+            </div>
+          );
+        }
+        return null;
       })()}
 
       {/* Actions */}
@@ -336,7 +454,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
   if (day.isRest) {
     return (
       <div
-        className={`rounded-[var(--radius-default)] border px-4 py-3 ${
+        className={`rounded-[14px] border px-[18px] py-3 transition-all ${
           isToday ? "border-accent/30 bg-accent-dim"
           : isPast ? "border-border/30 bg-surface/30 opacity-60"
           : "border-border/50 bg-surface/50"
@@ -375,7 +493,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
 
   return (
     <div
-      className={`rounded-[var(--radius-default)] border p-4 transition-all ${
+      className={`rounded-[14px] border p-[18px] transition-all active:scale-[0.98] ${
         isCompleted ? "border-accent/30 bg-accent-dim/30"
         : isToday ? "border-accent bg-surface"
         : isPast ? "border-border/50 bg-surface/50 opacity-60"
@@ -387,27 +505,27 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted2">{dayLabel}</span>
           {isToday && (
-            <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
+            <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[10px] font-medium text-accent tracking-wide">
               Today
             </span>
           )}
           {isCompleted && (
-            <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
+            <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[10px] font-medium text-accent tracking-wide">
               ✓ done
             </span>
           )}
         </div>
-        <span className="text-[10px] text-muted">{day.sessionDuration}</span>
+        <span className="label-muted">{day.sessionDuration}</span>
       </div>
 
       {/* Title */}
-      <h3 className="mt-2 font-display text-lg tracking-wide text-text">
+      <h3 className="mt-2 font-display text-lg tracking-wide text-text" style={{ fontSize: 'clamp(18px, 5vw, 22px)' }}>
         {day.sessionTitle}
       </h3>
 
       {/* Collapsed: summary with context */}
       {!expanded && (
-        <div className="mt-1">
+        <div className="mt-1.5">
           <div className="flex items-center justify-between">
             <p className="text-[11px] text-muted2 font-light truncate flex-1">
               {day.exercises.length} exercises · {day.sessionDuration}
@@ -416,11 +534,14 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
               className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
           </div>
           {day.coachNote && (
-            <p className="mt-1 text-[10px] text-muted font-light truncate">{day.coachNote}</p>
+            <p className="mt-1.5 text-[10px] text-muted font-light leading-relaxed truncate">{day.coachNote}</p>
           )}
-          <div className="mt-1.5 flex flex-wrap gap-1">
+          <div className="mt-2 flex flex-wrap gap-1">
             {day.exercises.slice(0, 3).map((ex, i) => (
-              <span key={i} className="text-[9px] text-muted2 bg-surface2/50 rounded px-1.5 py-0.5">{ex.name}</span>
+              <span key={i} className="inline-flex items-center gap-1 text-[9px] text-muted2 bg-surface2/50 rounded px-1.5 py-0.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ background: getCategoryColor(ex.name) }} />
+                {ex.name}
+              </span>
             ))}
             {day.exercises.length > 3 && (
               <span className="text-[9px] text-muted">+{day.exercises.length - 3}</span>
@@ -432,12 +553,15 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
       {/* Expanded: full details */}
       {expanded && (
         <>
-          {day.coachNote && <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>}
-          <div className="mt-3 flex flex-col gap-1">
+          {day.coachNote && <p className="mt-1.5 text-xs text-muted2 leading-relaxed">{day.coachNote}</p>}
+          <div className="mt-3 flex flex-col gap-1.5">
             {day.exercises.map((ex, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span className="text-text/80">{ex.name}</span>
-                <span className="text-muted">{ex.sets}×{ex.reps}</span>
+                <span className="flex items-center gap-1.5 text-text/80">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ background: getCategoryColor(ex.name) }} />
+                  {ex.name}
+                </span>
+                <span className="text-muted font-light">{ex.sets}×{ex.reps}</span>
               </div>
             ))}
           </div>

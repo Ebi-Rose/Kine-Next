@@ -16,11 +16,13 @@ import { getWarmupForSession } from "@/data/warmup-data";
 import { trimSessionToTime } from "@/lib/time-budget";
 import { getExerciseStallWeeks } from "@/lib/programme-age";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
+import MuscleDiagram from "@/components/MuscleDiagram";
 import SkillPathSheet from "@/components/SkillPathSheet";
 import VideoSheet from "@/components/VideoSheet";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
+import { sharePR } from "@/lib/share-card";
 
 interface SetLog {
   reps: string;
@@ -55,6 +57,7 @@ export default function SessionPage() {
   const [swapSheetIdx, setSwapSheetIdx] = useState<number | null>(null);
   const [showWarmup, setShowWarmup] = useState(true);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [sessionPRs, setSessionPRs] = useState<{ name: string; weight: number; reps: number }[]>([]);
   // #14/#15: Video and skill path sheet state
   const [videoSheetEx, setVideoSheetEx] = useState<string | null>(null);
   const [skillPathEx, setSkillPathEx] = useState<string | null>(null);
@@ -220,6 +223,7 @@ export default function SessionPage() {
 
     // Detect PRs
     const prs = detectPRs(logs);
+    setSessionPRs(prs);
     if (prs.length > 0) {
       prs.forEach((pr) => toast(`PR: ${pr.name} — ${pr.weight}kg × ${pr.reps}`, "success"));
     }
@@ -310,6 +314,7 @@ export default function SessionPage() {
     return (
       <AnalysisScreen
         analysis={analysis}
+        prs={sessionPRs}
         onDone={() => {
           setSessionLogs({});
           setFeedbackState({ effort: null, soreness: null, tsDay: null, tsTime: null, sessionStartTime: null });
@@ -336,6 +341,31 @@ export default function SessionPage() {
           {isTrimmed ? `~${timeBudget} min (trimmed)` : day.sessionDuration} · {effectiveExercises.length} exercises
         </p>
       </div>
+
+      {/* Set notation education — first encounter */}
+      {!useKineStore.getState().eduFlags.seen_set_notation && (
+        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+          <p className="text-[10px] text-accent font-display tracking-wider mb-2">TRAINING SHORTHAND</p>
+          <div className="flex flex-col gap-1 text-[11px]">
+            <div><span className="text-text font-medium">3×8</span> <span className="text-muted2 font-light">— 3 sets of 8 reps</span></div>
+            <div><span className="text-text font-medium">3×8-10</span> <span className="text-muted2 font-light">— start at 8, add weight when you hit 10 for all sets</span></div>
+            <div><span className="text-text font-medium">RPE 7</span> <span className="text-muted2 font-light">— could have done 3 more reps</span></div>
+            <div><span className="text-text font-medium">RIR 2</span> <span className="text-muted2 font-light">— stopped 2 reps short of failure</span></div>
+          </div>
+          <button
+            onClick={() => {
+              const store = useKineStore.getState();
+              store.setGoal(store.goal); // trigger re-render
+              // Mark as seen
+              const flags = { ...store.eduFlags, seen_set_notation: true };
+              useKineStore.setState({ eduFlags: flags } as Partial<typeof store>);
+            }}
+            className="mt-2 text-[10px] text-accent hover:underline"
+          >
+            Got it
+          </button>
+        </div>
+      )}
 
       {/* #12: Time budget notice */}
       {isTrimmed && (
@@ -366,6 +396,21 @@ export default function SessionPage() {
           </div>
         </div>
       )}
+
+      {/* Muscle diagram */}
+      <div className="mb-4">
+        <MuscleDiagram
+          sessionMuscleGroups={(() => {
+            const groups = new Set<string>();
+            effectiveExercises.forEach((ex) => {
+              const lib = findExercise(ex.name);
+              if (lib) groups.add(lib.muscle);
+            });
+            return [...groups];
+          })()}
+          collapsed={true}
+        />
+      </div>
 
       {/* Exercise list */}
       <div className="flex flex-col gap-3">
@@ -519,13 +564,21 @@ function ExerciseCard({
   const videoThumb = getVideoThumb(exercise.name);
   const vidUrl = getVideoUrl(exercise.name);
 
+  // Category color for left border accent
+  const catColor = exInfo?.muscle
+    ? { push: "var(--color-cat-push)", pull: "var(--color-cat-pull)", legs: "var(--color-cat-legs)", hinge: "var(--color-cat-hinge)", core: "var(--color-cat-core)", cardio: "var(--color-cat-cardio)" }[exInfo.muscle] || "var(--color-border)"
+    : "var(--color-border)";
+
   return (
-    <div className={`rounded-xl border transition-all duration-200 ${
-      skipped ? "border-border/50 bg-surface/50 opacity-50"
-        : log.saved ? "border-accent/30 bg-accent-dim/50"
-        : expanded ? "border-border-active bg-surface"
-        : "border-border bg-surface"
-    }`}>
+    <div
+      className={`rounded-xl border transition-all duration-200 ${
+        skipped ? "border-border/50 bg-surface/50 opacity-50"
+          : log.saved ? "border-accent/30 bg-accent-dim/50"
+          : expanded ? "border-border-active bg-surface"
+          : "border-border bg-surface"
+      }`}
+      style={{ borderLeftWidth: "3px", borderLeftColor: skipped ? "var(--color-border)" : catColor }}
+    >
       {/* Header */}
       <button onClick={onToggle} className="flex w-full items-center gap-3 p-4 text-left">
         {/* Video thumbnail or muscle dot */}
@@ -572,6 +625,13 @@ function ExerciseCard({
               </span>
             )}
           </div>
+          {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0) && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {[...muscleTags.primary, ...muscleTags.secondary].slice(0, 3).map((tag) => (
+                <span key={tag} className="rounded-full bg-surface2/60 px-1.5 py-0.5 text-[9px] text-muted2 font-light">{tag}</span>
+              ))}
+            </div>
+          )}
         </div>
         <span className="text-muted text-[10px] shrink-0">{expanded ? "▾" : "▸"}</span>
       </button>
@@ -584,7 +644,7 @@ function ExerciseCard({
         const skillPath = hasSkillPath(exercise.name) ? getSkillPath(exercise.name, []) : null;
 
         return (
-          <div className="border-t border-border px-4 pb-4 pt-3">
+          <div className="border-t border-border/50 px-4 pb-4 pt-3">
             {/* Breathing cue */}
             {breathCue && (
               <p className="mb-3 text-[10px] text-accent italic">{breathCue}</p>
@@ -676,6 +736,46 @@ function ExerciseCard({
               </Button>
             </div>
 
+            {/* #14: Video + #15: Skill path action buttons */}
+            <div className="mt-3 flex gap-2">
+              {hasVideo(exercise.name) && onVideoSheet && (
+                <button
+                  onClick={() => onVideoSheet(exercise.name)}
+                  className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
+                >
+                  <span>▶</span> Watch form
+                </button>
+              )}
+              {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && onSkillPath && (
+                <button
+                  onClick={() => onSkillPath(exercise.name)}
+                  className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
+                >
+                  ↕ Adjust difficulty
+                </button>
+              )}
+            </div>
+
+            {/* #17: Exercise stall detection */}
+            {(() => {
+              const stallWeeks = getExerciseStallWeeks(exercise.name);
+              if (stallWeeks >= 3) {
+                return (
+                  <div className="mt-3 rounded-lg border border-accent/20 bg-accent-dim/30 px-3 py-2">
+                    <p className="text-[10px] text-accent font-medium">
+                      Weight hasn&apos;t increased in {stallWeeks} sessions
+                    </p>
+                    <p className="text-[10px] text-muted2 font-light mt-0.5">
+                      {stallWeeks >= 5
+                        ? "Consider swapping to a variation, adjusting rep range, or taking a deload."
+                        : "This is normal — focus on form and rep quality. The weight will follow."}
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             {/* Muscle tags */}
             {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0) && (
               <div className="mt-3 flex flex-wrap gap-1">
@@ -699,7 +799,7 @@ function ExerciseCard({
               <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
             )}
 
-            {/* Skill path hint */}
+            {/* Skill path hint (inline preview) */}
             {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
               <div className="mt-3 rounded-lg bg-surface2/50 px-3 py-2">
                 <p className="text-[9px] tracking-wider text-muted uppercase mb-1">Difficulty</p>
@@ -782,7 +882,8 @@ function FeedbackScreen({ onSubmit }: { onSubmit: (effort: number, soreness: num
 
 // ── Analysis Results Screen ──
 
-function AnalysisScreen({ analysis, onDone }: { analysis: AnalysisResult | null; onDone: () => void }) {
+function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResult | null; prs?: { name: string; weight: number; reps: number }[]; onDone: () => void }) {
+  const { progressDB } = useKineStore();
   const verdictColors: Record<string, string> = {
     strong: "text-green-400",
     solid: "text-muted2",
@@ -790,9 +891,46 @@ function AnalysisScreen({ analysis, onDone }: { analysis: AnalysisResult | null;
     adjust: "text-accent",
   };
 
+  function handleSharePR(pr: { name: string; weight: number; reps: number }) {
+    const history = progressDB.lifts[pr.name] || [];
+    const prevBest = history.length > 1
+      ? history.slice(0, -1).reduce((best: number, entry: { weight: number }) => Math.max(best, entry.weight), 0)
+      : undefined;
+
+    sharePR({
+      name: pr.name,
+      weight: pr.weight,
+      reps: pr.reps,
+      prev: prevBest,
+      weekNum: progressDB.currentWeek || 1,
+      totalSessions: progressDB.sessions.length,
+    });
+  }
+
   return (
     <div>
       <h2 className="font-display text-2xl tracking-wide text-accent">Session review</h2>
+
+      {/* PR cards with share */}
+      {prs.length > 0 && (
+        <div className="mt-4 flex flex-col gap-2">
+          {prs.map((pr, i) => (
+            <div key={i} className="rounded-[14px] border border-accent/30 bg-accent-dim p-4 flex items-center justify-between">
+              <div>
+                <p className="label-accent mb-0.5">New PR</p>
+                <p className="text-sm font-medium text-text">{pr.name}</p>
+                <p className="text-xs text-muted2">{pr.weight}kg x {pr.reps} reps</p>
+              </div>
+              <button
+                onClick={() => handleSharePR(pr)}
+                className="rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-[10px] text-accent hover:bg-accent/20 transition-colors"
+              >
+                Share
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {analysis ? (
         <>

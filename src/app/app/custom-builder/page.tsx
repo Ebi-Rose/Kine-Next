@@ -6,6 +6,7 @@ import { useKineStore } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
 import { SESSION_MUSCLE_FOCUS } from "@/data/session-muscle-focus";
+import { apiFetchStreaming } from "@/lib/api";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
 
@@ -21,6 +22,7 @@ export default function CustomBuilderPage() {
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [muscleFilter, setMuscleFilter] = useState("all");
+  const [aiLoading, setAiLoading] = useState(false);
 
   if (!week || dayIdx < 0) {
     router.replace("/app");
@@ -55,6 +57,46 @@ export default function CustomBuilderPage() {
 
   function removeExercise(name: string) {
     setSelectedExercises(selectedExercises.filter((n) => n !== name));
+  }
+
+  // #16: AI-generated session
+  async function aiSuggest() {
+    setAiLoading(true);
+    try {
+      const store = useKineStore.getState();
+      const focusHint = muscleFilter !== "all" ? muscleFilter : title || "balanced full body";
+
+      const data = await apiFetchStreaming({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 500,
+        system: "You are Kine. Suggest exercises for a custom training session. Return ONLY a JSON array of exercise names: [\"Exercise Name\", ...]. Use standard exercise names. Female-first: prioritise posterior chain, glutes, unilateral work.",
+        messages: [{
+          role: "user",
+          content: `Suggest 5-6 exercises for a "${focusHint}" session. Equipment: ${store.equip.join(", ") || "bodyweight"}. Experience: ${store.exp || "new"}. Injuries: ${store.injuries.join(", ") || "none"}. Make it a well-rounded session with compounds first, then isolations.`,
+        }],
+      }, { timeoutMs: 15000 });
+
+      const text = data.content.map((b) => b.text || "").join("").trim();
+      const j = text.indexOf("[");
+      const k = text.lastIndexOf("]");
+      if (j >= 0 && k >= 0) {
+        const names = JSON.parse(text.slice(j, k + 1)) as string[];
+        // Only add exercises that exist in the library
+        const valid = names.filter(n =>
+          EXERCISE_LIBRARY.some(e => e.name.toLowerCase() === n.toLowerCase())
+        );
+        if (valid.length > 0) {
+          setSelectedExercises(valid);
+          if (!title) setTitle(focusHint.charAt(0).toUpperCase() + focusHint.slice(1));
+          toast(`AI suggested ${valid.length} exercises`, "success");
+        } else {
+          toast("AI suggestions didn't match library — try picking manually", "error");
+        }
+      }
+    } catch {
+      toast("AI unavailable — pick exercises manually", "error");
+    }
+    setAiLoading(false);
   }
 
   function buildSession() {
@@ -106,6 +148,15 @@ export default function CustomBuilderPage() {
         placeholder="Session name (e.g. Active Recovery, Glute Focus)"
         className="mt-4 w-full rounded-[var(--radius-default)] border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent"
       />
+
+      {/* #16: AI suggest button */}
+      <button
+        onClick={aiSuggest}
+        disabled={aiLoading}
+        className="mt-3 w-full rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim/30 px-3 py-2.5 text-xs text-accent hover:bg-accent-dim transition-all disabled:opacity-50"
+      >
+        {aiLoading ? "AI is thinking..." : "Let AI build this session"}
+      </button>
 
       {/* Selected exercises */}
       {selectedExercises.length > 0 && (
