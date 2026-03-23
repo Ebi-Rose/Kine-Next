@@ -24,10 +24,12 @@ import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
 import { sharePR } from "@/lib/share-card";
+import SessionTimer from "@/components/SessionTimer";
 
 interface SetLog {
   reps: string;
   weight: string;
+  timestamp?: string;
 }
 
 interface ExerciseLog {
@@ -45,7 +47,7 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig } =
     useKineStore();
 
   const [logs, setLogs] = useState<Record<number, ExerciseLog>>({});
@@ -63,6 +65,8 @@ export default function SessionPage() {
   // #14/#15: Video and skill path sheet state
   const [videoSheetEx, setVideoSheetEx] = useState<string | null>(null);
   const [skillPathEx, setSkillPathEx] = useState<string | null>(null);
+  const [restActive, setRestActive] = useState(false);
+  const [currentRestDuration, setCurrentRestDuration] = useState(restConfig.compound);
 
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
@@ -127,9 +131,24 @@ export default function SessionPage() {
         toast("Log at least one set before saving", "error");
         return prev;
       }
-      return { ...prev, [exIdx]: { ...ex, saved: true } };
+      // Stamp each logged set with wall-clock time
+      const stamped = ex.actual.map((s) =>
+        (s.reps || s.weight) && !s.timestamp
+          ? { ...s, timestamp: new Date().toISOString() }
+          : s
+      );
+      return { ...prev, [exIdx]: { ...ex, actual: stamped, saved: true } };
     });
-  }, []);
+
+    // Trigger rest timer in timed mode
+    if (sessionMode === "timed") {
+      const exName = effectiveExercises[exIdx]?.name;
+      const lib = exName ? findExercise(exName) : null;
+      const isIso = lib?.tags.includes("Isolation");
+      setCurrentRestDuration(isIso ? restConfig.isolation : restConfig.compound);
+      setRestActive(true);
+    }
+  }, [sessionMode, restConfig, effectiveExercises]);
 
   const skipExercise = useCallback((exIdx: number) => {
     setLogs((prev) => ({
@@ -332,6 +351,14 @@ export default function SessionPage() {
 
   return (
     <div>
+      {/* Session Timer */}
+      <SessionTimer
+        mode={sessionMode}
+        restDuration={currentRestDuration}
+        restActive={restActive}
+        onRestDismiss={() => setRestActive(false)}
+      />
+
       {/* Header */}
       <div className="mb-6">
         <button onClick={() => router.back()} className="text-xs text-muted2 hover:text-text transition-colors">

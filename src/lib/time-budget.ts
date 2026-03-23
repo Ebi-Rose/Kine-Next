@@ -110,6 +110,34 @@ export function trimSessionToTime(exercises: Exercise[], budgetMinutes: number):
 }
 
 /**
+ * Estimate total session time with custom rest periods (in minutes).
+ */
+export function estimateSessionTimeWithRest(
+  exercises: Exercise[],
+  compoundRestSec: number,
+  isolationRestSec: number
+): number {
+  return exercises.reduce((total, ex) => {
+    const sets = parseInt(ex.sets) || 3;
+    const reps = parseInt(ex.reps) || 8;
+    const lib = findExercise(ex.name);
+    const logType = lib?.logType || "weighted";
+    const isIso = !isCompound(ex);
+
+    let setTimeSec: number;
+    if (logType === "timed") setTimeSec = reps;
+    else if (logType === "cardio") setTimeSec = reps * 60;
+    else if (logType === "bodyweight" || logType === "bodyweight_unilateral") setTimeSec = reps * 4;
+    else if (isIso) setTimeSec = reps * 4;
+    else setTimeSec = reps * 5 + 8;
+
+    const restSec = isIso ? isolationRestSec : compoundRestSec;
+    const transitionSec = isIso ? 60 : 90;
+    return total + Math.ceil((sets * (setTimeSec + restSec) + transitionSec) / 60);
+  }, 0);
+}
+
+/**
  * Get a human-readable time estimate string.
  */
 export function formatTimeEstimate(exercises: Exercise[]): string {

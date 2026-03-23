@@ -8,7 +8,13 @@ export type Experience = "new" | "developing" | "intermediate" | null;
 export type CycleType = "regular" | "irregular" | "hormonal" | "perimenopause" | "na" | null;
 export type Duration = "short" | "medium" | "long" | "extended" | null;
 export type EduMode = "full" | "feel" | "silent";
+export type SessionMode = "timed" | "stopwatch" | "off";
 export type Units = "kg" | "lbs";
+
+export interface RestConfig {
+  compound: number;
+  isolation: number;
+}
 
 export interface PeriodLog {
   date: string;
@@ -81,6 +87,8 @@ interface KineState {
   dayDurations: Record<number, number>;
   cycle: { periodLog: PeriodLog[]; avgLength: number | null };
   eduMode: EduMode;
+  sessionMode: SessionMode;
+  restConfig: RestConfig;
   eduFlags: Record<string, boolean>;
   skillPreferences: Record<string, string>;
   units: Units;
@@ -129,6 +137,8 @@ interface KineState {
   setFeedbackState: (state: FeedbackState) => void;
   setPersonalProfile: (profile: PersonalProfile) => void;
   setSessionTimeBudgets: (budgets: Record<number, number>) => void;
+  setSessionMode: (mode: SessionMode) => void;
+  setRestConfig: (config: RestConfig) => void;
   resetOnboarding: () => void;
 }
 
@@ -148,6 +158,8 @@ const initialOnboarding = {
   dayDurations: {} as Record<number, number>,
   cycle: { periodLog: [] as PeriodLog[], avgLength: null as number | null },
   eduMode: "full" as EduMode,
+  sessionMode: "off" as SessionMode,
+  restConfig: { compound: 150, isolation: 75 } as RestConfig,
   eduFlags: {} as Record<string, boolean>,
   skillPreferences: {} as Record<string, string>,
   units: "kg" as Units,
@@ -221,6 +233,8 @@ export const useKineStore = create<KineState>()(
       setFeedbackState: (state) => set({ feedbackState: state }),
       setPersonalProfile: (profile) => set({ personalProfile: profile }),
       setSessionTimeBudgets: (budgets) => set({ sessionTimeBudgets: budgets }),
+      setSessionMode: (mode) => set({ sessionMode: mode }),
+      setRestConfig: (config) => set({ restConfig: config }),
       resetOnboarding: () => set(initialOnboarding),
     }),
     {

@@ -30,6 +30,17 @@ export function reconcileState() {
     });
   }
 
+  // Ensure sessionMode has valid value
+  const validModes = ["timed", "stopwatch", "off"];
+  if (!validModes.includes(store.sessionMode)) {
+    store.setSessionMode("off");
+  }
+
+  // Ensure restConfig has valid values
+  if (!store.restConfig || typeof store.restConfig.compound !== "number" || typeof store.restConfig.isolation !== "number") {
+    store.setRestConfig({ compound: 150, isolation: 75 });
+  }
+
   // Ensure progressDB has required fields
   const db = store.progressDB;
   let needsUpdate = false;

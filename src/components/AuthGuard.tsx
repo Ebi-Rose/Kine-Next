@@ -18,16 +18,24 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (isDemoMode()) {
           const store = useKineStore.getState();
           const params = new URLSearchParams(window.location.search);
-          const seedMode = params.get("seed");
+          const mode = params.get("mode");
 
-          if (seedMode === "full" && !store.progressDB.programStartDate) {
-            // kinedemo: seed with 5 weeks of data
+          if (mode === "demo") {
+            // kinedemo: always reset and seed with 5 weeks of data
+            store.resetOnboarding();
+            localStorage.removeItem("kine_v2");
             import("@/lib/demo-seed").then(({ seedDemoStore }) => {
               seedDemoStore(store);
+              setAllowed(true);
+              setChecking(false);
             });
-          } else if (!store.goal) {
-            // kinenew: go through onboarding
+            return;
+          } else if (mode === "new") {
+            // kinenew: clear data and go to onboarding
+            store.resetOnboarding();
+            localStorage.removeItem("kine_v2");
             router.replace("/app/onboarding?demo=true");
+            return;
           }
         }
         setAllowed(true);

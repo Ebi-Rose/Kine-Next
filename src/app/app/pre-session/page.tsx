@@ -7,7 +7,7 @@ import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
 import CollapsibleSection from "@/components/CollapsibleSection";
-import { trimSessionToTime, estimateSessionTime } from "@/lib/time-budget";
+import { trimSessionToTime, estimateSessionTime, estimateSessionTimeWithRest } from "@/lib/time-budget";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
 
@@ -49,7 +49,9 @@ export default function PreSessionPage() {
 
   const {
     weekData, goal, injuries, injuryNotes, cycleType, cycle,
-    eduMode, setEduMode, progressDB, sessionTimeBudgets,
+    eduMode, setEduMode, sessionMode, setSessionMode,
+    restConfig, setRestConfig,
+    progressDB, sessionTimeBudgets,
     setSessionTimeBudgets, setCurrentDayIdx,
   } = useKineStore();
 
@@ -61,8 +63,10 @@ export default function PreSessionPage() {
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [duration, setDuration] = useState<number | null>(null);
   const [coaching, setCoaching] = useState<CoachLevel>(eduMode);
-  const [timings, setTimings] = useState(true);
-  const [restAlerts, setRestAlerts] = useState(false);
+  const [energy, setEnergy] = useState<"low" | "normal" | "good" | "great" | null>(null);
+  const [timing, setTiming] = useState<"timed" | "stopwatch" | "off">(sessionMode);
+  const [compoundRest, setCompoundRest] = useState(restConfig.compound);
+  const [isolationRest, setIsolationRest] = useState(restConfig.isolation);
   const [swapIdx, setSwapIdx] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -139,27 +143,32 @@ export default function PreSessionPage() {
   // Context description
   const contextDesc = useMemo(() => {
     const parts: string[] = [];
+    if (energy) {
+      const labels = { low: "Low energy", normal: "Normal", good: "Feeling good", great: "Feeling great" };
+      parts.push(labels[energy]);
+    }
     if (phaseInfo) parts.push(phaseInfo.phase.charAt(0).toUpperCase() + phaseInfo.phase.slice(1) + " phase");
     if (injuries.length || injuryNotes) parts.push(injuries.join(", ") || "injury note");
     if (daysSinceLastSession !== null) parts.push(`${daysSinceLastSession} day${daysSinceLastSession !== 1 ? "s" : ""} rest`);
-    return parts.length ? parts.join(" · ") : "No context notes";
-  }, [phaseInfo, injuries, injuryNotes, daysSinceLastSession]);
+    return parts.length ? parts.join(" · ") : "Tap to check in";
+  }, [energy, phaseInfo, injuries, injuryNotes, daysSinceLastSession]);
 
   // Settings description
   const settingsDesc = useMemo(() => {
-    const labels: Record<CoachLevel, string> = { full: "Full coaching", feel: "Feel only", silent: "Coaching off" };
-    const parts = [labels[coaching], timings ? "timings on" : "timings off"];
-    if (restAlerts) parts.push("rest alerts");
-    return parts.join(" · ");
-  }, [coaching, timings, restAlerts]);
+    const coachLabels: Record<CoachLevel, string> = { full: "Full coaching", feel: "Feel only", silent: "Coaching off" };
+    const timingLabels: Record<string, string> = { timed: "Timed", stopwatch: "Stopwatch", off: "No timing" };
+    return [coachLabels[coaching], timingLabels[timing]].join(" · ");
+  }, [coaching, timing]);
 
   // Has changes
   const hasChanges = useMemo(() => {
     return skipped.size > 0 ||
       (duration !== null && duration !== defaultDuration) ||
       coaching !== eduMode ||
-      !timings || restAlerts;
-  }, [skipped, duration, defaultDuration, coaching, eduMode, timings, restAlerts]);
+      timing !== sessionMode ||
+      compoundRest !== restConfig.compound ||
+      isolationRest !== restConfig.isolation;
+  }, [skipped, duration, defaultDuration, coaching, eduMode, timing, sessionMode, compoundRest, isolationRest, restConfig]);
 
   // ── Actions ──
   const toggleSkip = useCallback((idx: number) => {
@@ -190,15 +199,35 @@ export default function PreSessionPage() {
     });
   }, [defaultDuration]);
 
+  const addExercise = useCallback((exerciseName: string) => {
+    if (!week?.days?.[dayIdx]) return;
+    const lib = findExercise(exerciseName);
+    const newEx: import("@/lib/week-builder").Exercise = {
+      name: exerciseName,
+      sets: lib?.tags.includes("Compound") ? "3" : "3",
+      reps: lib?.tags.includes("Compound") ? "8" : "12",
+      rest: lib?.tags.includes("Compound") ? "120" : "90",
+    };
+    const updated = { ...week };
+    const updatedDay = { ...updated.days[dayIdx] };
+    updatedDay.exercises = [...updatedDay.exercises, newEx];
+    updated.days[dayIdx] = updatedDay;
+    useKineStore.getState().setWeekData(updated);
+  }, [week, dayIdx]);
+
   const startSession = useCallback(() => {
     // Apply settings
     if (coaching !== eduMode) setEduMode(coaching);
+    if (timing !== sessionMode) setSessionMode(timing);
+    if (compoundRest !== restConfig.compound || isolationRest !== restConfig.isolation) {
+      setRestConfig({ compound: compoundRest, isolation: isolationRest });
+    }
     if (duration !== null && duration !== defaultDuration) {
       setSessionTimeBudgets({ ...sessionTimeBudgets, [dayIdx]: duration });
     }
     setCurrentDayIdx(dayIdx);
     router.push(`/app/session?day=${dayIdx}`);
-  }, [coaching, eduMode, setEduMode, duration, defaultDuration, dayIdx, sessionTimeBudgets, setSessionTimeBudgets, setCurrentDayIdx, router]);
+  }, [coaching, eduMode, setEduMode, timing, sessionMode, setSessionMode, compoundRest, isolationRest, restConfig, setRestConfig, duration, defaultDuration, dayIdx, sessionTimeBudgets, setSessionTimeBudgets, setCurrentDayIdx, router]);
 
   const handleStart = useCallback(() => {
     if (hasChanges) {
@@ -271,6 +300,36 @@ export default function PreSessionPage() {
 
       {/* ── Section 0: Your notes ── */}
       <CollapsibleSection title="Your notes" description={contextDesc}>
+        {/* Energy check-in */}
+        <div className="pb-3 mb-1">
+          <div className="text-xs font-medium mb-2">How are you feeling?</div>
+          <div className="flex gap-2">
+            {(["low", "normal", "good", "great"] as const).map((level) => (
+              <button
+                key={level}
+                onClick={() => setEnergy(energy === level ? null : level)}
+                className={`flex-1 text-[11px] py-2 rounded-lg border transition-all ${
+                  energy === level
+                    ? "border-accent/40 bg-accent/10 text-accent"
+                    : "border-white/[0.06] bg-white/[0.03] text-muted hover:text-text hover:border-white/[0.12]"
+                }`}
+              >
+                {level === "low" ? "Low" : level === "normal" ? "Normal" : level === "good" ? "Good" : "Great"}
+              </button>
+            ))}
+          </div>
+          {energy === "low" && (
+            <p className="text-[10px] text-muted2 font-light mt-2 leading-relaxed">
+              Lighter effort is still progress. Drop a set or two if you need to — consistency beats intensity.
+            </p>
+          )}
+          {energy === "great" && (
+            <p className="text-[10px] text-muted2 font-light mt-2 leading-relaxed">
+              Good window to push if it feels right. Trust the energy.
+            </p>
+          )}
+        </div>
+
         {/* Cycle */}
         {phaseNote && phaseInfo && (
           <div className="text-xs text-muted2 font-light leading-relaxed pb-2.5">
@@ -437,16 +496,21 @@ export default function PreSessionPage() {
                         <span className="text-accent/80 font-display tracking-wider">~{extraMin} MIN SPARE</span>
                         <p className="text-muted2 font-light mt-1">
                           Full programme loaded.
-                          {suggestions.length > 0 && (
-                            <> You could add: {suggestions.map((s, i) => (
-                              <span key={s.name}>
-                                <strong className="text-text font-normal">{s.name}</strong>
-                                <span className="text-muted"> ({s.muscle})</span>
-                                {i < suggestions.length - 1 ? ', ' : ''}
-                              </span>
-                            ))}.</>
-                          )}
+                          {suggestions.length > 0 && <> Tap to add:</>}
                         </p>
+                        {suggestions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {suggestions.map((s) => (
+                              <button
+                                key={s.name}
+                                onClick={() => addExercise(s.name)}
+                                className="text-[11px] text-accent bg-accent/10 border border-accent/30 rounded-lg px-2.5 py-1.5 hover:bg-accent/20 active:scale-[0.97] transition-all"
+                              >
+                                + {s.name} <span className="text-accent/60 font-light">({s.muscle})</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -583,40 +647,85 @@ export default function PreSessionPage() {
           </div>
         </div>
 
-        {/* Timings */}
-        <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04]">
-          <div className="flex-1">
-            <div className="text-xs font-medium mb-px">Record timings</div>
-            <div className="text-[10px] text-muted font-light leading-tight">Track set durations and rest periods</div>
+        {/* Session timing */}
+        <div className="py-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="text-xs font-medium mb-px">Session timing</div>
+              <div className="text-[10px] text-muted font-light leading-tight">
+                {timing === "timed" ? "Rest countdown after each set" : timing === "stopwatch" ? "Running clock, self-paced rest" : "No timers"}
+              </div>
+            </div>
+            <div className="flex gap-1.5 shrink-0 ml-4">
+              {(["timed", "stopwatch", "off"] as const).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setTiming(level)}
+                  className={`text-[11px] px-2 py-1 border-b-2 transition-all ${
+                    timing === level
+                      ? "border-accent text-accent"
+                      : "border-transparent text-muted hover:text-text"
+                  }`}
+                >
+                  {level === "timed" ? "Timed" : level === "stopwatch" ? "Stopwatch" : "Off"}
+                </button>
+              ))}
+            </div>
           </div>
-          <label className="relative w-[38px] h-[22px] cursor-pointer inline-block shrink-0 ml-4">
-            <input
-              type="checkbox"
-              checked={timings}
-              onChange={(e) => setTimings(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="absolute inset-0 bg-white/[0.06] rounded-full transition-all peer-checked:bg-accent/20" />
-            <div className="absolute top-[3px] left-[3px] w-4 h-4 bg-muted rounded-full transition-all peer-checked:left-[19px] peer-checked:bg-accent" />
-          </label>
-        </div>
 
-        {/* Rest alerts */}
-        <div className="flex items-center justify-between py-2.5">
-          <div className="flex-1">
-            <div className="text-xs font-medium mb-px">Rest alerts</div>
-            <div className="text-[10px] text-muted font-light leading-tight">Nudge when suggested rest is up</div>
-          </div>
-          <label className="relative w-[38px] h-[22px] cursor-pointer inline-block shrink-0 ml-4">
-            <input
-              type="checkbox"
-              checked={restAlerts}
-              onChange={(e) => setRestAlerts(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="absolute inset-0 bg-white/[0.06] rounded-full transition-all peer-checked:bg-accent/20" />
-            <div className="absolute top-[3px] left-[3px] w-4 h-4 bg-muted rounded-full transition-all peer-checked:left-[19px] peer-checked:bg-accent" />
-          </label>
+          {/* Rest config — timed mode only */}
+          {timing === "timed" && (
+            <div className="mt-3 pt-2.5 border-t border-white/[0.04] animate-in fade-in slide-in-from-top-1 duration-200">
+              {/* Compound rest */}
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-[11px] text-muted2 font-light">Compounds</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="w-[24px] h-[24px] rounded-full bg-white/[0.06] text-muted2 text-xs flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
+                    onClick={() => setCompoundRest(Math.max(30, compoundRest - 15))}
+                  >−</button>
+                  <span className="font-display text-[13px] tracking-wider min-w-[40px] text-center">
+                    {Math.floor(compoundRest / 60)}:{String(compoundRest % 60).padStart(2, "0")}
+                  </span>
+                  <button
+                    className="w-[24px] h-[24px] rounded-full bg-white/[0.06] text-muted2 text-xs flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
+                    onClick={() => setCompoundRest(Math.min(300, compoundRest + 15))}
+                  >+</button>
+                </div>
+              </div>
+
+              {/* Isolation rest */}
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-[11px] text-muted2 font-light">Isolations</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="w-[24px] h-[24px] rounded-full bg-white/[0.06] text-muted2 text-xs flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
+                    onClick={() => setIsolationRest(Math.max(30, isolationRest - 15))}
+                  >−</button>
+                  <span className="font-display text-[13px] tracking-wider min-w-[40px] text-center">
+                    {Math.floor(isolationRest / 60)}:{String(isolationRest % 60).padStart(2, "0")}
+                  </span>
+                  <button
+                    className="w-[24px] h-[24px] rounded-full bg-white/[0.06] text-muted2 text-xs flex items-center justify-center hover:bg-accent/15 hover:text-accent transition-all"
+                    onClick={() => setIsolationRest(Math.min(300, isolationRest + 15))}
+                  >+</button>
+                </div>
+              </div>
+
+              {/* Time impact estimate */}
+              <div className="text-[10px] text-muted font-light mt-1.5 pt-1.5 border-t border-white/[0.04]">
+                ~{estimateSessionTimeWithRest(activeExercises, compoundRest, isolationRest)} min with rest
+                {currentDuration > 0 && (
+                  <span>
+                    {" "}· {estimateSessionTimeWithRest(activeExercises, compoundRest, isolationRest) <= currentDuration
+                      ? <span className="text-accent/70">fits your {currentDuration} min budget</span>
+                      : <span className="text-[#c49098]/70">exceeds your {currentDuration} min budget</span>
+                    }
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="text-[11px] text-muted font-light leading-snug pt-2 border-t border-border mt-1">
@@ -660,6 +769,12 @@ export default function PreSessionPage() {
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
                   <span className="text-xs shrink-0">⚙</span>
                   <span>Coaching: <span className="line-through text-muted">{eduMode}</span> → <span className="text-[#6a9a7a]">{coaching}</span></span>
+                </div>
+              )}
+              {timing !== sessionMode && (
+                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
+                  <span className="text-xs shrink-0">⏱</span>
+                  <span>Timing: <span className="line-through text-muted">{sessionMode}</span> → <span className="text-[#6a9a7a]">{timing}</span></span>
                 </div>
               )}
             </div>
@@ -707,9 +822,15 @@ export default function PreSessionPage() {
                 </div>
               )}
               {coaching !== eduMode && (
-                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5">
+                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5 border-b border-border">
                   <span className="text-[#7a8aaa]">⚙</span>
                   <span>Coaching → <span className="text-[#7a8aaa]">{coaching === "full" ? "Full" : coaching === "feel" ? "Feel only" : "Off"}</span></span>
+                </div>
+              )}
+              {timing !== sessionMode && (
+                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5">
+                  <span className="text-[#7a8aaa]">⏱</span>
+                  <span>Timing → <span className="text-[#7a8aaa]">{timing === "timed" ? "Timed" : timing === "stopwatch" ? "Stopwatch" : "Off"}</span></span>
                 </div>
               )}
             </div>
