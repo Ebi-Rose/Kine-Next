@@ -1,11 +1,18 @@
 "use client";
 
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import BottomNav from "@/components/BottomNav";
 import ToastContainer from "@/components/Toast";
 import SyncProvider from "@/components/SyncProvider";
+import GuideButton from "@/components/GuideButton";
+import GuideDrawer from "@/components/GuideDrawer";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const [guideOpen, setGuideOpen] = useState(false);
+  const pathname = usePathname();
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bg">
@@ -15,6 +22,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <ToastContainer />
         <SyncProvider />
+        <GuideButton onClick={() => setGuideOpen(true)} />
+        <GuideDrawer open={guideOpen} onClose={() => setGuideOpen(false)} route={pathname} />
       </div>
     </AuthGuard>
   );
