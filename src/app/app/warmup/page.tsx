@@ -98,15 +98,26 @@ export default function WarmupPage() {
       <p className="mt-1 text-xs text-muted2">Prepare your body for {day.sessionTitle}</p>
 
       {/* General + session-specific warmup */}
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6 flex flex-col gap-2.5">
         {warmupExercises.map((ex, i) => (
-          <div key={i} className="rounded-[var(--radius-default)] border border-border bg-surface p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text">{ex.name}</p>
-                <p className="text-xs text-muted2">{ex.cue}</p>
+          <div key={i} className="rounded-xl border border-border bg-surface p-3.5">
+            <div className="flex items-start gap-3">
+              {/* Category badge */}
+              <div className={`shrink-0 mt-0.5 rounded px-1.5 py-0.5 text-[8px] tracking-wider uppercase ${
+                ex.category === "activation" ? "bg-accent/10 text-accent"
+                : ex.category === "mobility" ? "bg-cat-pull/10 text-cat-pull"
+                : ex.category === "dynamic" ? "bg-cat-legs/10 text-cat-legs"
+                : "bg-surface2 text-muted2"
+              }`}>
+                {ex.category}
               </div>
-              <span className="text-xs text-accent">{ex.duration}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-[13px] font-medium text-text">{ex.name}</p>
+                  <span className="text-[11px] text-accent font-light shrink-0 ml-2">{ex.duration}</span>
+                </div>
+                <p className="text-[11px] text-muted2 font-light mt-0.5 leading-relaxed">{ex.cue}</p>
+              </div>
             </div>
           </div>
         ))}
