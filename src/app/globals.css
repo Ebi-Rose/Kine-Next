@@ -48,7 +48,7 @@ body::before {
   inset: 0;
   z-index: -1;
   background: url("/hero-bg.JPG") center/cover no-repeat;
-  opacity: 0.035;
+  opacity: 0.06;
   pointer-events: none;
 }
 

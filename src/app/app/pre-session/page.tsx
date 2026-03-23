@@ -197,7 +197,7 @@ export default function PreSessionPage() {
       setSessionTimeBudgets({ ...sessionTimeBudgets, [dayIdx]: duration });
     }
     setCurrentDayIdx(dayIdx);
-    router.push(`/app/warmup?day=${dayIdx}`);
+    router.push(`/app/session?day=${dayIdx}`);
   }, [coaching, eduMode, setEduMode, duration, defaultDuration, dayIdx, sessionTimeBudgets, setSessionTimeBudgets, setCurrentDayIdx, router]);
 
   const handleStart = useCallback(() => {
