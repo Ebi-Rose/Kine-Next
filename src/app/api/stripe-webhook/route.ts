@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
               stripe_subscription_id: session.subscription as string,
               plan,
               status: subscription.status || "active",
+              cancel_at_period_end: subscription.cancel_at_period_end || false,
               current_period_start: subscription.current_period_start
                 ? new Date(
                     subscription.current_period_start * 1000
@@ -93,15 +94,34 @@ export async function POST(request: NextRequest) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.supabase_user_id;
+        let userId = subscription.metadata?.supabase_user_id;
+
+        // Fallback: look up user by stripe_customer_id if metadata is missing
+        if (!userId) {
+          const { data: existing } = await supabase
+            .from("subscriptions")
+            .select("user_id")
+            .eq("stripe_customer_id", subscription.customer as string)
+            .single();
+          userId = existing?.user_id;
+        }
         if (!userId) break;
 
         const sub = subscription as unknown as Record<string, unknown>;
         const updNow = new Date().toISOString();
+
+        // Determine plan from price if available
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        const plan = priceId === process.env.STRIPE_PRICE_YEARLY ? "yearly"
+          : priceId === process.env.STRIPE_PRICE_MONTHLY ? "monthly"
+          : undefined;
+
         await supabase
           .from("subscriptions")
           .update({
             status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end || false,
+            ...(plan && { plan }),
             current_period_start:
               typeof sub.current_period_start === "number"
                 ? new Date(sub.current_period_start * 1000).toISOString()
@@ -118,13 +138,23 @@ export async function POST(request: NextRequest) {
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.supabase_user_id;
+        let userId = subscription.metadata?.supabase_user_id;
+
+        if (!userId) {
+          const { data: existing } = await supabase
+            .from("subscriptions")
+            .select("user_id")
+            .eq("stripe_customer_id", subscription.customer as string)
+            .single();
+          userId = existing?.user_id;
+        }
         if (!userId) break;
 
         await supabase
           .from("subscriptions")
           .update({
             status: "canceled",
+            cancel_at_period_end: false,
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId);

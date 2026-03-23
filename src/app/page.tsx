@@ -376,10 +376,18 @@ function PricingPage({ onNavigate }: { onNavigate: (p: Page) => void }) {
     setLoading(true);
     setError("");
     try {
+      const { getUser } = await import("@/lib/auth");
+      const user = await getUser();
+      if (!user) {
+        setError("Please sign in first.");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, userId: user.id, email: user.email }),
       });
       const data = await res.json();
       if (data.url) {

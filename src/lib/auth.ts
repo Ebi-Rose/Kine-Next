@@ -113,6 +113,7 @@ export async function getSubscriptionStatus() {
       status: data.status as string,
       plan: data.plan as string,
       currentPeriodEnd: data.current_period_end as string,
+      cancelAtPeriodEnd: data.cancel_at_period_end as boolean,
       stripeCustomerId: data.stripe_customer_id as string,
     };
   } catch {
