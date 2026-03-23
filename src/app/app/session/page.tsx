@@ -797,10 +797,6 @@ function ExerciseCard({
 
             <div className="mt-3 flex gap-2">
               <Button size="sm" className="flex-1" onClick={() => onSave(index)}>Save</Button>
-              <Button size="sm" variant="ghost" onClick={() => onSkip(index)}>Skip</Button>
-              <Button size="sm" variant="ghost" onClick={() => onSwap(index)} disabled={swapLoading}>
-                {swapLoading ? "..." : "Swap"}
-              </Button>
             </div>
 
             {/* #14: Video + #15: Skill path action buttons */}
