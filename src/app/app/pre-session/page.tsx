@@ -780,6 +780,22 @@ export default function PreSessionPage() {
                   <span>Timing: <span className="line-through text-muted">{sessionMode}</span> → <span className="text-[#6a9a7a]">{timing}</span></span>
                 </div>
               )}
+              {(compoundRest !== restConfig.compound || isolationRest !== restConfig.isolation) && (() => {
+                const oldTime = estimateSessionTimeWithRest(activeExercises, restConfig.compound, restConfig.isolation);
+                const newTime = estimateSessionTimeWithRest(activeExercises, compoundRest, isolationRest);
+                const diff = newTime - oldTime;
+                return (
+                  <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
+                    <span className="text-xs shrink-0">⏱</span>
+                    <span>
+                      Rest adjusted{" "}
+                      <span className={diff > 0 ? "text-[#c49098]/70" : "text-[#6a9a7a]"}>
+                        {diff > 0 ? "+" : ""}{diff} min
+                      </span>
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -831,11 +847,22 @@ export default function PreSessionPage() {
                 </div>
               )}
               {timing !== sessionMode && (
-                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5">
+                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5 border-b border-border">
                   <span className="text-[#7a8aaa]">⏱</span>
                   <span>Timing → <span className="text-[#7a8aaa]">{timing === "timed" ? "Timed" : timing === "stopwatch" ? "Stopwatch" : "Off"}</span></span>
                 </div>
               )}
+              {(compoundRest !== restConfig.compound || isolationRest !== restConfig.isolation) && (() => {
+                const oldTime = estimateSessionTimeWithRest(activeExercises, restConfig.compound, restConfig.isolation);
+                const newTime = estimateSessionTimeWithRest(activeExercises, compoundRest, isolationRest);
+                const diff = newTime - oldTime;
+                return (
+                  <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5">
+                    <span className="text-[#7a8aaa]">⏱</span>
+                    <span>Rest adjusted <span className={diff > 0 ? "text-[#c49098]/70" : "text-[#6a9a7a]"}>{diff > 0 ? "+" : ""}{diff} min</span></span>
+                  </div>
+                );
+              })()}
             </div>
 
             <button
