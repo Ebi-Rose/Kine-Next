@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useKineStore, useStoreHydrated } from "@/store/useKineStore";
+import { useKineStore } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
 import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult, ExerciseFeedback } from "@/lib/session-analysis";
@@ -50,7 +50,8 @@ export default function SessionPage() {
 
   const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, exp } =
     useKineStore();
-  const hydrated = useStoreHydrated();
+  // Store is ready if goal exists (set during onboarding)
+  const hydrated = useKineStore((s) => s.goal !== null);
 
   const [logs, setLogs] = useState<Record<number, ExerciseLog>>({});
   const [expandedEx, setExpandedEx] = useState<number | null>(0);
