@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
-import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+const STRIPE_API = "https://api.stripe.com/v1";
+
 export async function POST(request: NextRequest) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return Response.json({ error: "Stripe not configured" }, { status: 500 });
+  }
+
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -23,19 +27,36 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (subError || !sub?.stripe_customer_id) {
+      console.error("[portal] No subscription found for user:", userId, subError?.message);
       return Response.json({ error: "No subscription found" }, { status: 404 });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const siteUrl = process.env.SITE_URL || "https://kinefit.app";
+    const body = new URLSearchParams({
       customer: sub.stripe_customer_id,
-      return_url:
-        (process.env.SITE_URL || "https://kinefit.app") + "/app/",
+      return_url: `${siteUrl}/app/profile`,
+    }).toString();
+
+    const resp = await fetch(`${STRIPE_API}/billing_portal/sessions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
     });
 
-    return Response.json({ url: session.url });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      console.error("[portal] Stripe error:", data.error?.message);
+      return Response.json({ error: data.error?.message || "Stripe error" }, { status: 500 });
+    }
+
+    return Response.json({ url: data.url });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Portal error:", message);
+    console.error("[portal] Error:", message);
     return Response.json({ error: message }, { status: 500 });
   }
 }
