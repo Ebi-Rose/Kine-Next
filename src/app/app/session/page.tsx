@@ -250,11 +250,21 @@ export default function SessionPage() {
   // ── Complete Session ──
   function completeSession() {
     // Every exercise must have at least one logged set OR be skipped
+    // Weighted exercises require weight; bodyweight/timed require reps only
     const incomplete: string[] = [];
     Object.entries(logs).forEach(([idx, ex]) => {
       const isSkipped = ex.saved && ex.actual.length === 0;
-      const hasData = ex.actual.some((s) => s.reps || s.weight);
-      if (!isSkipped && !hasData) {
+      if (isSkipped) return;
+
+      const exInfo = findExercise(ex.name);
+      const logType = exInfo?.logType || "weighted";
+      const isWeighted = logType === "weighted" || logType === "weighted_unilateral";
+
+      const hasValidSet = ex.actual.some((s) =>
+        isWeighted ? (s.reps && s.weight) : !!s.reps
+      );
+
+      if (!hasValidSet) {
         incomplete.push(ex.name);
       }
     });
