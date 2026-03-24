@@ -58,14 +58,6 @@ export async function POST(request: NextRequest) {
         const periodEnd = subscription.current_period_end
           || item?.current_period_end;
 
-        console.log("[webhook] subscription:", {
-          status: subscription.status,
-          periodStart,
-          periodEnd,
-          topLevel: { start: subscription.current_period_start, end: subscription.current_period_end },
-          itemLevel: { start: item?.current_period_start, end: item?.current_period_end },
-        });
-
         const now = new Date().toISOString();
         const { error: subError } = await supabase
           .from("subscriptions")
@@ -107,31 +99,18 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         let userId = subscription.metadata?.supabase_user_id;
 
-        // Log typed and raw to catch API version differences
         const rawSub = event.data.object as unknown as Record<string, unknown>;
-        console.log("[webhook] subscription.updated:", {
-          metadataUserId: userId,
-          customer: subscription.customer,
-          typed_cancel_at_period_end: subscription.cancel_at_period_end,
-          raw_cancel_at_period_end: rawSub.cancel_at_period_end,
-          raw_cancellation_details: rawSub.cancellation_details,
-          status: subscription.status,
-        });
 
         // Fallback: look up user by stripe_customer_id if metadata is missing
         if (!userId) {
-          const { data: existing, error: lookupError } = await supabase
+          const { data: existing } = await supabase
             .from("subscriptions")
             .select("user_id")
             .eq("stripe_customer_id", subscription.customer as string)
             .single();
-          console.log("[webhook] customer lookup:", { found: existing?.user_id, error: lookupError?.message });
           userId = existing?.user_id;
         }
-        if (!userId) {
-          console.warn("[webhook] subscription.updated: could not find user, skipping");
-          break;
-        }
+        if (!userId) break;
 
         const updNow = new Date().toISOString();
 
@@ -172,8 +151,6 @@ export async function POST(request: NextRequest) {
 
         if (updError) {
           console.error("[webhook] subscription update failed:", updError);
-        } else {
-          console.log("[webhook] subscription updated for user:", userId);
         }
         break;
       }

@@ -70,10 +70,7 @@ export async function getSubscriptionStatus() {
   }
 
   const user = await getUser();
-  if (!user) {
-    console.log("[auth] getSubscriptionStatus: no user");
-    return { active: false };
-  }
+  if (!user) return { active: false };
 
   try {
     const { data, error } = await supabase
@@ -82,13 +79,9 @@ export async function getSubscriptionStatus() {
       .eq("user_id", user.id)
       .single();
 
-    if (error || !data) {
-      console.log("[auth] getSubscriptionStatus: no subscription row", error?.message);
-      return { active: false };
-    }
+    if (error || !data) return { active: false };
 
     const isActive = data.status === "active" || data.status === "trialing";
-    console.log("[auth] getSubscriptionStatus:", data.status, "active:", isActive);
     return {
       active: isActive,
       status: data.status as string,
@@ -97,8 +90,7 @@ export async function getSubscriptionStatus() {
       cancelAtPeriodEnd: data.cancel_at_period_end as boolean,
       stripeCustomerId: data.stripe_customer_id as string,
     };
-  } catch (e) {
-    console.log("[auth] getSubscriptionStatus: error", e);
+  } catch {
     return { active: false };
   }
 }

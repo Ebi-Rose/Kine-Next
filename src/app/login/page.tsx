@@ -9,7 +9,6 @@ type View = "signup" | "login";
 /** Check auth + subscription and route accordingly */
 async function routeAuthenticatedUser(router: ReturnType<typeof useRouter>) {
   const sub = await getSubscriptionStatus();
-  console.log("[login] routeAuthenticatedUser: sub.active =", sub.active);
   if (sub.active) {
     router.replace("/app");
   } else {
