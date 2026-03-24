@@ -149,11 +149,16 @@ export async function POST(request: NextRequest) {
         const updEnd = (typeof sub.current_period_end === "number" ? sub.current_period_end : null)
           || (updItem as unknown as Record<string, unknown>)?.current_period_end;
 
+        // Detect cancellation: cancel_at_period_end OR cancellation_details.reason
+        const cancellationDetails = rawSub.cancellation_details as Record<string, unknown> | null;
+        const isCancelling = subscription.cancel_at_period_end
+          || (cancellationDetails?.reason === "cancellation_requested");
+
         const { error: updError } = await supabase
           .from("subscriptions")
           .update({
             status: subscription.status,
-            cancel_at_period_end: subscription.cancel_at_period_end || false,
+            cancel_at_period_end: isCancelling,
             ...(plan && { plan }),
             current_period_start: typeof updStart === "number"
               ? new Date(updStart * 1000).toISOString()
