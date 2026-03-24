@@ -46,6 +46,7 @@ async function doSync() {
         units: store.units,
       },
       weekData: store.weekData,
+      weekHistory: store.weekHistory,
       progressDB: store.progressDB,
       personalProfile: store.personalProfile,
       currentDayIdx: store.currentDayIdx,
@@ -107,6 +108,7 @@ export async function syncFromSupabase(): Promise<boolean> {
     }
 
     if (cloud.weekData !== undefined) store.setWeekData(cloud.weekData);
+    if (cloud.weekHistory !== undefined) store.setWeekHistory(cloud.weekHistory as unknown[]);
     if (cloud.personalProfile) store.setPersonalProfile(cloud.personalProfile as typeof store.personalProfile);
     if (cloud.sessionLogs) store.setSessionLogs(cloud.sessionLogs as typeof store.sessionLogs);
     if (cloud.feedbackState) store.setFeedbackState(cloud.feedbackState as typeof store.feedbackState);

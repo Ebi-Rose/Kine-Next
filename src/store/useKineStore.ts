@@ -95,6 +95,7 @@ interface KineState {
 
   // AI week
   weekData: unknown | null;
+  weekHistory: unknown[]; // archived previous weeks
 
   // Progress
   progressDB: {
@@ -132,6 +133,7 @@ interface KineState {
   setEduMode: (mode: EduMode) => void;
   setUnits: (units: Units) => void;
   setWeekData: (data: unknown | null) => void;
+  setWeekHistory: (history: unknown[]) => void;
   setCurrentDayIdx: (idx: number | null) => void;
   setSessionLogs: (logs: Record<number, SessionLog>) => void;
   setFeedbackState: (state: FeedbackState) => void;
@@ -175,6 +177,7 @@ export const useKineStore = create<KineState>()(
 
       // AI week
       weekData: null,
+      weekHistory: [],
 
       // Progress
       progressDB: {
@@ -227,7 +230,22 @@ export const useKineStore = create<KineState>()(
       setProgressDB: (db) => set({ progressDB: db }),
       setEduMode: (mode) => set({ eduMode: mode }),
       setUnits: (units) => set({ units }),
-      setWeekData: (data) => set({ weekData: data }),
+      setWeekData: (data) => set((state) => {
+        // Archive current week before replacing (if it has data)
+        const history = [...state.weekHistory];
+        if (state.weekData && data !== null) {
+          // Don't duplicate if same week
+          const existing = state.weekData as { _weekNum?: number };
+          const alreadyArchived = history.some(
+            (h) => (h as { _weekNum?: number })._weekNum === existing._weekNum
+          );
+          if (!alreadyArchived) {
+            history.push(state.weekData);
+          }
+        }
+        return { weekData: data, weekHistory: history };
+      }),
+      setWeekHistory: (history) => set({ weekHistory: history }),
       setCurrentDayIdx: (idx) => set({ currentDayIdx: idx }),
       setSessionLogs: (logs) => set({ sessionLogs: logs }),
       setFeedbackState: (state) => set({ feedbackState: state }),

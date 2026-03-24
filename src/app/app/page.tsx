@@ -177,34 +177,82 @@ function WeekView({
   onRebuild: () => void;
   loading: boolean;
 }) {
-  const { cycleType, cycle, setCycle, progressDB } = useKineStore();
+  const { cycleType, cycle, setCycle, progressDB, weekHistory } = useKineStore();
   const [showRearrange, setShowRearrange] = useState(false);
+  const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
   const weekStart = getWeekDateRange();
   const trainingPhase = getCurrentPhaseInfo(progressDB.currentWeek, progressDB.phaseOffset);
+
+  // Week navigation: past weeks from history, current week is live
+  const isViewingPast = viewingPastIdx !== null;
+  const displayWeek = isViewingPast
+    ? (weekHistory[viewingPastIdx] as WeekData)
+    : week;
+  const displayWeekNum = displayWeek?._weekNum || 1;
+  const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
+  const hasNext = isViewingPast; // can always go forward to current
+
+  function goToPrevWeek() {
+    if (isViewingPast && viewingPastIdx > 0) {
+      setViewingPastIdx(viewingPastIdx - 1);
+    } else if (!isViewingPast && weekHistory.length > 0) {
+      setViewingPastIdx(weekHistory.length - 1);
+    }
+  }
+
+  function goToNextWeek() {
+    if (isViewingPast) {
+      if (viewingPastIdx < weekHistory.length - 1) {
+        setViewingPastIdx(viewingPastIdx + 1);
+      } else {
+        setViewingPastIdx(null); // back to current
+      }
+    }
+  }
 
   // Cycle phase
   const phase = cycleType === "regular"
     ? getCurrentPhase(cycle.periodLog, cycle.avgLength)
     : null;
 
+  if (!displayWeek) return null;
+
   return (
     <div>
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
-            Week {week._weekNum || 1} · {weekStart}
-          </p>
+          <div className="flex items-center gap-3">
+            {hasPrev && (
+              <button onClick={goToPrevWeek} className="text-muted2 hover:text-accent transition-colors text-sm">
+                ‹
+              </button>
+            )}
+            <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
+              Week {displayWeekNum}{isViewingPast ? "" : ` · ${weekStart}`}
+            </p>
+            {hasNext && (
+              <button onClick={goToNextWeek} className="text-muted2 hover:text-accent transition-colors text-sm">
+                ›
+              </button>
+            )}
+            {isViewingPast && (
+              <button onClick={() => setViewingPastIdx(null)}
+                className="text-[9px] text-accent border border-accent/30 rounded-full px-2 py-0.5 hover:bg-accent/10 transition-all">
+                Current →
+              </button>
+            )}
+          </div>
           <Link href="/app/calendar" className="text-[10px] text-muted2 hover:text-accent transition-colors">
             Calendar →
           </Link>
         </div>
         <h1 className="mt-1 font-display text-2xl tracking-wide text-text">
-          {week.programName}
+          {displayWeek.programName}
         </h1>
-        {week._isFallback && (
+        {displayWeek._isFallback && (
           <p className="mt-1 text-[10px] text-muted uppercase tracking-wider">
             Standard programme — AI will personalise next time
           </p>
@@ -273,10 +321,10 @@ function WeekView({
       )}
 
       {/* Coach note */}
-      {week.weekCoachNote && (
+      {displayWeek.weekCoachNote && (
         <div className="mb-6 rounded-[var(--radius-default)] border border-border bg-surface p-4">
           <p className="text-xs leading-relaxed text-muted2">
-            {week.weekCoachNote}
+            {displayWeek.weekCoachNote}
           </p>
         </div>
       )}
@@ -310,11 +358,18 @@ function WeekView({
         return null;
       })()}
 
-      {/* Session completion summary */}
-      {(() => {
+      {/* Past week banner */}
+      {isViewingPast && (
+        <div className="mb-4 rounded-lg border border-muted/20 bg-surface/50 px-4 py-3 text-center">
+          <p className="text-[10px] text-muted2">Viewing Week {displayWeekNum} · read-only</p>
+        </div>
+      )}
+
+      {/* Session completion summary — current week only */}
+      {!isViewingPast && (() => {
         const weekSessions = (progressDB.sessions as { weekNum?: number }[])
           .filter((s) => s.weekNum === progressDB.currentWeek);
-        const trainingDayCount = week.days.filter((d) => !d.isRest).length;
+        const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
         if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
           return (
             <p className="mb-3 text-xs text-muted2">
@@ -347,8 +402,10 @@ function WeekView({
 
       {/* Days */}
       {(() => {
-        // Find next active session (first non-rest, non-completed, today or future)
-        const nextActiveIdx = week.days.findIndex((d, i) => {
+        const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
+
+        // Find next active session (current week only)
+        const nextActiveIdx = isViewingPast ? -1 : displayWeek.days.findIndex((d, i) => {
           if (d.isRest) return false;
           const completed = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
             .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === i);
@@ -357,19 +414,18 @@ function WeekView({
 
         return (
           <div className="flex flex-col gap-2">
-            {week.days.map((day, i) => {
+            {displayWeek.days.map((day, i) => {
               const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === i);
-              const isPast = i < todayIdx;
-              const isNextActive = i === nextActiveIdx;
+                .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
 
               return (
                 <DayCard
                   key={i} day={day} dayIdx={i}
-                  isToday={i === todayIdx}
+                  isToday={!isViewingPast && i === todayIdx}
                   isCompleted={isCompleted}
-                  isPast={isPast}
-                  expanded={isNextActive || i === todayIdx}
+                  isPast={isViewingPast || i < todayIdx}
+                  expanded={!isViewingPast && (i === nextActiveIdx || i === todayIdx)}
+                  readOnly={isViewingPast}
                 />
               );
             })}
@@ -381,7 +437,7 @@ function WeekView({
       {(() => {
         const weekSessions = (progressDB.sessions as { weekNum?: number }[])
           .filter((s) => s.weekNum === progressDB.currentWeek);
-        const trainingDayCount = week.days.filter((d) => !d.isRest).length;
+        const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
         if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
           const nextWeekNum = (progressDB.currentWeek || 1) + 1;
           const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
@@ -518,8 +574,8 @@ function getRestMessage(dayIdx: number): string {
   return REST_DAY_MESSAGES[dayIdx % REST_DAY_MESSAGES.length];
 }
 
-function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false }: {
-  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean;
+function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false }: {
+  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean;
 }) {
   const router = useRouter();
   const { progressDB, setProgressDB } = useKineStore();
@@ -611,8 +667,10 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             <p className="text-[11px] text-muted2 font-light truncate flex-1">
               {day.exercises.length} exercises · {day.sessionDuration}
             </p>
-            <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
-              className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
+            {!readOnly && (
+              <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
+                className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
+            )}
           </div>
           {day.coachNote && (
             <p className="mt-1.5 text-[10px] text-muted font-light leading-relaxed truncate">{day.coachNote}</p>
