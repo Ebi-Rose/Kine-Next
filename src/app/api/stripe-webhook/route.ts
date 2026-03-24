@@ -51,6 +51,21 @@ export async function POST(request: NextRequest) {
             subscription.error?.message || "Failed to retrieve subscription"
           );
 
+        // Period dates: top-level on older API versions, items-level on newer
+        const item = subscription.items?.data?.[0];
+        const periodStart = subscription.current_period_start
+          || item?.current_period_start;
+        const periodEnd = subscription.current_period_end
+          || item?.current_period_end;
+
+        console.log("[webhook] subscription:", {
+          status: subscription.status,
+          periodStart,
+          periodEnd,
+          topLevel: { start: subscription.current_period_start, end: subscription.current_period_end },
+          itemLevel: { start: item?.current_period_start, end: item?.current_period_end },
+        });
+
         const now = new Date().toISOString();
         const { error: subError } = await supabase
           .from("subscriptions")
@@ -62,15 +77,11 @@ export async function POST(request: NextRequest) {
               plan,
               status: subscription.status || "active",
               cancel_at_period_end: subscription.cancel_at_period_end || false,
-              current_period_start: subscription.current_period_start
-                ? new Date(
-                    subscription.current_period_start * 1000
-                  ).toISOString()
+              current_period_start: periodStart
+                ? new Date(periodStart * 1000).toISOString()
                 : now,
-              current_period_end: subscription.current_period_end
-                ? new Date(
-                    subscription.current_period_end * 1000
-                  ).toISOString()
+              current_period_end: periodEnd
+                ? new Date(periodEnd * 1000).toISOString()
                 : now,
               updated_at: now,
             },
@@ -107,14 +118,21 @@ export async function POST(request: NextRequest) {
         }
         if (!userId) break;
 
-        const sub = subscription as unknown as Record<string, unknown>;
         const updNow = new Date().toISOString();
 
         // Determine plan from price if available
-        const priceId = subscription.items?.data?.[0]?.price?.id;
+        const updItem = subscription.items?.data?.[0];
+        const priceId = updItem?.price?.id;
         const plan = priceId === process.env.STRIPE_PRICE_YEARLY ? "yearly"
           : priceId === process.env.STRIPE_PRICE_MONTHLY ? "monthly"
           : undefined;
+
+        // Period dates: top-level or item-level depending on Stripe API version
+        const sub = subscription as unknown as Record<string, unknown>;
+        const updStart = (typeof sub.current_period_start === "number" ? sub.current_period_start : null)
+          || (updItem as unknown as Record<string, unknown>)?.current_period_start;
+        const updEnd = (typeof sub.current_period_end === "number" ? sub.current_period_end : null)
+          || (updItem as unknown as Record<string, unknown>)?.current_period_end;
 
         await supabase
           .from("subscriptions")
@@ -122,14 +140,12 @@ export async function POST(request: NextRequest) {
             status: subscription.status,
             cancel_at_period_end: subscription.cancel_at_period_end || false,
             ...(plan && { plan }),
-            current_period_start:
-              typeof sub.current_period_start === "number"
-                ? new Date(sub.current_period_start * 1000).toISOString()
-                : updNow,
-            current_period_end:
-              typeof sub.current_period_end === "number"
-                ? new Date(sub.current_period_end * 1000).toISOString()
-                : updNow,
+            current_period_start: typeof updStart === "number"
+              ? new Date(updStart * 1000).toISOString()
+              : updNow,
+            current_period_end: typeof updEnd === "number"
+              ? new Date(updEnd * 1000).toISOString()
+              : updNow,
             updated_at: updNow,
           })
           .eq("user_id", userId);
