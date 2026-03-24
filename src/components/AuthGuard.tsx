@@ -16,7 +16,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function check() {
+      console.log("[AuthGuard] starting check, pathname:", pathname);
+
       const authed = await isAuthenticated();
+      console.log("[AuthGuard] authed:", authed);
       if (cancelled) return;
       if (!authed) {
         router.replace("/login");
@@ -27,6 +30,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         new URLSearchParams(window.location.search).get("checkout") === "success";
 
       let sub = await getSubscriptionStatus();
+      console.log("[AuthGuard] sub:", sub.active);
       if (!sub.active && isPostCheckout) {
         for (let i = 0; i < 5; i++) {
           await new Promise((r) => setTimeout(r, 2000));
@@ -38,18 +42,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       if (cancelled) return;
       if (!sub.active) {
+        console.log("[AuthGuard] no subscription, redirecting to /pricing");
         router.replace("/pricing");
         return;
       }
 
-      // Wait for store hydration (up to 2s) before checking onboarding
-      let goal = useKineStore.getState().goal;
-      if (goal === null) {
-        await new Promise((r) => setTimeout(r, 500));
-        goal = useKineStore.getState().goal;
-      }
+      // Brief wait for store hydration from localStorage
+      await new Promise((r) => setTimeout(r, 300));
+      const goal = useKineStore.getState().goal;
+      console.log("[AuthGuard] goal:", goal, "pathname:", pathname);
 
       if (goal === null && pathname !== "/app/onboarding") {
+        console.log("[AuthGuard] no onboarding, redirecting");
         router.replace("/app/onboarding");
         return;
       }
@@ -60,6 +64,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         window.history.replaceState({}, "", pathname);
       }
 
+      console.log("[AuthGuard] allowed!");
       setAllowed(true);
     }
 
