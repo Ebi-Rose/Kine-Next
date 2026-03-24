@@ -112,10 +112,14 @@ export default function SessionPage() {
         const updated = { ...prev };
         const ex = { ...updated[exIdx] };
         const sets = [...ex.actual];
+        const prevVal = sets[setIdx][field];
         sets[setIdx] = { ...sets[setIdx], [field]: val };
-        if (field === "weight" && setIdx === 0 && val) {
+        // Auto-fill subsequent sets: copy if empty or still matching the old value
+        if (setIdx === 0 && val) {
           sets.forEach((s, i) => {
-            if (i > 0 && !s.weight) sets[i] = { ...s, weight: val };
+            if (i > 0 && (!s[field] || s[field] === prevVal)) {
+              sets[i] = { ...s, [field]: val };
+            }
           });
         }
         ex.actual = sets;
@@ -156,6 +160,21 @@ export default function SessionPage() {
       setRestActive(true);
     }
   }, [sessionMode, restConfig, effectiveExercises]);
+
+  const unskipExercise = useCallback((exIdx: number) => {
+    const ex = effectiveExercises[exIdx];
+    if (!ex) return;
+    const numSets = parseInt(ex.sets) || 3;
+    setLogs((prev) => ({
+      ...prev,
+      [exIdx]: {
+        ...prev[exIdx],
+        saved: false,
+        actual: Array.from({ length: numSets }, () => ({ reps: "", weight: "" })),
+      },
+    }));
+    setExpandedEx(exIdx);
+  }, [effectiveExercises]);
 
   const skipExercise = useCallback((exIdx: number) => {
     setLogs((prev) => ({
@@ -531,6 +550,7 @@ export default function SessionPage() {
             onUpdateNote={updateNote}
             onSave={saveExercise}
             onSkip={skipExercise}
+            onUnskip={unskipExercise}
             onSwap={(idx) => setSwapSheetIdx(idx)}
             swapLoading={false}
             onVideoPlay={(url) => setVideoUrl(url)}
@@ -660,7 +680,7 @@ export default function SessionPage() {
 // ── Exercise Card ──
 
 function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full",
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full",
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -671,6 +691,7 @@ function ExerciseCard({
   onUpdateNote: (exIdx: number, note: string) => void;
   onSave: (exIdx: number) => void;
   onSkip: (exIdx: number) => void;
+  onUnskip: (exIdx: number) => void;
   onSwap: (exIdx: number) => void;
   swapLoading: boolean;
   onVideoPlay?: (url: string) => void;
@@ -701,6 +722,14 @@ function ExerciseCard({
       }`}
       style={{ borderLeftWidth: "3px", borderLeftColor: skipped ? "var(--color-border)" : catColor }}
     >
+      {/* Unskip row (when expanded and skipped) */}
+      {expanded && skipped && (
+        <div className="flex items-center justify-end gap-2 px-4 pt-3 pb-0">
+          <button onClick={(e) => { e.stopPropagation(); onUnskip(index); }}
+            className="text-[10px] text-accent hover:text-text transition-colors px-2 py-1">Undo skip</button>
+        </div>
+      )}
+
       {/* Skip/Swap row at top (when expanded and not saved) */}
       {expanded && !log.saved && !skipped && (
         <div className="flex items-center justify-end gap-2 px-4 pt-3 pb-0">
