@@ -107,10 +107,14 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         let userId = subscription.metadata?.supabase_user_id;
 
+        // Log typed and raw to catch API version differences
+        const rawSub = event.data.object as unknown as Record<string, unknown>;
         console.log("[webhook] subscription.updated:", {
           metadataUserId: userId,
           customer: subscription.customer,
-          cancel_at_period_end: subscription.cancel_at_period_end,
+          typed_cancel_at_period_end: subscription.cancel_at_period_end,
+          raw_cancel_at_period_end: rawSub.cancel_at_period_end,
+          raw_cancellation_details: rawSub.cancellation_details,
           status: subscription.status,
         });
 
