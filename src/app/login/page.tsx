@@ -2,9 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated } from "@/lib/auth";
+import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
 
 type View = "signup" | "login";
+
+/** Check auth + subscription and route accordingly */
+async function routeAuthenticatedUser(router: ReturnType<typeof useRouter>) {
+  const sub = await getSubscriptionStatus();
+  console.log("[login] routeAuthenticatedUser: sub.active =", sub.active);
+  if (sub.active) {
+    router.replace("/app");
+  } else {
+    router.replace("/pricing");
+  }
+}
 
 export default function LoginPage() {
   const [view, setView] = useState<View>("signup");
@@ -13,7 +24,7 @@ export default function LoginPage() {
   // Auto-redirect if already authenticated
   useEffect(() => {
     isAuthenticated().then((ok) => {
-      if (ok) router.replace("/app");
+      if (ok) routeAuthenticatedUser(router);
     });
   }, [router]);
 
@@ -45,7 +56,8 @@ function SignupView({ onSwitch }: { onSwitch: () => void }) {
       return;
     }
 
-    router.push("/app");
+    // New signup — no subscription yet, go to pricing
+    router.push("/pricing");
   }
 
   async function handleGoogle() {
@@ -152,7 +164,7 @@ function LoginView({ onSwitch }: { onSwitch: () => void }) {
       return;
     }
 
-    router.push("/app");
+    await routeAuthenticatedUser(router);
   }
 
   async function handleGoogle() {

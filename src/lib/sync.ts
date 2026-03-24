@@ -1,12 +1,12 @@
 import { supabase } from "./supabase";
-import { getUser, isLocalDev, isDemoMode, isDevBypass } from "./auth";
+import { getUser, isDevBypass } from "./auth";
 import { useKineStore } from "@/store/useKineStore";
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 const SYNC_DEBOUNCE_MS = 2000;
 
 function shouldSkipSync(): boolean {
-  return isDevBypass() || isLocalDev() || isDemoMode();
+  return isDevBypass();
 }
 
 /**

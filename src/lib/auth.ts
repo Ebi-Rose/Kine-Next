@@ -1,28 +1,6 @@
 import { supabase } from "./supabase";
 
-const DEMO_KEY = "kine2026";
-
-/** True when running on localhost */
-export function isLocalDev(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-  );
-}
-
-/** True when ?demo=true, ?key=kine2026, or demo was previously activated */
-export function isDemoMode(): boolean {
-  if (typeof window === "undefined") return false;
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("demo") === "true" || params.get("key") === DEMO_KEY) {
-    localStorage.setItem("kine_demo", "true");
-    return true;
-  }
-  return localStorage.getItem("kine_demo") === "true";
-}
-
-/** True if dev bypass env var is set */
+/** True if dev bypass env var is set (local development only) */
 export function isDevBypass(): boolean {
   return process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
 }
@@ -44,19 +22,11 @@ export async function getUser() {
 }
 
 /**
- * Returns true if the user should be allowed into /app/.
- * Bypass order: dev bypass → localhost → demo → real session.
+ * Returns true if the user has a real Supabase session.
+ * Dev bypass is the only shortcut — no demo or localhost bypass in production.
  */
 export async function isAuthenticated(): Promise<boolean> {
   if (isDevBypass()) return true;
-  if (isLocalDev()) return true;
-  if (isDemoMode()) return true;
-  const session = await getSession();
-  return !!session;
-}
-
-/** Returns true only for real Supabase sessions (not bypasses) */
-export async function hasSession(): Promise<boolean> {
   const session = await getSession();
   return !!session;
 }
@@ -80,7 +50,6 @@ export async function signInWithOAuth(provider: "google" | "apple") {
 export async function signOut() {
   await supabase.auth.signOut();
   localStorage.removeItem("kine_v2");
-  localStorage.removeItem("kine_demo");
   window.location.href = "/";
 }
 
@@ -96,12 +65,15 @@ export function onAuthStateChange(
 }
 
 export async function getSubscriptionStatus() {
-  if (isDevBypass() || isLocalDev() || isDemoMode()) {
+  if (isDevBypass()) {
     return { active: true };
   }
 
   const user = await getUser();
-  if (!user) return { active: false };
+  if (!user) {
+    console.log("[auth] getSubscriptionStatus: no user");
+    return { active: false };
+  }
 
   try {
     const { data, error } = await supabase
@@ -110,9 +82,13 @@ export async function getSubscriptionStatus() {
       .eq("user_id", user.id)
       .single();
 
-    if (error || !data) return { active: false };
+    if (error || !data) {
+      console.log("[auth] getSubscriptionStatus: no subscription row", error?.message);
+      return { active: false };
+    }
 
     const isActive = data.status === "active" || data.status === "trialing";
+    console.log("[auth] getSubscriptionStatus:", data.status, "active:", isActive);
     return {
       active: isActive,
       status: data.status as string,
@@ -121,7 +97,8 @@ export async function getSubscriptionStatus() {
       cancelAtPeriodEnd: data.cancel_at_period_end as boolean,
       stripeCustomerId: data.stripe_customer_id as string,
     };
-  } catch {
+  } catch (e) {
+    console.log("[auth] getSubscriptionStatus: error", e);
     return { active: false };
   }
 }

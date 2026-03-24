@@ -22,14 +22,7 @@ export default function AccessPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.mode === "demo") {
-          router.push("/app?demo=true&mode=demo");
-        } else if (data.mode === "new") {
-          router.push("/app?demo=true&mode=new");
-        } else {
-          router.push("/login");
-        }
+        router.push("/login");
       } else {
         const data = await res.json();
         setError(data.error || "Invalid access code.");
