@@ -107,16 +107,27 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         let userId = subscription.metadata?.supabase_user_id;
 
+        console.log("[webhook] subscription.updated:", {
+          metadataUserId: userId,
+          customer: subscription.customer,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          status: subscription.status,
+        });
+
         // Fallback: look up user by stripe_customer_id if metadata is missing
         if (!userId) {
-          const { data: existing } = await supabase
+          const { data: existing, error: lookupError } = await supabase
             .from("subscriptions")
             .select("user_id")
             .eq("stripe_customer_id", subscription.customer as string)
             .single();
+          console.log("[webhook] customer lookup:", { found: existing?.user_id, error: lookupError?.message });
           userId = existing?.user_id;
         }
-        if (!userId) break;
+        if (!userId) {
+          console.warn("[webhook] subscription.updated: could not find user, skipping");
+          break;
+        }
 
         const updNow = new Date().toISOString();
 
@@ -134,7 +145,7 @@ export async function POST(request: NextRequest) {
         const updEnd = (typeof sub.current_period_end === "number" ? sub.current_period_end : null)
           || (updItem as unknown as Record<string, unknown>)?.current_period_end;
 
-        await supabase
+        const { error: updError } = await supabase
           .from("subscriptions")
           .update({
             status: subscription.status,
@@ -149,6 +160,12 @@ export async function POST(request: NextRequest) {
             updated_at: updNow,
           })
           .eq("user_id", userId);
+
+        if (updError) {
+          console.error("[webhook] subscription update failed:", updError);
+        } else {
+          console.log("[webhook] subscription updated for user:", userId);
+        }
         break;
       }
 
