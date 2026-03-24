@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useKineStore } from "@/store/useKineStore";
+import { useKineStore, useStoreHydrated } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
 import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult, ExerciseFeedback } from "@/lib/session-analysis";
@@ -48,8 +48,9 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, exp } =
     useKineStore();
+  const hydrated = useStoreHydrated();
 
   const [logs, setLogs] = useState<Record<number, ExerciseLog>>({});
   const [expandedEx, setExpandedEx] = useState<number | null>(0);
@@ -303,10 +304,21 @@ export default function SessionPage() {
   }
 
   // ── Render ──
-  if (!week || !day || dayIdx < 0) {
+  if (!hydrated) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!week || !day || dayIdx < 0) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
         <p className="text-muted2">No session found</p>
+        <Button variant="secondary" className="mt-4" onClick={() => router.push("/app")}>
+          Back to week
+        </Button>
       </div>
     );
   }
@@ -350,7 +362,6 @@ export default function SessionPage() {
     );
   }
 
-  const { injuries, exp } = useKineStore();
   const warmup = buildWarmup(day.sessionTitle, effectiveExercises, injuries, exp || "developing");
   const timeBudget = sessionTimeBudgets[dayIdx];
   const isTrimmed = timeBudget && effectiveExercises.length < day.exercises.length;

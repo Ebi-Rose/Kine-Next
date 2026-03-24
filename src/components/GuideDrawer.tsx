@@ -10,166 +10,166 @@ interface GuideSection {
 const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: GuideSection[] }> = {
   "/app": {
     label: "Your week",
-    intro: "This is your home base — everything starts here. Your week is laid out day by day, with sessions ready when you are.",
+    intro: "Your week at a glance. Each card is a session — tap to start when you're ready.",
     sections: [
       {
-        title: "How your week works",
-        body: <>Each card is a training day built around your goal, equipment, and schedule. Today&apos;s session is highlighted — tap <strong className="text-accent font-normal">Start session</strong> when you&apos;re ready. There&apos;s no pressure to follow the exact order, but the sequence is designed to balance your recovery.</>,
+        title: "Training days",
+        body: <>Today's session is highlighted. Tap <strong className="text-accent font-normal">Start session</strong> to begin. You can do sessions in any order.</>,
       },
       {
-        title: "Rest days matter",
-        body: "Rest days aren't empty days — they're part of the programme. Your muscles grow and adapt during recovery, not during the session itself. You can add a session to a rest day if you want, but the plan accounts for recovery by default.",
+        title: "Rest days",
+        body: "Rest days are part of the plan. You can add a session if you want, but recovery is built in.",
       },
       {
-        title: "End-of-week check-in",
-        body: "At the end of each week, you'll get a short check-in asking how training felt. Was it too much? Too easy? About right? Your honest answer helps Kine fine-tune next week's volume — small adjustments, never drastic swings.",
-      },
-      {
-        title: "Blocks and phases",
-        body: "Your training is organised in 4-week blocks. Each block has a purpose — building volume, pushing intensity, or recovering. The tag at the top tells you where you are. Trust the process, even when a deload week feels easy.",
+        title: "Weekly check-in",
+        body: "At the end of the week, a quick check-in asks how training felt. This helps shape next week.",
       },
     ],
   },
   "/app/pre-session": {
     label: "Before you start",
-    intro: "This is your moment to check in with yourself and set up the session the way you want it. Nothing here is mandatory — it's all about making the session work for you today.",
+    intro: "Set up the session however works for you today. Nothing here is required.",
     sections: [
       {
-        title: "How are you feeling?",
-        body: <>The energy check-in is for you, not for judgement. Tap <strong className="text-accent font-normal">Low</strong>, <strong className="text-accent font-normal">Normal</strong>, <strong className="text-accent font-normal">Good</strong>, or <strong className="text-accent font-normal">Great</strong> — it won&apos;t change your workout. Over time, this data helps you spot patterns (like energy dipping at certain points in your cycle or after poor sleep).</>,
+        title: "Energy check-in",
+        body: <>Tap <strong className="text-accent font-normal">Low</strong>, <strong className="text-accent font-normal">Normal</strong>, <strong className="text-accent font-normal">Good</strong>, or <strong className="text-accent font-normal">Great</strong>. This is just a note for you — it won't change your workout.</>,
       },
       {
-        title: "Don&apos;t like an exercise?",
-        body: <>No problem. Open <strong className="text-accent font-normal">Your exercises</strong> and tap <strong className="text-accent font-normal">Swap</strong> next to any movement. Kine will suggest alternatives that hit the same muscles with equipment you actually have. You can also skip exercises entirely — the session adapts.</>,
+        title: "Swap or skip exercises",
+        body: <>Open <strong className="text-accent font-normal">Your exercises</strong> and tap <strong className="text-accent font-normal">Swap</strong> to find alternatives, or skip anything that doesn't work today.</>,
       },
       {
-        title: "Short on time?",
-        body: "Use the duration controls to shorten (or extend) your session. When you reduce time, Kine drops isolation exercises first and keeps the compounds that matter most. If you extend, it'll suggest exercises you could add. The session always stays balanced.",
+        title: "Adjust your time",
+        body: "Use − / + to change session length. The session adjusts to fit.",
       },
       {
-        title: "Timing your session",
-        body: <><strong className="text-accent font-normal">Timed</strong> gives you automatic rest countdowns between sets — great if you want structure. <strong className="text-accent font-normal">Stopwatch</strong> is a simple running clock for when you prefer to self-pace. <strong className="text-accent font-normal">Off</strong> means no timers at all. You can set compound and isolation rest periods separately when using Timed.</>,
+        title: "Session timing",
+        body: <><strong className="text-accent font-normal">Timed</strong> counts rest between sets. <strong className="text-accent font-normal">Stopwatch</strong> gives you a running clock. <strong className="text-accent font-normal">Off</strong> means no timers.</>,
       },
       {
         title: "Coaching notes",
-        body: "If you've added cycle data, you'll see phase-aware notes here — gentle context about how your body typically responds right now. These are observations, not instructions. You always decide how hard to push.",
+        body: "If you've added cycle data, you'll see notes about how your body typically responds right now. These are observations, not instructions.",
       },
     ],
   },
   "/app/session": {
-    label: "During your session",
-    intro: "You're in it now. Focus on the work — the app handles the tracking. Everything here is designed to stay out of your way until you need it.",
+    label: "Your session",
+    intro: "Focus on the work. The app handles the rest.",
     sections: [
       {
-        title: "Logging your sets",
-        body: "Enter reps and weight for each set. When you fill in set 1, that weight auto-fills the remaining sets — just adjust if you change weight. For bodyweight exercises, you only need to enter reps. Don't stress about being exact — a completed session beats a perfect log.",
+        title: "Logging sets",
+        body: "Enter reps and weight for each set. Set 1's weight auto-fills the rest — adjust if needed.",
       },
       {
-        title: "Rest between sets",
-        body: <>If you chose <strong className="text-accent font-normal">Timed</strong> mode, a rest countdown appears after you save each exercise. It&apos;s a guide, not a gate — tap to dismiss whenever you&apos;re ready. The timer uses the compound/isolation rest periods you set in the pre-session screen.</>,
+        title: "Rest timer",
+        body: <>In <strong className="text-accent font-normal">Timed</strong> mode, a countdown starts after you save. Tap to dismiss when you're ready.</>,
       },
       {
         title: "Moving through exercises",
-        body: <>Tap <strong className="text-accent font-normal">Save</strong> after logging all sets for an exercise. The card collapses and the next one opens automatically. Not feeling an exercise? <strong className="text-accent font-normal">Skip</strong> moves you forward without logging it. You can also swap exercises mid-session if something isn&apos;t working.</>,
+        body: <><strong className="text-accent font-normal">Save</strong> collapses the current exercise and opens the next. <strong className="text-accent font-normal">Skip</strong> moves on without logging.</>,
       },
       {
-        title: "After your last exercise",
-        body: "You'll do a quick effort and soreness rating — just two taps. This feedback goes directly into your training history and helps Kine understand how sessions are landing. Then you'll see a summary of what you accomplished.",
+        title: "Finishing up",
+        body: "After your last exercise, a quick effort and soreness rating wraps things up.",
       },
     ],
   },
   "/app/warmup": {
-    label: "Warming up",
-    intro: "A good warm-up makes the working sets feel better and reduces injury risk. This is time well spent, not time wasted.",
+    label: "Warm-up",
+    intro: "A good warm-up makes everything feel better. Take your time here.",
     sections: [
       {
         title: "General warm-up",
-        body: "Start with 5-10 minutes of light movement to raise your heart rate and body temperature. This gets blood flowing to your muscles and lubricates your joints. A brisk walk, light cycling, or dynamic stretches all work.",
+        body: "5–10 minutes of light movement — walking, cycling, or dynamic stretches.",
       },
       {
         title: "Ramp sets",
-        body: "For compound lifts (squats, bench, deadlifts), ramp sets gradually build up to your working weight. They prime your nervous system and let you practice the movement pattern before it gets heavy. These aren't meant to be tiring — they're preparation.",
+        body: "For big lifts, these build up to your working weight gradually. They're preparation, not extra work.",
       },
       {
-        title: "Working around injuries",
-        body: "If you've noted injuries in your profile, you'll see specific warm-up modifications here. These help you prepare safely without aggravating existing issues. Warming up the area around an injury often helps more than avoiding it entirely.",
+        title: "Injuries",
+        body: "If you've noted injuries in your profile, you'll see modified warm-up suggestions here.",
       },
     ],
   },
   "/app/progress": {
-    label: "Your progress",
-    intro: "This is where all your hard work shows up. Every set you log builds the picture over time — the trends matter more than any single session.",
+    label: "Progress",
+    intro: "Every session you log builds the picture. The trend matters more than any single day.",
     sections: [
       {
         title: "Lift history",
-        body: "Tap any exercise to see your best sets over time. The chart tracks weight progression week by week. Don't worry about linear progress — strength comes in waves, especially with cycle-aware training. Look for the overall trend, not the day-to-day.",
+        body: "Tap any exercise to see your progression over time.",
       },
       {
         title: "Personal records",
-        body: "PRs are tracked automatically whenever you log a set that beats your previous best for that exercise. They'll pop up during your session with a celebration. Small PRs count just as much as big ones — a 1kg increase is still progress.",
+        body: "PRs are tracked automatically. You'll see them celebrated during your session.",
       },
       {
-        title: "Session history",
-        body: "Scroll down to see your completed sessions — what you did, how you rated effort, and any analysis. This is useful for spotting patterns: which sessions felt great, which felt heavy, and whether that lined up with your energy or cycle phase.",
+        title: "Past sessions",
+        body: "Scroll down for your session history — what you did and how it felt.",
       },
     ],
   },
   "/app/profile": {
-    label: "Your profile",
-    intro: "This is where you tell Kine about yourself. The more context you provide, the smarter your coaching becomes — but nothing here is required.",
+    label: "Profile",
+    intro: "Tell Kine about yourself. More context means better coaching — but nothing is required.",
     sections: [
       {
         title: "Coaching level",
-        body: <><strong className="text-accent font-normal">Full</strong> coaching gives you form cues, breathing reminders, and context about why each exercise is in your plan. <strong className="text-accent font-normal">Feel</strong> strips it back to the essentials. <strong className="text-accent font-normal">Off</strong> hides all coaching — just the exercises and the numbers. You can override this per-session in the pre-session screen.</>,
+        body: <><strong className="text-accent font-normal">Full</strong> gives you cues and tips. <strong className="text-accent font-normal">Feel</strong> is minimal. <strong className="text-accent font-normal">Off</strong> hides coaching. You can change this per-session too.</>,
       },
       {
         title: "Cycle tracking",
-        body: "If you track your cycle, Kine uses it to give you phase-aware coaching notes — like when your body typically responds best to training, or when recovery might take longer. It never automatically changes your programme. The guidance is there if you want it, invisible if you don't.",
+        body: "Log your cycle to see phase-aware coaching notes. These are gentle observations — they never change the programme.",
       },
       {
-        title: "Injuries and limitations",
-        body: "Note any current injuries or areas of concern. Kine will flag exercises that might need modification and suggest alternatives. You'll also see injury-specific warm-up guidance. Update these as things change — what hurts today might be fine next month.",
+        title: "Injuries",
+        body: "Note current injuries and Kine will flag relevant exercises and suggest alternatives.",
       },
       {
         title: "Equipment",
-        body: "Keep your available equipment up to date. This directly affects which exercises appear in your sessions — Kine will never programme something you can't do with what you have.",
+        body: "Keep this up to date so your sessions only include exercises you can do.",
       },
     ],
   },
   "/app/week-checkin": {
     label: "Week reflection",
-    intro: "Take a moment to look back at the week. This isn't a test — it's a conversation between you and your programme. Your honesty here makes next week better.",
+    intro: "A quick look back. Your honesty here shapes next week.",
     sections: [
       {
-        title: "How it shapes your plan",
-        body: "Your check-in directly influences next week's programming. If you say the volume was too much, Kine dials it back slightly. Too easy? It nudges things up. The adjustments are always gradual — no dramatic swings.",
+        title: "Volume feedback",
+        body: "Was it too much, about right, or too easy? This directly influences next week.",
       },
       {
         title: "Effort and soreness",
-        body: "Rate how hard the week felt overall, and how your body is holding up. There are no right answers. A week that felt hard isn't a failure, and a week that felt easy doesn't mean you're not progressing. The data helps Kine calibrate over time.",
+        body: "Rate how hard it felt and how your body is holding up. No right answers.",
       },
       {
-        title: "Adding context",
-        body: "The notes field is for anything that affected your training — bad sleep, work stress, travel, illness, life happening. This context helps make sense of the numbers. A tough week with poor sleep is very different from a tough week with great recovery.",
+        title: "Notes",
+        body: "Anything that affected your week — sleep, stress, life. Helps make sense of the data.",
       },
     ],
   },
 };
 
-const DEFAULT_SECTIONS: GuideSection[] = [
-  {
-    title: "Need help?",
-    body: "Navigate to any main page and open the guide for page-specific tips and explanations.",
-  },
-];
+const DEFAULT_GUIDE = {
+  label: "Guide",
+  intro: "Tap the ? button on any page to get tips and explanations specific to where you are in the app.",
+  sections: [
+    {
+      title: "Getting started",
+      body: "Head to your week view to see your training plan. Each day card shows your exercises — tap Start session when you're ready to train.",
+    },
+  ] as GuideSection[],
+};
 
-function getGuideForRoute(route: string): { label: string; sections: GuideSection[] } {
+function getGuideForRoute(route: string): { label: string; intro: string; sections: GuideSection[] } {
   // Exact match first
   if (GUIDE_CONTENT[route]) return GUIDE_CONTENT[route];
   // Strip query params and try base path
   const base = route.split("?")[0];
   if (GUIDE_CONTENT[base]) return GUIDE_CONTENT[base];
-  return { label: "Guide", sections: DEFAULT_SECTIONS };
+  return DEFAULT_GUIDE;
 }
 
 interface GuideDrawerProps {
@@ -179,7 +179,7 @@ interface GuideDrawerProps {
 }
 
 export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) {
-  const { label, sections } = getGuideForRoute(route);
+  const { label, intro, sections } = getGuideForRoute(route);
 
   // Escape key to close
   useEffect(() => {
@@ -230,9 +230,14 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
           </div>
 
           {/* Page label */}
-          <div className="text-[9px] tracking-[1px] uppercase text-accent/50 mb-3">
+          <div className="text-[9px] tracking-[1px] uppercase text-accent/50 mb-2">
             {label}
           </div>
+
+          {/* Intro */}
+          <p className="text-[12px] text-muted2 font-light leading-[1.7] mb-4 pb-4 border-b border-white/[0.06]">
+            {intro}
+          </p>
 
           {/* Sections */}
           {sections.map((section, i) => (

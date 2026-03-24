@@ -93,11 +93,31 @@ export default function ProgressPage() {
         <div className="mt-6">
           <h2 className="mb-3 text-xs tracking-wider text-muted uppercase">Lift history</h2>
           <div className="flex flex-col gap-2">
-            {liftNames.map((name) => {
+            {liftNames
+              .sort((a, b) => {
+                const aMax = lifts[a].reduce((m, e) => Math.max(m, e.weight), 0);
+                const bMax = lifts[b].reduce((m, e) => Math.max(m, e.weight), 0);
+                return bMax - aMax;
+              })
+              .map((name) => {
               const entries = lifts[name];
               const latest = entries[entries.length - 1];
               const best = entries.reduce((b, e) => e.weight > b.weight ? e : b, entries[0]);
               const orm = calculateORM(best.weight, best.reps);
+
+              // Trend: compare last entry to 2nd-to-last
+              const prev = entries.length >= 2 ? entries[entries.length - 2] : null;
+              const trend = prev
+                ? latest.weight > prev.weight ? "up" : latest.weight < prev.weight ? "down" : "flat"
+                : "new";
+              const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : trend === "flat" ? "→" : "✦";
+              const trendColor = trend === "up" ? "text-green-400" : trend === "down" ? "text-accent" : "text-muted2";
+
+              // Sparkline data (last 8 entries)
+              const sparkData = entries.slice(-8);
+              const sparkMax = Math.max(...sparkData.map(e => e.weight));
+              const sparkMin = Math.min(...sparkData.map(e => e.weight));
+              const sparkRange = sparkMax - sparkMin || 1;
 
               return (
                 <button
@@ -107,37 +127,71 @@ export default function ProgressPage() {
                     selectedLift === name ? "border-accent bg-surface" : "border-border bg-surface hover:border-border-active"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-text">{name}</span>
-                    <span className="text-xs text-muted2">{latest.weight}kg × {latest.reps}</span>
+                  <div className="flex items-center gap-3">
+                    {/* Trend indicator */}
+                    <span className={`text-sm font-medium ${trendColor}`}>{trendIcon}</span>
+
+                    {/* Name + meta */}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-text">{name}</span>
+                      <div className="flex gap-3 mt-0.5">
+                        <span className="text-[10px] text-muted2">{latest.weight}kg × {latest.reps}</span>
+                        {best.weight > latest.weight && (
+                          <span className="text-[10px] text-muted">Best: {best.weight}kg</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mini sparkline */}
+                    {sparkData.length >= 2 && (
+                      <div className="flex items-end gap-[2px] h-6 w-16 shrink-0">
+                        {sparkData.map((entry, i) => {
+                          const h = ((entry.weight - sparkMin) / sparkRange) * 100;
+                          return (
+                            <div
+                              key={i}
+                              className={`flex-1 rounded-t ${i === sparkData.length - 1 ? "bg-accent" : "bg-accent/30"}`}
+                              style={{ height: `${Math.max(h, 12)}%` }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
+
                   {selectedLift === name && (
                     <div className="mt-3 border-t border-border pt-3">
-                      <div className="flex gap-4 text-xs text-muted2 mb-2">
+                      <div className="flex gap-4 text-xs text-muted2 mb-3">
                         <span>Best: {best.weight}kg × {best.reps}</span>
                         <span>Est 1RM: {orm}kg</span>
                         <span>{entries.length} entries</span>
                       </div>
+
+                      {/* Bigger chart */}
+                      {entries.length >= 2 && (
+                        <div className="mb-3 h-20 flex items-end gap-1">
+                          {entries.slice(-12).map((entry, i) => {
+                            const maxW = Math.max(...entries.map((e) => e.weight));
+                            const minW = Math.min(...entries.map((e) => e.weight));
+                            const range = maxW - minW || 1;
+                            const h = ((entry.weight - minW) / range) * 100;
+                            return (
+                              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                                <div className="w-full rounded-t bg-accent/60" style={{ height: `${Math.max(h, 8)}%` }} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <div className="flex flex-col gap-1">
-                        {entries.slice(-8).map((entry, i) => (
+                        {entries.slice(-8).reverse().map((entry, i) => (
                           <div key={i} className="flex items-center justify-between text-xs">
                             <span className="text-muted">{entry.date}</span>
                             <span className="text-text">{entry.weight}kg × {entry.reps}</span>
                           </div>
                         ))}
                       </div>
-                      {entries.length >= 2 && (
-                        <div className="mt-3 h-16 flex items-end gap-1">
-                          {entries.slice(-12).map((entry, i) => {
-                            const maxW = Math.max(...entries.map((e) => e.weight));
-                            const h = maxW > 0 ? (entry.weight / maxW) * 100 : 50;
-                            return (
-                              <div key={i} className="flex-1 rounded-t bg-accent/60" style={{ height: `${Math.max(h, 10)}%` }}
-                                title={`${entry.weight}kg × ${entry.reps}`} />
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   )}
                 </button>
