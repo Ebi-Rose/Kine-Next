@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
-import { useKineStore } from "@/store/useKineStore";
+import { useKineStore, useStoreHydrated } from "@/store/useKineStore";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
+  const checkedRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+  const hydrated = useStoreHydrated();
 
   useEffect(() => {
+    // Don't run until store is hydrated from localStorage
+    if (!hydrated) return;
+
+    // Only run the full auth+subscription check once per mount
+    if (checkedRef.current) return;
+
     let cancelled = false;
 
     async function check() {
@@ -23,13 +31,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Must have an active subscription
-      // After checkout, webhook may be slow — retry a few times
       const isPostCheckout = typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get("checkout") === "success";
 
       let sub = await getSubscriptionStatus();
       if (!sub.active && isPostCheckout) {
-        // Poll for up to 10 seconds waiting for webhook
         for (let i = 0; i < 5; i++) {
           await new Promise((r) => setTimeout(r, 2000));
           if (cancelled) return;
@@ -54,18 +60,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Clean up checkout param from URL
       if (isPostCheckout) {
         window.history.replaceState({}, "", pathname);
       }
 
+      checkedRef.current = true;
       setAllowed(true);
       setChecking(false);
     }
 
     check();
     return () => { cancelled = true; };
-  }, [router, pathname]);
+  }, [hydrated, router, pathname]);
 
   if (checking) {
     return (
