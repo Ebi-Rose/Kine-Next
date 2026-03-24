@@ -69,6 +69,8 @@ export default function SessionPage() {
   const [videoSheetEx, setVideoSheetEx] = useState<string | null>(null);
   const [skillPathEx, setSkillPathEx] = useState<string | null>(null);
   const [restActive, setRestActive] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showWarmupWarning, setShowWarmupWarning] = useState(false);
   const [currentRestDuration, setCurrentRestDuration] = useState(restConfig.compound);
 
   const week = weekData as WeekData | null;
@@ -247,13 +249,36 @@ export default function SessionPage() {
 
   // ── Complete Session ──
   function completeSession() {
-    const hasAnyData = Object.values(logs).some((ex) =>
-      ex.actual.some((s) => s.reps || s.weight)
-    );
-    if (!hasAnyData) {
-      toast("Log at least one exercise before completing", "error");
+    // Every exercise must have at least one logged set OR be skipped
+    const incomplete: string[] = [];
+    Object.entries(logs).forEach(([idx, ex]) => {
+      const isSkipped = ex.saved && ex.actual.length === 0;
+      const hasData = ex.actual.some((s) => s.reps || s.weight);
+      if (!isSkipped && !hasData) {
+        incomplete.push(ex.name);
+      }
+    });
+
+    if (incomplete.length > 0) {
+      const names = incomplete.length <= 3
+        ? incomplete.join(", ")
+        : `${incomplete.slice(0, 2).join(", ")} +${incomplete.length - 2} more`;
+      toast(`Log or skip: ${names}`, "error");
+      // Expand the first incomplete exercise
+      const firstIdx = Object.entries(logs).find(([, ex]) => {
+        const isSkipped = ex.saved && ex.actual.length === 0;
+        const hasData = ex.actual.some((s) => s.reps || s.weight);
+        return !isSkipped && !hasData;
+      });
+      if (firstIdx) setExpandedEx(Number(firstIdx[0]));
       return;
     }
+
+    setShowConfirm(true);
+  }
+
+  function confirmComplete() {
+    setShowConfirm(false);
     setSessionLogs(logs as unknown as typeof sessionLogs);
     setSessionStep("feedback");
   }
@@ -451,8 +476,8 @@ export default function SessionPage() {
               <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
               <p className="text-[10px] text-muted2 mt-0.5">~{warmup.totalMin} min</p>
             </div>
-            <button onClick={() => setShowWarmup(false)} className="text-[10px] text-muted2 hover:text-text">
-              Hide
+            <button onClick={() => setShowWarmupWarning(true)} className="text-[10px] text-muted2 hover:text-text">
+              Skip
             </button>
           </div>
 
@@ -568,6 +593,67 @@ export default function SessionPage() {
           Complete session ✓
         </Button>
       </div>
+
+      {/* Warmup skip warning */}
+      {showWarmupWarning && (
+        <BottomSheet open={true} onClose={() => setShowWarmupWarning(false)}>
+          <div className="px-1 pb-4">
+            <h3 className="font-display text-lg tracking-wide text-text mb-2">Skip warm up?</h3>
+            <p className="text-xs text-muted2 leading-relaxed mb-4">
+              Warming up reduces injury risk and improves performance. Cold muscles are more prone to strain, especially on compound lifts.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" className="flex-1" onClick={() => setShowWarmupWarning(false)}>
+                Keep warm up
+              </Button>
+              <Button variant="ghost" size="sm" className="flex-1 text-muted" onClick={() => { setShowWarmup(false); setShowWarmupWarning(false); }}>
+                Skip anyway
+              </Button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Confirmation popup */}
+      {showConfirm && (
+        <BottomSheet open={true} onClose={() => setShowConfirm(false)}>
+          <div className="px-1 pb-4">
+            <h3 className="font-display text-lg tracking-wide text-text mb-4">Session summary</h3>
+            <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
+              {Object.entries(logs).map(([idx, ex]) => {
+                const isSkipped = ex.saved && ex.actual.length === 0;
+                const loggedSets = ex.actual.filter((s) => s.reps || s.weight);
+                return (
+                  <div key={idx} className={`rounded-lg border border-border bg-surface px-3 py-2 ${isSkipped ? "opacity-50" : ""}`}>
+                    <p className={`text-xs font-medium ${isSkipped ? "line-through text-muted" : "text-text"}`}>{ex.name}</p>
+                    {isSkipped ? (
+                      <p className="text-[10px] text-muted">Skipped</p>
+                    ) : loggedSets.length > 0 ? (
+                      <div className="flex flex-wrap gap-x-3 mt-0.5">
+                        {loggedSets.map((s, i) => (
+                          <span key={i} className="text-[10px] text-muted2">
+                            {s.reps}×{s.weight || "BW"}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-amber-400">No sets logged</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Button variant="secondary" size="sm" className="flex-1" onClick={() => setShowConfirm(false)}>
+                Go back
+              </Button>
+              <Button size="sm" className="flex-1" onClick={confirmComplete}>
+                Confirm ✓
+              </Button>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
 
       {/* Swap sheet */}
       {swapSheetIdx !== null && (
