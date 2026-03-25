@@ -5,6 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
 
+/** Returns the access mode from localStorage (set by /access page) */
+function getAccessMode(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("kine_mode"); // "new" | "demo" | null (real)
+}
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState(false);
   const router = useRouter();
@@ -16,10 +22,28 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function check() {
-      console.log("[AuthGuard] starting check, pathname:", pathname);
+      const mode = getAccessMode();
 
+      // ── Demo / New mode: skip auth and subscription checks ──
+      if (mode === "demo" || mode === "new") {
+        // Brief wait for store hydration
+        await new Promise((r) => setTimeout(r, 300));
+        if (cancelled) return;
+
+        if (mode === "new") {
+          const goal = useKineStore.getState().goal;
+          if (goal === null && pathname !== "/app/onboarding") {
+            router.replace("/app/onboarding");
+            return;
+          }
+        }
+
+        setAllowed(true);
+        return;
+      }
+
+      // ── Real mode: full auth + subscription checks ──
       const authed = await isAuthenticated();
-      console.log("[AuthGuard] authed:", authed);
       if (cancelled) return;
       if (!authed) {
         router.replace("/login");
@@ -30,7 +54,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         new URLSearchParams(window.location.search).get("checkout") === "success";
 
       let sub = await getSubscriptionStatus();
-      console.log("[AuthGuard] sub:", sub.active);
       if (!sub.active && isPostCheckout) {
         for (let i = 0; i < 5; i++) {
           await new Promise((r) => setTimeout(r, 2000));
@@ -42,7 +65,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       if (cancelled) return;
       if (!sub.active) {
-        console.log("[AuthGuard] no subscription, redirecting to /pricing");
         router.replace("/pricing");
         return;
       }
@@ -50,10 +72,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       // Brief wait for store hydration from localStorage
       await new Promise((r) => setTimeout(r, 300));
       const goal = useKineStore.getState().goal;
-      console.log("[AuthGuard] goal:", goal, "pathname:", pathname);
 
       if (goal === null && pathname !== "/app/onboarding") {
-        console.log("[AuthGuard] no onboarding, redirecting");
         router.replace("/app/onboarding");
         return;
       }
@@ -64,7 +84,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         window.history.replaceState({}, "", pathname);
       }
 
-      console.log("[AuthGuard] allowed!");
       setAllowed(true);
     }
 

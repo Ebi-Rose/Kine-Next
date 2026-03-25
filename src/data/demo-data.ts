@@ -182,6 +182,29 @@ export const demoProgressDB = {
 };
 
 // ── Current Week Data (Week 8) ──
+/** Load all demo data into the Zustand store */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function loadDemoData(store: any) {
+  // Onboarding state
+  store.setGoal?.(demoState.goal);
+  store.setExp?.(demoState.exp);
+  store.setEquip?.(demoState.equip);
+  store.setDays?.(String(demoState.days));
+  store.setTrainingDays?.(demoState.trainingDays);
+  store.setDuration?.(demoState.duration);
+  store.setInjuries?.(demoState.injuries);
+  store.setCycleType?.(demoState.cycleType);
+
+  // Week data
+  store.setWeekData?.(demoWeekData);
+
+  // Progress
+  store.setProgressDB?.(demoProgressDB);
+
+  // Profile
+  store.setProfile?.(demoProfile);
+}
+
 export const demoWeekData = {
   programName: 'Strength — Upper/Lower/Full',
   weekCoachNote:
