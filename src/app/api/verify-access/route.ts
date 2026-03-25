@@ -1,15 +1,19 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
-// Code → mode mapping
-// kine2026: real flow (auth + stripe + onboarding)
-// kinenew:  skip auth/stripe, fresh user → onboarding
-// kinedemo: skip auth/stripe, seed data → app
-const CODE_MODES: Record<string, string> = {
-  kine2026: "real",
-  kinenew: "new",
-  kinedemo: "demo",
-};
+// Codes and modes from env vars — nothing hardcoded
+// ACCESS_CODES: comma-separated "code:mode" pairs
+// e.g. "kine2026:real,kinenew:new,kinedemo:demo"
+// Codes without a mode default to "real"
+function getCodeMap(): Record<string, string> {
+  const raw = process.env.ACCESS_CODES || "";
+  const map: Record<string, string> = {};
+  raw.split(",").forEach((entry) => {
+    const [code, mode] = entry.trim().toLowerCase().split(":");
+    if (code) map[code] = mode || "real";
+  });
+  return map;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,16 +24,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
 
-    // Check built-in codes first
-    const mode = CODE_MODES[trimmed];
+    const codeMap = getCodeMap();
+    const mode = codeMap[trimmed];
 
-    // Also check env var for additional real-flow codes
-    const extraCodes = (process.env.ACCESS_CODES || "")
-      .split(",")
-      .map((c) => c.trim().toLowerCase())
-      .filter(Boolean);
-
-    if (!mode && !extraCodes.includes(trimmed)) {
+    if (!mode) {
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
 
