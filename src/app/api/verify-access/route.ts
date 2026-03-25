@@ -4,14 +4,16 @@ import { cookies } from "next/headers";
 export async function POST(request: NextRequest) {
   try {
     const { code } = await request.json();
-    const accessCode = process.env.ACCESS_CODE || "kine2026";
+    // Support multiple codes: comma-separated in env, or defaults
+    const envCodes = process.env.ACCESS_CODES || process.env.ACCESS_CODE || "kine2026";
+    const validCodes = envCodes.split(",").map((c) => c.trim().toLowerCase());
     const trimmed = code?.trim().toLowerCase();
 
     if (!trimmed) {
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
 
-    if (trimmed === accessCode.toLowerCase()) {
+    if (validCodes.includes(trimmed)) {
       const cookieStore = await cookies();
       cookieStore.set("kine_access", "granted", {
         httpOnly: true,
