@@ -436,18 +436,18 @@ export default function LandingPage() {
 
         @media (max-width: 768px) {
           .landing-page {
-            padding: 32px 16px;
+            padding: 16px 16px;
             justify-content: flex-start;
-            padding-top: 8vh;
+            padding-top: 4vh;
           }
           .lp-layout {
             flex-direction: column;
-            gap: 32px;
+            gap: 16px;
             text-align: center;
           }
           .lp-content {
             align-items: center;
-            gap: 12px;
+            gap: 8px;
           }
           .lp-logo { font-size: 48px; letter-spacing: 6px; }
           .lp-headline { font-size: 17px; max-width: 360px; text-align: center; }
@@ -458,8 +458,21 @@ export default function LandingPage() {
           .lp-waitlist-form input { padding: 12px 14px; font-size: 13px; }
           .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 12px 12px; }
           .lp-waitlist-note { text-align: center; }
-          .lp-phone-wrapper { display: none; }
-          .lp-footer { flex-direction: column; gap: 8px; }
+          .lp-phone { width: 140px; height: 260px; border-radius: 20px; }
+          .lp-phone::before { width: 60px; height: 16px; }
+          .lp-phone-screen { padding: 24px 10px 10px; gap: 6px; }
+          .lp-ph-logo { font-size: 10px; }
+          .lp-ph-week { font-size: 7px; }
+          .lp-ph-checkin-done { padding: 16px 8px 10px; gap: 4px; }
+          .lp-ph-checkin-icon { width: 32px; height: 32px; }
+          .lp-ph-checkin-icon svg { width: 18px; height: 18px; }
+          .lp-ph-checkin-title { font-size: 10px; }
+          .lp-ph-checkin-subtitle { font-size: 7px; }
+          .lp-ph-adjustment { padding: 8px; }
+          .lp-ph-adjustment-text { font-size: 8px; }
+          .lp-ph-nav { display: none; }
+          .lp-phone-glow { width: 220px; height: 300px; }
+          .lp-footer { display: none; }
         }
         @media (max-width: 390px) {
           .lp-logo { font-size: 40px; }
