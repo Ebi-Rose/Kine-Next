@@ -92,6 +92,12 @@ export default function LandingPage() {
           color: #f0f0f0;
           font-weight: 400;
         }
+        .lp-subline {
+          font-size: 17px;
+          line-height: 1.6;
+          color: #999;
+          max-width: 380px;
+        }
         .lp-body {
           font-size: 15px;
           line-height: 1.7;
@@ -354,6 +360,46 @@ export default function LandingPage() {
           color: #c49098;
           font-style: normal;
         }
+        .lp-ph-checkin-done {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          padding: 32px 16px 20px;
+          text-align: center;
+        }
+        .lp-ph-checkin-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: rgba(196, 144, 152, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .lp-ph-checkin-title {
+          font-size: 14px;
+          font-weight: 400;
+          color: #e0e0e0;
+          letter-spacing: 0.2px;
+        }
+        .lp-ph-checkin-subtitle {
+          font-size: 10px;
+          color: #555;
+        }
+        .lp-ph-adjustment {
+          background: #131313;
+          border: 1px solid #1a1a1a;
+          border-radius: 10px;
+          padding: 14px;
+          border-left: 2px solid rgba(196, 144, 152, 0.3);
+        }
+        .lp-ph-adjustment-text {
+          font-size: 11px;
+          color: #888;
+          font-weight: 300;
+          line-height: 1.6;
+        }
         .lp-ph-nav {
           margin-top: auto;
           display: flex;
@@ -430,17 +476,19 @@ export default function LandingPage() {
       <div className="lp-layout">
         <div className="lp-content">
           <div className="lp-logo">
-            <span className="lp-k">K</span><span className="lp-rest">INE</span>
+            <span className="lp-k">K</span><span className="lp-rest">INĒ</span>
           </div>
 
           <p className="lp-headline">
-            <strong>Stop guessing.</strong> Get a programme that actually understands your body.
+            <strong>Most programmes weren&apos;t built for your body.</strong>
+          </p>
+
+          <p className="lp-subline">
+            Showing up is the hard part. Kinē handles everything else.
           </p>
 
           <p className="lp-body">
-            Kine builds your strength training week by week &mdash;
-            explains every decision in plain language, and adjusts as <em>you</em> change.
-            No spreadsheets. No bro-science. Just coaching that makes sense.
+            Structured progression that shifts when your life does. No guilt. No starting over. Every decision explained.
           </p>
 
           <div className="lp-waitlist">
@@ -479,7 +527,7 @@ export default function LandingPage() {
                 <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg>
               </a>
             </div>
-            <div className="lp-footer-text">&copy; 2026 Kine</div>
+            <div className="lp-footer-text">&copy; 2026 Kinē</div>
           </div>
         </div>
 
@@ -489,32 +537,23 @@ export default function LandingPage() {
           <div className="lp-phone">
             <div className="lp-phone-screen">
               <div className="lp-phone-top">
-                <div className="lp-ph-logo"><span className="lpk">K</span><span className="lpr">INE</span></div>
+                <div className="lp-ph-logo"><span className="lpk">K</span><span className="lpr">INĒ</span></div>
                 <div className="lp-ph-week">Week 2 of 4</div>
               </div>
 
-              <div className="lp-ph-session">
-                <div className="lp-ph-session-title">Monday &mdash; Lower Body</div>
-                <div className="lp-ph-session-meta">5 exercises &middot; ~45 min &middot; Glute focus</div>
-              </div>
-
-              <div className="lp-ph-exercise">
-                <div className="lp-ph-ex-name">Romanian Deadlift</div>
-                <div className="lp-ph-ex-rx">Should feel heavy but controlled</div>
-                <div className="lp-ph-ex-tags">
-                  <span className="lp-ph-tag lp-ph-tag-accent">Glutes</span>
-                  <span className="lp-ph-tag lp-ph-tag-muted">Hamstrings</span>
+              <div className="lp-ph-checkin-done">
+                <div className="lp-ph-checkin-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#c49098" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                 </div>
+                <div className="lp-ph-checkin-title">Check-in received</div>
+                <div className="lp-ph-checkin-subtitle">Your next week has been updated.</div>
               </div>
 
-              <div className="lp-ph-cue">
-                Hinge from the hips, not the back. Slow on the way down &mdash; that&apos;s where the work happens.
-              </div>
-
-              <div className="lp-ph-edu">
-                <div className="lp-ph-edu-label">Why this exercise</div>
-                <div className="lp-ph-edu-text">
-                  Your glutes are the strongest muscle you have. RDLs train them through <em>full range</em> &mdash; most programmes skip this.
+              <div className="lp-ph-adjustment">
+                <div className="lp-ph-adjustment-text">
+                  Soreness was high after Tuesday&apos;s session. Next week spaces your lower body days further apart.
                 </div>
               </div>
 

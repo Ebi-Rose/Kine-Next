@@ -203,7 +203,7 @@ export default function SessionPage() {
       const data = await apiFetchStreaming({
         model: "claude-sonnet-4-20250514",
         max_tokens: 200,
-        system: "You are Kine. Suggest ONE alternative exercise. Return ONLY JSON: {\"name\":\"Exercise Name\",\"reason\":\"1 sentence why\"}",
+        system: "You are Kinē. Suggest ONE alternative exercise. Return ONLY JSON: {\"name\":\"Exercise Name\",\"reason\":\"1 sentence why\"}",
         messages: [{
           role: "user",
           content: `Replace "${currentEx.name}" in a ${day.sessionTitle} session. Equipment: ${store.equip.join(", ")}. Injuries: ${store.injuries.join(", ") || "none"}. Already in session: ${otherExercises.join(", ")}. Same muscle group, different movement pattern.`,

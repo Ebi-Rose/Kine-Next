@@ -112,7 +112,7 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
   },
   "/app/profile": {
     label: "Profile",
-    intro: "Tell Kine about yourself. More context means better coaching — but nothing is required.",
+    intro: "Tell Kinē about yourself. More context means better coaching — but nothing is required.",
     sections: [
       {
         title: "Coaching level",
@@ -124,7 +124,7 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
       },
       {
         title: "Injuries",
-        body: "Note current injuries and Kine will flag relevant exercises and suggest alternatives.",
+        body: "Note current injuries and Kinē will flag relevant exercises and suggest alternatives.",
       },
       {
         title: "Equipment",

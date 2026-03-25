@@ -98,7 +98,7 @@ export async function renderShareCard(pr: SharePR): Promise<Blob> {
   ctx.font = "16px Bebas Neue, sans-serif";
   ctx.fillStyle = "#777777";
   ctx.letterSpacing = "2px";
-  ctx.fillText("KINE", W - 28, brandY);
+  ctx.fillText("KINĒ", W - 28, brandY);
 
   return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob!), "image/png"));
 }
@@ -112,12 +112,12 @@ export async function sharePR(pr: SharePR): Promise<void> {
       await navigator.share({
         files: [file],
         title: `New PR: ${pr.name} ${pr.weight}kg`,
-        text: `${pr.name} - ${pr.weight}kg. Trained with Kine.`,
+        text: `${pr.name} - ${pr.weight}kg. Trained with Kinē.`,
       });
     } else if (navigator.share) {
       await navigator.share({
         title: `New PR: ${pr.name} ${pr.weight}kg`,
-        text: `${pr.name} - ${pr.weight}kg. Trained with Kine.`,
+        text: `${pr.name} - ${pr.weight}kg. Trained with Kinē.`,
         url: "https://kinefit.app",
       });
     } else {

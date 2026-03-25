@@ -44,7 +44,7 @@ export interface WeekData {
 
 // ── System Prompt ──
 
-const SYSTEM_PROMPT = `You are Kine - an intelligent strength and conditioning coach. Generate structured training programs. Return only valid JSON. No markdown, no code fences, no explanation.
+const SYSTEM_PROMPT = `You are Kinē - an intelligent strength and conditioning coach. Generate structured training programs. Return only valid JSON. No markdown, no code fences, no explanation.
 
 VOICE RULES: No jargon - never use stimulus, hypertrophy, CNS, eccentric, bilateral, progressive overload, or adaptation. weekCoachNote is 2 sentences max: what this week focuses on and what to expect. coachNote per session is 1 sentence leading with what matters most for her goal today. Sound like a coach talking to someone she knows - direct, specific, warm but honest. Never academic, never a motivational poster.
 
@@ -138,12 +138,23 @@ function buildUserPrompt(): string {
   // Recent session context (last 3 sessions for adaptation)
   let historyCtx = "";
   if (progressDB.sessions.length > 0) {
-    const recent = (progressDB.sessions as { title?: string; effort?: number; soreness?: number }[])
+    const recent = (progressDB.sessions as { title?: string; effort?: number; soreness?: number; dayIdx?: number }[])
       .slice(-3);
-    const histLines = recent.map((s) =>
-      `${s.title || "Session"} (effort: ${s.effort || "?"}/4, soreness: ${s.soreness || "?"}/4)`
-    );
+    const histLines = recent.map((s) => {
+      const day = s.dayIdx !== undefined ? DAY_LABELS[s.dayIdx] : "?";
+      return `${day} — ${s.title || "Session"} (effort: ${s.effort || "?"}/4, soreness: ${s.soreness || "?"}/4)`;
+    });
     historyCtx = `\n\nRecent sessions:\n${histLines.join("\n")}`;
+
+    // Session-specific guidance for high soreness
+    const highSoreness = recent.filter((s) => (s.soreness || 0) >= 3);
+    if (highSoreness.length > 0) {
+      const names = highSoreness.map((s) => {
+        const day = s.dayIdx !== undefined ? DAY_LABELS[s.dayIdx] : "";
+        return day ? `${s.title || "Session"} on ${day}` : (s.title || "Session");
+      }).join(", ");
+      historyCtx += `\nNote: High soreness reported after ${names}. Consider spacing similar muscle groups further apart or reducing volume for those muscle groups next week.`;
+    }
   }
 
   // #11: Week check-in feedback for AI adaptation

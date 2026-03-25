@@ -4,8 +4,59 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import { getPhase, getBlockWeek, getBlockNumber } from "@/lib/periodisation";
+import { DAY_LABELS } from "@/data/constants";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
+
+type SessionRecord = { weekNum?: number; effort?: number; soreness?: number; title?: string; dayIdx?: number; prs?: unknown[] };
+
+function getSessionInsight(sessions: SessionRecord[], scheduleFeeling: string | null): string {
+  if (sessions.length === 0) {
+    return scheduleFeeling === "too_easy"
+      ? "Noted — next week will push a little harder."
+      : scheduleFeeling === "too_much"
+        ? "Noted — next week will dial back the intensity."
+        : "Noted — keeping the balance where it is.";
+  }
+
+  // Find the highest-soreness session
+  const sorest = sessions.reduce((max, s) =>
+    (s.soreness || 0) > (max.soreness || 0) ? s : max, sessions[0]);
+
+  // Find the highest-effort session
+  const hardest = sessions.reduce((max, s) =>
+    (s.effort || 0) > (max.effort || 0) ? s : max, sessions[0]);
+
+  const dayName = (s: SessionRecord) =>
+    s.dayIdx !== undefined ? DAY_LABELS[s.dayIdx] : null;
+
+  // High soreness on a specific session
+  if ((sorest.soreness || 0) >= 3 && sorest.title) {
+    const day = dayName(sorest);
+    const sessionLabel = day ? `${day}'s ${sorest.title}` : sorest.title;
+    return `Soreness was high after ${sessionLabel}. Next week spaces your lower body days further apart.`;
+  }
+
+  // High effort across the board
+  if ((hardest.effort || 0) >= 4 && hardest.title) {
+    const day = dayName(hardest);
+    const sessionLabel = day ? `${day}'s ${hardest.title}` : hardest.title;
+    return `${sessionLabel} pushed your limits. Next week builds on that without overreaching.`;
+  }
+
+  // Low everything — room to push
+  const allEasy = sessions.every((s) => (s.effort || 2) <= 2 && (s.soreness || 2) <= 2);
+  if (allEasy) {
+    return "You sailed through this week. Next week can push a bit harder.";
+  }
+
+  // Fallback to schedule-based
+  return scheduleFeeling === "too_easy"
+    ? "Noted — next week will push a little harder."
+    : scheduleFeeling === "too_much"
+      ? "Noted — next week will dial back the intensity."
+      : "Noted — keeping the balance where it is.";
+}
 
 export default function WeekCheckinPage() {
   const router = useRouter();
@@ -27,7 +78,7 @@ export default function WeekCheckinPage() {
 
   // Week stats
   const weekSessions = useMemo(() =>
-    (progressDB.sessions as { weekNum?: number; effort?: number; soreness?: number; title?: string; prs?: unknown[] }[])
+    (progressDB.sessions as SessionRecord[])
       .filter((s) => s.weekNum === weekNum),
     [progressDB.sessions, weekNum]
   );
@@ -217,11 +268,7 @@ export default function WeekCheckinPage() {
           <div className="text-4xl mb-4">✓</div>
           <h2 className="font-display text-2xl tracking-wide text-accent">Check-in saved</h2>
           <p className="mt-2 text-xs text-muted2 max-w-xs">
-            {scheduleFeeling === "too_easy"
-              ? "Noted — next week will push a little harder."
-              : scheduleFeeling === "too_much"
-                ? "Noted — next week will dial back the intensity."
-                : "Noted — keeping the balance where it is."}
+            {getSessionInsight(weekSessions, scheduleFeeling)}
           </p>
           <Button className="mt-6" onClick={() => router.push("/app")}>
             Back to week

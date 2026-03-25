@@ -69,7 +69,7 @@ export default function CustomBuilderPage() {
       const data = await apiFetchStreaming({
         model: "claude-sonnet-4-20250514",
         max_tokens: 500,
-        system: "You are Kine. Suggest exercises for a custom training session. Return ONLY a JSON array of exercise names: [\"Exercise Name\", ...]. Use standard exercise names. Female-first: prioritise posterior chain, glutes, unilateral work.",
+        system: "You are Kinē. Suggest exercises for a custom training session. Return ONLY a JSON array of exercise names: [\"Exercise Name\", ...]. Use standard exercise names. Female-first: prioritise posterior chain, glutes, unilateral work.",
         messages: [{
           role: "user",
           content: `Suggest 5-6 exercises for a "${focusHint}" session. Equipment: ${store.equip.join(", ") || "bodyweight"}. Experience: ${store.exp || "new"}. Injuries: ${store.injuries.join(", ") || "none"}. Make it a well-rounded session with compounds first, then isolations.`,
