@@ -35,8 +35,9 @@ export default function LandingPage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px;
+          padding: 16px 20px;
           position: relative;
+          overflow: hidden;
           background: #0a0a0a;
           font-family: 'DM Sans', sans-serif;
           font-weight: 300;
@@ -47,7 +48,7 @@ export default function LandingPage() {
           position: absolute;
           inset: 0;
           background: url('/hero-bg.JPG') center/cover no-repeat;
-          opacity: 0.07;
+          opacity: 0.05;
           pointer-events: none;
         }
         .lp-layout {
@@ -55,7 +56,7 @@ export default function LandingPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 72px;
+          gap: 48px;
           max-width: 980px;
           width: 100%;
           animation: lpFadeUp 1s ease-out;
@@ -69,18 +70,18 @@ export default function LandingPage() {
           max-width: 420px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 12px;
         }
         .lp-logo {
           font-family: 'Bebas Neue', sans-serif;
-          font-size: 64px;
-          letter-spacing: 8px;
+          font-size: 48px;
+          letter-spacing: 6px;
           line-height: 1;
         }
         .lp-logo .lp-k { color: #c49098; }
         .lp-logo .lp-rest { color: #f0f0f0; }
         .lp-headline {
-          font-size: 22px;
+          font-size: 20px;
           line-height: 1.5;
           color: #bbb;
           max-width: 380px;
@@ -96,8 +97,8 @@ export default function LandingPage() {
           max-width: 380px;
         }
         .lp-body {
-          font-size: 15px;
-          line-height: 1.7;
+          font-size: 14px;
+          line-height: 1.6;
           color: #666;
           max-width: 360px;
         }
@@ -108,8 +109,8 @@ export default function LandingPage() {
         .lp-waitlist {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          margin-top: 4px;
+          gap: 8px;
+          margin-top: 0;
         }
         .lp-waitlist-form {
           display: flex;
@@ -164,7 +165,7 @@ export default function LandingPage() {
           max-width: 300px;
         }
         .lp-access {
-          margin-top: 4px;
+          margin-top: 0;
         }
         .lp-access a {
           font-size: 12px;
@@ -177,8 +178,8 @@ export default function LandingPage() {
         .lp-footer {
           display: flex;
           align-items: center;
-          gap: 14px;
-          margin-top: 4px;
+          gap: 10px;
+          margin-top: 0;
         }
         .lp-socials {
           display: flex;
@@ -216,11 +217,11 @@ export default function LandingPage() {
           flex-shrink: 0;
         }
         .lp-phone {
-          width: 270px;
-          height: 540px;
+          width: 210px;
+          height: 420px;
           background: #0e0e0e;
-          border-radius: 36px;
-          border: 3px solid #1a1a1a;
+          border-radius: 32px;
+          border: 2px solid #1a1a1a;
           overflow: hidden;
           position: relative;
           box-shadow:
@@ -453,13 +454,11 @@ export default function LandingPage() {
           .lp-subline { font-size: 12px; max-width: 360px; text-align: center; }
           .lp-body { font-size: 13px; max-width: 300px; text-align: center; }
           .lp-waitlist { align-items: center; }
-          .lp-waitlist-form { max-width: 320px; }
+          .lp-waitlist-form { max-width: 320px; flex-direction: column; border-radius: 12px; }
           .lp-waitlist-form input { padding: 12px 14px; font-size: 13px; }
-          .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; }
+          .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 12px 12px; }
           .lp-waitlist-note { text-align: center; }
-          .lp-phone { width: 230px; height: 460px; }
-          .lp-phone::before { width: 80px; height: 20px; }
-          .lp-phone-screen { padding: 32px 12px 12px; gap: 8px; }
+          .lp-phone-wrapper { display: none; }
           .lp-footer { flex-direction: column; gap: 8px; }
         }
         @media (max-width: 390px) {
