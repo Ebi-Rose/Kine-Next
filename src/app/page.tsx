@@ -45,12 +45,9 @@ export default function LandingPage() {
         .landing-page::before {
           content: '';
           position: absolute;
-          top: 15%;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, rgba(196, 144, 152, 0.04) 0%, transparent 70%);
+          inset: 0;
+          background: url('/hero-bg.JPG') center/cover no-repeat;
+          opacity: 0.07;
           pointer-events: none;
         }
         .lp-layout {
@@ -449,11 +446,12 @@ export default function LandingPage() {
           }
           .lp-content {
             align-items: center;
-            gap: 16px;
+            gap: 12px;
           }
-          .lp-logo { font-size: 52px; letter-spacing: 6px; }
-          .lp-headline { font-size: 18px; max-width: 320px; }
-          .lp-body { font-size: 14px; max-width: 300px; }
+          .lp-logo { font-size: 48px; letter-spacing: 6px; }
+          .lp-headline { font-size: 17px; max-width: 360px; text-align: center; }
+          .lp-subline { font-size: 12px; max-width: 360px; text-align: center; }
+          .lp-body { font-size: 13px; max-width: 300px; text-align: center; }
           .lp-waitlist { align-items: center; }
           .lp-waitlist-form { max-width: 320px; }
           .lp-waitlist-form input { padding: 12px 14px; font-size: 13px; }
@@ -465,8 +463,8 @@ export default function LandingPage() {
           .lp-footer { flex-direction: column; gap: 8px; }
         }
         @media (max-width: 390px) {
-          .lp-logo { font-size: 44px; }
-          .lp-headline { font-size: 16px; }
+          .lp-logo { font-size: 40px; }
+          .lp-headline { font-size: 19px; max-width: 300px; }
           .lp-phone { width: 210px; height: 420px; }
         }
       `}</style>

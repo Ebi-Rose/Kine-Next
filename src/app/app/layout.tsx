@@ -16,7 +16,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bg">
-        <main className="mx-auto max-w-[var(--container-max)] px-6 pb-20 pt-6" style={{ paddingLeft: 'max(24px, env(safe-area-inset-left))', paddingRight: 'max(24px, env(safe-area-inset-right))' }}>
+        <header className="mx-auto max-w-[var(--container-max)] px-6 pt-4 pb-0" style={{ paddingLeft: 'max(24px, env(safe-area-inset-left))', paddingRight: 'max(24px, env(safe-area-inset-right))' }}>
+          <span className="font-display text-lg tracking-widest">
+            <span className="text-accent">K</span>
+            <span className="text-text">INĒ</span>
+          </span>
+        </header>
+        <main className="mx-auto max-w-[var(--container-max)] px-6 pb-20 pt-3" style={{ paddingLeft: 'max(24px, env(safe-area-inset-left))', paddingRight: 'max(24px, env(safe-area-inset-right))' }}>
           {children}
         </main>
         <BottomNav />
