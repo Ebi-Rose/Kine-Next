@@ -40,6 +40,7 @@ function SignupView({ onSwitch }: { onSwitch: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState(false);
   const router = useRouter();
 
   async function handleSignup(e: React.FormEvent) {
@@ -47,11 +48,17 @@ function SignupView({ onSwitch }: { onSwitch: () => void }) {
     setError("");
     setLoading(true);
 
-    const { error: authError } = await signUp(email, password);
+    const { data, error: authError } = await signUp(email, password);
     setLoading(false);
 
     if (authError) {
       setError(authError.message);
+      return;
+    }
+
+    // If email confirmation is required, Supabase returns a user without a session
+    if (data?.user && !data.session) {
+      setConfirmEmail(true);
       return;
     }
 
@@ -61,6 +68,26 @@ function SignupView({ onSwitch }: { onSwitch: () => void }) {
 
   async function handleGoogle() {
     await signInWithOAuth("google");
+  }
+
+  if (confirmEmail) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-6">
+        <div className="w-full max-w-sm text-center">
+          <h2 className="font-display text-2xl tracking-wide text-text">Check your email</h2>
+          <p className="mt-3 text-sm text-muted2">
+            We sent a confirmation link to <strong className="text-text">{email}</strong>.
+            Click it to activate your account, then come back to log in.
+          </p>
+          <button
+            onClick={onSwitch}
+            className="mt-6 text-sm text-accent hover:underline"
+          >
+            Go to login →
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -128,7 +155,9 @@ function SignupView({ onSwitch }: { onSwitch: () => void }) {
         )}
 
         <p className="mt-4 text-center text-[10px] text-muted">
-          By continuing, you agree to our Terms & Privacy Policy
+          By continuing, you agree to our{" "}
+          <a href="/terms" className="text-accent hover:underline">Terms</a> &{" "}
+          <a href="/privacy" className="text-accent hover:underline">Privacy Policy</a>
         </p>
 
         <p className="mt-4 text-center text-xs text-muted2">
@@ -148,6 +177,7 @@ function LoginView({ onSwitch }: { onSwitch: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
@@ -180,7 +210,7 @@ function LoginView({ onSwitch }: { onSwitch: () => void }) {
       setError(resetError.message);
     } else {
       setError("");
-      alert("Password reset email sent. Check your inbox.");
+      setResetSent(true);
     }
   }
 
@@ -245,6 +275,12 @@ function LoginView({ onSwitch }: { onSwitch: () => void }) {
 
         {error && (
           <p className="mt-3 text-center text-xs text-red-400">{error}</p>
+        )}
+
+        {resetSent && (
+          <p className="mt-3 text-center text-xs text-green-400">
+            Password reset email sent. Check your inbox.
+          </p>
         )}
 
         <button

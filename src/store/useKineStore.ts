@@ -119,6 +119,9 @@ interface KineState {
   feedbackState: FeedbackState;
   sessionTimeBudgets: Record<number, number>;
 
+  // Sync metadata
+  _lastModifiedAt: string; // ISO timestamp of last local change
+
   // Actions
   setGoal: (goal: Goal) => void;
   setExp: (exp: Experience) => void;
@@ -208,6 +211,9 @@ export const useKineStore = create<KineState>()(
         currentLifts: {},
       },
 
+      // Sync metadata
+      _lastModifiedAt: new Date().toISOString(),
+
       // Session
       currentDayIdx: null,
       sessionLogs: {},
@@ -220,15 +226,15 @@ export const useKineStore = create<KineState>()(
       },
       sessionTimeBudgets: {},
 
-      // Actions
-      setGoal: (goal) => set({ goal }),
-      setExp: (exp) => set({ exp }),
-      setEquip: (equip) => set({ equip }),
-      setDays: (days) => set({ days }),
-      setTrainingDays: (days) => set({ trainingDays: days }),
-      setDuration: (duration) => set({ duration }),
-      setInjuries: (injuries) => set({ injuries }),
-      setInjuryNotes: (notes) => set({ injuryNotes: notes }),
+      // Actions (touch _lastModifiedAt on meaningful changes)
+      setGoal: (goal) => set({ goal, _lastModifiedAt: new Date().toISOString() }),
+      setExp: (exp) => set({ exp, _lastModifiedAt: new Date().toISOString() }),
+      setEquip: (equip) => set({ equip, _lastModifiedAt: new Date().toISOString() }),
+      setDays: (days) => set({ days, _lastModifiedAt: new Date().toISOString() }),
+      setTrainingDays: (days) => set({ trainingDays: days, _lastModifiedAt: new Date().toISOString() }),
+      setDuration: (duration) => set({ duration, _lastModifiedAt: new Date().toISOString() }),
+      setInjuries: (injuries) => set({ injuries, _lastModifiedAt: new Date().toISOString() }),
+      setInjuryNotes: (notes) => set({ injuryNotes: notes, _lastModifiedAt: new Date().toISOString() }),
       setConditions: (conditions) => {
         // Derive comfortFlags from conditions
         const comfortFlags: string[] = [];
@@ -236,14 +242,14 @@ export const useKineStore = create<KineState>()(
           comfortFlags.push("impactSensitive");
         if (conditions.includes("pelvic_floor"))
           comfortFlags.push("proneSensitive");
-        set({ conditions, comfortFlags });
+        set({ conditions, comfortFlags, _lastModifiedAt: new Date().toISOString() });
       },
-      setCycleType: (cycleType) => set({ cycleType }),
-      setCycle: (cycle) => set({ cycle }),
-      setDayDurations: (durations) => set({ dayDurations: durations }),
-      setProgressDB: (db) => set({ progressDB: db }),
-      setEduMode: (mode) => set({ eduMode: mode }),
-      setUnits: (units) => set({ units }),
+      setCycleType: (cycleType) => set({ cycleType, _lastModifiedAt: new Date().toISOString() }),
+      setCycle: (cycle) => set({ cycle, _lastModifiedAt: new Date().toISOString() }),
+      setDayDurations: (durations) => set({ dayDurations: durations, _lastModifiedAt: new Date().toISOString() }),
+      setProgressDB: (db) => set({ progressDB: db, _lastModifiedAt: new Date().toISOString() }),
+      setEduMode: (mode) => set({ eduMode: mode, _lastModifiedAt: new Date().toISOString() }),
+      setUnits: (units) => set({ units, _lastModifiedAt: new Date().toISOString() }),
       setWeekData: (data) => set((state) => {
         // Archive current week before replacing (if it has data)
         const history = [...state.weekHistory];

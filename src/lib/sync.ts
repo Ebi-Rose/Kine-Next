@@ -53,7 +53,24 @@ async function doSync() {
       sessionTimeBudgets: store.sessionTimeBudgets,
       sessionLogs: store.sessionLogs,
       feedbackState: store.feedbackState,
+      _lastModifiedAt: store._lastModifiedAt,
     };
+
+    // Check cloud timestamp before writing — don't overwrite newer data
+    const { data: existing } = await supabase
+      .from("training_data")
+      .select("updated_at")
+      .eq("user_id", user.id)
+      .single();
+
+    if (existing?.updated_at) {
+      const cloudTime = new Date(existing.updated_at).getTime();
+      const localTime = new Date(store._lastModifiedAt).getTime();
+      if (cloudTime > localTime) {
+        console.info("[sync] Cloud data is newer — skipping upload to avoid overwrite");
+        return;
+      }
+    }
 
     const { error } = await supabase.from("training_data").upsert(
       {
@@ -74,6 +91,7 @@ async function doSync() {
 
 /**
  * Fetch training data from Supabase and hydrate Zustand store.
+ * Only overwrites local data if cloud is newer.
  */
 export async function syncFromSupabase(): Promise<boolean> {
   if (shouldSkipSync()) return false;
@@ -92,7 +110,20 @@ export async function syncFromSupabase(): Promise<boolean> {
     const cloud = data.data as Record<string, unknown>;
     const store = useKineStore.getState();
 
-    // Hydrate store from cloud data
+    // Conflict resolution: only hydrate if cloud is newer than local
+    const cloudModified = (cloud._lastModifiedAt as string) || data.updated_at;
+    const localModified = store._lastModifiedAt;
+
+    if (localModified && cloudModified) {
+      const cloudTime = new Date(cloudModified).getTime();
+      const localTime = new Date(localModified).getTime();
+      if (localTime > cloudTime) {
+        console.info("[sync] Local data is newer — skipping cloud restore");
+        return false;
+      }
+    }
+
+    // Cloud is newer or equal — hydrate store
     if (cloud.state && typeof cloud.state === "object") {
       const s = cloud.state as Record<string, unknown>;
       if (s.goal !== undefined) store.setGoal(s.goal as typeof store.goal);

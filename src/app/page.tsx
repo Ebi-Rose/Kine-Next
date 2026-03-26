@@ -537,7 +537,13 @@ export default function LandingPage() {
                 <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg>
               </a>
             </div>
-            <div className="lp-footer-text">&copy; 2026 Kinē</div>
+            <div className="lp-footer-text">
+              <a href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}><span style={{ borderBottom: '1px solid #333' }}>Terms</span></a>
+              {' · '}
+              <a href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}><span style={{ borderBottom: '1px solid #333' }}>Privacy</span></a>
+              {' · '}
+              &copy; 2026 Kinē
+            </div>
           </div>
         </div>
 

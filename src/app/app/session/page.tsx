@@ -77,15 +77,15 @@ export default function SessionPage() {
   const day = week?.days?.[dayIdx];
 
   // #12: Apply time budget trimming to exercises
-  const effectiveExercises = (() => {
-    if (!day || day.isRest) return [];
+  const trimResult = (() => {
+    if (!day || day.isRest) return null;
     const budget = sessionTimeBudgets[dayIdx];
     if (budget && budget < (parseInt(day.sessionDuration) || 50)) {
-      const trimmed = trimSessionToTime(day.exercises, budget);
-      return trimmed.exercises;
+      return trimSessionToTime(day.exercises, budget);
     }
-    return day.exercises;
+    return null;
   })();
+  const effectiveExercises = trimResult?.exercises ?? (day?.exercises || []);
 
   // Initialize logs from exercises (using time-budget-trimmed list)
   useEffect(() => {
@@ -473,7 +473,10 @@ export default function SessionPage() {
         <div className="mb-4 rounded-lg border border-accent/20 bg-accent-dim/30 p-3">
           <p className="text-[10px] text-accent font-display tracking-wider">TRIMMED TO ~{timeBudget} MIN</p>
           <p className="text-[10px] text-muted2 font-light mt-0.5">
-            {day.exercises.length - effectiveExercises.length} exercise{day.exercises.length - effectiveExercises.length > 1 ? "s" : ""} removed to fit your time budget. Compounds kept.
+            {trimResult?.removedNames.length
+              ? `Removed: ${trimResult.removedNames.map((r) => r.name).join(", ")}.`
+              : `${day.exercises.length - effectiveExercises.length} exercise${day.exercises.length - effectiveExercises.length > 1 ? "s" : ""} removed.`
+            }{" "}Compounds kept.
           </p>
         </div>
       )}

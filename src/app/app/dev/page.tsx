@@ -11,6 +11,15 @@ export default function DevPanel() {
   const router = useRouter();
   const [showState, setShowState] = useState(false);
 
+  // Block access in production
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-sm text-muted2">Not available.</p>
+      </div>
+    );
+  }
+
   function advanceWeek() {
     store.setProgressDB({
       ...store.progressDB,

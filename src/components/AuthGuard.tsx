@@ -18,6 +18,7 @@ async function getAccessMode(): Promise<string | null> {
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -60,8 +61,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       let sub = await getSubscriptionStatus();
       if (!sub.active && isPostCheckout) {
-        for (let i = 0; i < 5; i++) {
-          await new Promise((r) => setTimeout(r, 2000));
+        setLoadingMsg("Activating your subscription…");
+        // Stripe webhook may not have fired yet — poll with backoff
+        const delays = [1000, 1500, 2000, 2500, 3000];
+        for (const delay of delays) {
+          await new Promise((r) => setTimeout(r, delay));
           if (cancelled) return;
           sub = await getSubscriptionStatus();
           if (sub.active) break;
@@ -98,8 +102,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!allowed) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-bg">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-bg gap-5">
+        <p className="font-display text-2xl tracking-wide text-text">
+          <span style={{ color: "var(--color-accent)" }}>K</span>INĒ
+        </p>
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        {loadingMsg && (
+          <p className="text-xs text-muted2 animate-pulse">{loadingMsg}</p>
+        )}
       </div>
     );
   }
