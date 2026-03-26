@@ -1,8 +1,8 @@
 import { supabase } from "./supabase";
 
-/** True if dev bypass env var is set (local development only) */
+/** True only in local development (never in production builds) */
 export function isDevBypass(): boolean {
-  return process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
+  return process.env.NODE_ENV === "development";
 }
 
 export async function getSession() {

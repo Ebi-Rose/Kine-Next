@@ -27,17 +27,14 @@ export default function AccessPage() {
 
         if (mode === "demo") {
           // Load seed data and go straight to app
-          localStorage.setItem("kine_mode", "demo");
           const { loadDemoData } = await import("@/data/demo-data");
           loadDemoData(useKineStore.getState());
           router.push("/app");
         } else if (mode === "new") {
           // Skip auth/stripe, fresh user → onboarding
-          localStorage.setItem("kine_mode", "new");
           router.push("/app/onboarding");
         } else {
           // Real flow: auth → stripe → onboarding
-          localStorage.removeItem("kine_mode");
           router.push("/login");
         }
       } else {

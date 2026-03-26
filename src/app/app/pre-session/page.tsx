@@ -48,7 +48,7 @@ export default function PreSessionPage() {
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
   const {
-    weekData, goal, injuries, injuryNotes, cycleType, cycle,
+    weekData, goal, injuries, injuryNotes, conditions, cycleType, cycle,
     eduMode, setEduMode, sessionMode, setSessionMode,
     restConfig, setRestConfig,
     progressDB, sessionTimeBudgets,
@@ -148,10 +148,11 @@ export default function PreSessionPage() {
       parts.push(labels[energy]);
     }
     if (phaseInfo) parts.push(phaseInfo.phase.charAt(0).toUpperCase() + phaseInfo.phase.slice(1) + " phase");
+    if (conditions.length) parts.push(conditions.length + " condition" + (conditions.length > 1 ? "s" : ""));
     if (injuries.length || injuryNotes) parts.push(injuries.join(", ") || "injury note");
     if (daysSinceLastSession !== null) parts.push(`${daysSinceLastSession} day${daysSinceLastSession !== 1 ? "s" : ""} rest`);
     return parts.length ? parts.join(" · ") : "Tap to check in";
-  }, [energy, phaseInfo, injuries, injuryNotes, daysSinceLastSession]);
+  }, [energy, phaseInfo, conditions, injuries, injuryNotes, daysSinceLastSession]);
 
   // Settings description
   const settingsDesc = useMemo(() => {
@@ -348,6 +349,20 @@ export default function PreSessionPage() {
           >
             Add cycle data for smarter coaching{" "}
             <span className="text-accent text-[11px]">SET UP →</span>
+          </div>
+        )}
+
+        {/* Conditions */}
+        {conditions.length > 0 && (
+          <div className="flex items-start gap-2 py-2 border-t border-border">
+            <span className="text-xs shrink-0 mt-px">ℹ</span>
+            <div className="text-xs text-muted2 font-light leading-snug">
+              <strong className="text-text font-medium">{conditions.map(c => {
+                const labels: Record<string, string> = { pcos: "PCOS", fibroids: "Fibroids", endometriosis: "Endometriosis", pelvic_floor: "Pelvic floor" };
+                return labels[c] || c;
+              }).join(", ")}</strong>
+              <span> — programme adapted</span>
+            </div>
           </div>
         )}
 

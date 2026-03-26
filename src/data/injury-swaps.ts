@@ -89,6 +89,42 @@ export const INJURY_SWAPS: Record<string, Record<string, string>> = {
   },
 };
 
+// ── Condition-based exercise swaps ──
+// Health conditions (PCOS, fibroids, endometriosis, pelvic floor) that affect exercise selection.
+// Conditions are context, not identity — the programme adapts silently.
+
+export const CONDITION_SWAPS: Record<string, Record<string, string>> = {
+  fibroids: {
+    "Box Jumps": "Step-Ups",
+    "Jump Squat": "Bodyweight Squat",
+    "Burpees": "Squat to Press",
+    "Jump Rope": "Incline Walk",
+    "Mountain Climbers": "Dead Bug",
+    "Crunch": "Pallof Press",
+    "V-Up": "Dead Bug",
+  },
+  endometriosis: {
+    "Box Jumps": "Step-Ups",
+    "Jump Squat": "Bodyweight Squat",
+    "Burpees": "Squat to Press",
+    "Jump Rope": "Incline Walk",
+    "Mountain Climbers": "Dead Bug",
+    "Crunch": "Pallof Press",
+    "V-Up": "Dead Bug",
+  },
+  pelvic_floor: {
+    "Box Jumps": "Step-Ups",
+    "Jump Squat": "Goblet Squat",
+    "Jump Rope": "Incline Walk",
+    "Burpees": "Squat to Press",
+    "Crunch": "Dead Bug",
+    "V-Up": "Dead Bug",
+    "Ab Wheel Rollout": "Bird Dog",
+    "Hanging Leg Raise": "Dead Bug",
+  },
+  pcos: {}, // No swaps — PCOS uses compound-priority via AI context
+};
+
 /** Apply injury swaps to a list of exercise names */
 export function applyInjurySwaps(
   exercises: string[],
@@ -99,6 +135,24 @@ export function applyInjurySwaps(
   return exercises.map((name) => {
     for (const injury of injuries) {
       const swaps = INJURY_SWAPS[injury];
+      if (swaps && swaps[name]) {
+        return swaps[name];
+      }
+    }
+    return name;
+  });
+}
+
+/** Apply condition swaps to a list of exercise names */
+export function applyConditionSwaps(
+  exercises: string[],
+  conditions: string[]
+): string[] {
+  if (conditions.length === 0) return exercises;
+
+  return exercises.map((name) => {
+    for (const condition of conditions) {
+      const swaps = CONDITION_SWAPS[condition];
       if (swaps && swaps[name]) {
         return swaps[name];
       }

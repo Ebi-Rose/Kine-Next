@@ -11,9 +11,9 @@ export default function PricingPage() {
     setLoading(true);
     setError("");
     try {
-      const { getUser } = await import("@/lib/auth");
-      const user = await getUser();
-      if (!user) {
+      const { getSession } = await import("@/lib/auth");
+      const session = await getSession();
+      if (!session) {
         setError("Please sign in first.");
         setLoading(false);
         return;
@@ -21,8 +21,11 @@ export default function PricingPage() {
 
       const res = await fetch("/api/create-checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, userId: user.id, email: user.email }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) {

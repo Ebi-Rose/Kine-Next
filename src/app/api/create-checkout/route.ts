@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getAuthenticatedUser } from "../_lib/auth";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 const PRICES: Record<string, string | undefined> = {
@@ -38,11 +39,18 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Stripe not configured" }, { status: 500 });
   }
 
+  const user = await getAuthenticatedUser(request);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { plan, userId, email } = await request.json();
+    const { plan } = await request.json();
+    const userId = user.id;
+    const email = user.email;
 
     if (!plan || !PRICES[plan]) {
-      return Response.json({ error: "Invalid plan: " + plan }, { status: 400 });
+      return Response.json({ error: "Invalid plan" }, { status: 400 });
     }
 
     let customerId: string | undefined;
@@ -82,8 +90,7 @@ export async function POST(request: NextRequest) {
     const session = await stripeRequest("/checkout/sessions", sessionParams);
     return Response.json({ url: session.url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Checkout error:", message);
-    return Response.json({ error: message }, { status: 500 });
+    console.error("Checkout error:", err instanceof Error ? err.message : err);
+    return Response.json({ error: "Failed to create checkout session" }, { status: 500 });
   }
 }

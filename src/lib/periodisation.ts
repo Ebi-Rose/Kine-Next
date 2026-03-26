@@ -1,5 +1,8 @@
-// ── Periodisation — 4-Week Block Structure ──
-// Accumulation → Intensification → Peak → Deload
+// ── Periodisation — 3-Week Progressive Block + Autoregulated Deloads ──
+// Accumulation → Intensification → Peak (repeat)
+// Deloads are triggered by signals, not by a fixed schedule.
+// Research: Schoenfeld et al. (2024) found fixed mid-program deloads negatively
+// influenced strength. Delphi consensus recommends autoregulation over rigid scheduling.
 
 export type PhaseName = "Accumulation" | "Intensification" | "Peak" | "Deload";
 
@@ -13,11 +16,12 @@ export interface BlockPhase {
   intensity: string;
 }
 
+/** The 3 progressive phases that repeat in each block. */
 const BLOCK_PHASES: Record<number, BlockPhase> = {
   1: {
     name: "Accumulation",
     label: "VOLUME WEEK",
-    description: "Building your base — higher reps, moderate load, more sets. The goal is muscle adaptation through volume.",
+    description: "Building your base — higher reps, moderate load, more sets. For physique goals, volume is the primary driver of muscle growth — add sets before adding weight.",
     loadMod: 0,
     volMod: "+1 set on main lifts",
     repRange: "10-12",
@@ -41,23 +45,28 @@ const BLOCK_PHASES: Record<number, BlockPhase> = {
     repRange: "4-6",
     intensity: "very high",
   },
-  4: {
-    name: "Deload",
-    label: "DELOAD WEEK",
-    description: "Planned recovery. Same movements, significantly lighter. Your body needs this to consolidate gains before the next block.",
-    loadMod: -20,
-    volMod: "-30-40% sets — recovery priority",
-    repRange: "12-15",
-    intensity: "low",
-  },
 };
 
+/** Deload phase — used when autoregulated triggers fire, not on a fixed schedule. */
+export const DELOAD_PHASE: BlockPhase = {
+  name: "Deload",
+  label: "DELOAD WEEK",
+  description: "Your body is asking for recovery. Same movements, significantly lighter. This is based on your recent effort and soreness — not a fixed schedule.",
+  loadMod: -20,
+  volMod: "-30-40% sets — recovery priority",
+  repRange: "12-15",
+  intensity: "low",
+};
+
+/** Maximum weeks without a deload before the safety net triggers. */
+const MAX_WEEKS_WITHOUT_DELOAD = 6;
+
 /**
- * Get the week number within the current 4-week block (1-4).
+ * Get the week number within the current 3-week block (1-3).
  */
 export function getBlockWeek(weekNum: number, phaseOffset: number = 0): number {
   const effective = weekNum - phaseOffset;
-  return ((Math.max(1, effective) - 1) % 4) + 1;
+  return ((Math.max(1, effective) - 1) % 3) + 1;
 }
 
 /**
@@ -65,7 +74,7 @@ export function getBlockWeek(weekNum: number, phaseOffset: number = 0): number {
  */
 export function getBlockNumber(weekNum: number, phaseOffset: number = 0): number {
   const effective = weekNum - phaseOffset;
-  return Math.ceil(Math.max(1, effective) / 4);
+  return Math.ceil(Math.max(1, effective) / 3);
 }
 
 /**
@@ -83,24 +92,38 @@ export function getNextPhase(weekNum: number, phaseOffset: number = 0): BlockPha
 }
 
 /**
- * Check if a deload should happen.
- * - Structured: week 4 of every block
- * - Emergency: avg soreness >= 3.8 over the current week
+ * Check if a deload should happen — fully autoregulated, no fixed schedule.
+ *
+ * Triggers:
+ * 1. High soreness: avg ≥ 3.8 across the current week's sessions
+ * 2. Low energy/motivation: most recent week check-in effort or motivation ≤ 2
+ * 3. Safety net: 6+ weeks since last deload (prevents indefinite fatigue accumulation)
  */
 export function shouldDeload(
   weekNum: number,
-  phaseOffset: number,
-  sessions: { weekNum?: number; soreness?: number }[]
+  _phaseOffset: number,
+  sessions: { weekNum?: number; soreness?: number }[],
+  lastDeloadWeek: number = 0,
+  latestCheckIn?: { effort: number; soreness: number },
 ): boolean {
-  // Structured deload at week 4
-  if (getBlockWeek(weekNum + 1, phaseOffset) === 4) return true;
-
-  // Emergency deload
+  // 1. High soreness across the current week
   const weekSessions = sessions.filter((s) => s.weekNum === weekNum);
-  if (weekSessions.length === 0) return false;
-  const avgSoreness =
-    weekSessions.reduce((a, s) => a + (s.soreness || 2), 0) / weekSessions.length;
-  return avgSoreness >= 3.8;
+  if (weekSessions.length > 0) {
+    const avgSoreness =
+      weekSessions.reduce((a, s) => a + (s.soreness || 2), 0) / weekSessions.length;
+    if (avgSoreness >= 3.8) return true;
+  }
+
+  // 2. Low energy or motivation from week check-in
+  if (latestCheckIn && (latestCheckIn.effort <= 2 || latestCheckIn.soreness <= 2)) {
+    // Only trigger if also at least 3 weeks since last deload (avoid back-to-back deloads)
+    if (weekNum - lastDeloadWeek >= 3) return true;
+  }
+
+  // 3. Safety net — max weeks without a deload
+  if (weekNum - lastDeloadWeek >= MAX_WEEKS_WITHOUT_DELOAD) return true;
+
+  return false;
 }
 
 /**
@@ -127,30 +150,39 @@ export function getWeekAdherence(
 
 /**
  * Get the effective next phase, holding current if adherence too low.
+ * If a deload was triggered, returns the deload phase instead of the natural next.
  */
 export function getEffectiveNextPhase(
   weekNum: number,
   phaseOffset: number,
   plannedDays: number,
-  sessions: { weekNum?: number }[],
-  skippedSessions: { weekNum?: number; movedTo?: number | null }[]
-): { phase: BlockPhase; held: boolean; adherence: ReturnType<typeof getWeekAdherence> } {
+  sessions: { weekNum?: number; soreness?: number }[],
+  skippedSessions: { weekNum?: number; movedTo?: number | null }[],
+  lastDeloadWeek: number = 0,
+  latestCheckIn?: { effort: number; soreness: number },
+): { phase: BlockPhase; held: boolean; deloading: boolean; adherence: ReturnType<typeof getWeekAdherence> } {
   const adherence = getWeekAdherence(weekNum, plannedDays, sessions, skippedSessions);
   const naturalNext = getNextPhase(weekNum, phaseOffset);
   const currentPhase = getPhase(weekNum, phaseOffset);
 
-  // Full or sufficient → advance
-  if (adherence.level === "full" || adherence.level === "sufficient") {
-    return { phase: naturalNext, held: false, adherence };
+  // Check if deload is triggered for next week
+  const needsDeload = shouldDeload(weekNum, phaseOffset, sessions, lastDeloadWeek, latestCheckIn);
+  if (needsDeload && currentPhase.name !== "Deload") {
+    return { phase: DELOAD_PHASE, held: false, deloading: true, adherence };
   }
 
   // Deload always advances (it's recovery, not training)
   if (currentPhase.name === "Deload") {
-    return { phase: naturalNext, held: false, adherence };
+    return { phase: naturalNext, held: false, deloading: false, adherence };
+  }
+
+  // Full or sufficient → advance
+  if (adherence.level === "full" || adherence.level === "sufficient") {
+    return { phase: naturalNext, held: false, deloading: false, adherence };
   }
 
   // Hold at current phase
-  return { phase: currentPhase, held: true, adherence };
+  return { phase: currentPhase, held: true, deloading: false, adherence };
 }
 
 /**
@@ -160,7 +192,7 @@ export function getPhaseContext(weekNum: number, phaseOffset: number): string {
   const phase = getPhase(weekNum, phaseOffset);
   const blockNum = getBlockNumber(weekNum, phaseOffset);
   const blockWeek = getBlockWeek(weekNum, phaseOffset);
-  return `Training phase: Block ${blockNum}, Week ${blockWeek}/4 — ${phase.name} (${phase.label}). ${phase.description} Rep range: ${phase.repRange}. Intensity: ${phase.intensity}.`;
+  return `Training phase: Block ${blockNum}, Week ${blockWeek}/3 — ${phase.name} (${phase.label}). ${phase.description} Rep range: ${phase.repRange}. Intensity: ${phase.intensity}. Deloads are autoregulated — not on a fixed schedule.`;
 }
 
 /**

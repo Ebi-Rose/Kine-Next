@@ -8,7 +8,7 @@ import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult, ExerciseFeedback } from "@/lib/session-analysis";
 import { apiFetchStreaming } from "@/lib/api";
 import { findExercise } from "@/data/exercise-library";
-import { getBreathingCue, getMuscleTags, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
+import { getBreathingCue, getMuscleTags, getConditionCue, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
 import { getSkillPath, hasSkillPath, SKILL_HINTS } from "@/data/skill-paths";
 import { getVideoThumb, hasVideo, getVideoUrl } from "@/data/exercise-videos";
 import { suggestNextWeight } from "@/lib/progression";
@@ -48,7 +48,7 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, exp } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, conditions, exp } =
     useKineStore();
   // Store is ready if goal exists (set during onboarding)
   const hydrated = useKineStore((s) => s.goal !== null);
@@ -417,7 +417,7 @@ export default function SessionPage() {
     );
   }
 
-  const warmup = buildWarmup(day.sessionTitle, effectiveExercises, injuries, exp || "developing");
+  const warmup = buildWarmup(day.sessionTitle, effectiveExercises, injuries, exp || "developing", conditions);
   const timeBudget = sessionTimeBudgets[dayIdx];
   const isTrimmed = timeBudget && effectiveExercises.length < day.exercises.length;
 
@@ -535,6 +535,18 @@ export default function SessionPage() {
             </div>
           )}
 
+          {/* Condition mods */}
+          {warmup.conditionItems.length > 0 && (
+            <div className="mb-2">
+              <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-1">For your body</p>
+              <div className="flex flex-col gap-1">
+                {warmup.conditionItems.map((wu, i) => (
+                  <FullWarmupItem key={`cond-${i}`} item={wu} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Ramp-up sets */}
           {warmup.rampSets.length > 0 && (
             <div className="mt-2 pt-2 border-t border-white/[0.04]">
@@ -593,6 +605,7 @@ export default function SessionPage() {
             onSkillPath={(name) => setSkillPathEx(name)}
             onEduSheet={(idx) => setEduSheetIdx(idx)}
             eduMode={eduMode}
+            conditions={conditions}
           />
         ))}
       </div>
@@ -757,6 +770,7 @@ export default function SessionPage() {
           feel={(effectiveExercises[eduSheetIdx] as { feel?: string }).feel}
           context={(effectiveExercises[eduSheetIdx] as { context?: string }).context}
           cues={(effectiveExercises[eduSheetIdx] as { cues?: string[] }).cues}
+          conditions={conditions}
         />
       )}
 
@@ -776,7 +790,7 @@ export default function SessionPage() {
 // ── Exercise Card ──
 
 function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full",
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full", conditions = [],
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -795,6 +809,7 @@ function ExerciseCard({
   onSkillPath?: (name: string) => void;
   onEduSheet?: (exIdx: number) => void;
   eduMode?: string;
+  conditions?: string[];
 }) {
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -904,7 +919,8 @@ function ExerciseCard({
       {expanded && !log.saved && (() => {
         const exInfo = findExercise(exercise.name);
         const logType = exInfo?.logType || "weighted";
-        const breathCue = getBreathingCue(exercise.name);
+        const breathCue = getBreathingCue(exercise.name, conditions);
+        const condCue = getConditionCue(exercise.name, conditions);
         const weightSuggestion = suggestNextWeight(exercise.name);
         const skillPath = hasSkillPath(exercise.name) ? getSkillPath(exercise.name, []) : null;
 
@@ -1060,6 +1076,10 @@ function ExerciseCard({
             )}
             {eduMode === "full" && isCompound(exercise.name) && (
               <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
+            )}
+            {/* Condition-specific education cue — full mode only, 1 max */}
+            {eduMode === "full" && condCue && (
+              <p className="mt-2 text-[10px] text-accent/80 font-light">ℹ {condCue.tag}: {condCue.cue}</p>
             )}
             </>)}
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyValue } from "./api/_lib/cookie-sign";
 
 const PUBLIC_ROUTES = ["/", "/access"];
 const GATED_ROUTES = ["/login", "/pricing", "/app"];
@@ -20,9 +21,10 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for access cookie
-  const accessCookie = req.cookies.get("kine_access")?.value;
-  if (accessCookie !== "granted") {
+  // Verify signed access cookie
+  const raw = req.cookies.get("kine_access")?.value;
+  const value = raw ? verifyValue(raw) : null;
+  if (!value?.startsWith("granted")) {
     return NextResponse.redirect(new URL("/access", req.nextUrl));
   }
 

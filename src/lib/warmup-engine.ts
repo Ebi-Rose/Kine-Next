@@ -8,6 +8,7 @@ import {
   WARMUP_ACTIVATION,
   WARMUP_STABILISER_EXTRAS,
   WARMUP_INJURY_MODS,
+  WARMUP_CONDITION_MODS,
   COOLDOWN_BREATH,
   COOLDOWN_RESET,
   COOLDOWN_EXERCISE_RELEASE,
@@ -31,6 +32,7 @@ export interface WarmupResult {
   activation: WarmupItem[];
   stabiliserExtra: WarmupItem | null;
   injuryItems: WarmupItem[];
+  conditionItems: WarmupItem[];
   rampSets: RampSet[];
   totalMin: number;
   firstExName: string | null;
@@ -84,6 +86,7 @@ export function buildWarmup(
   exercises: Exercise[],
   injuries: string[],
   expLevel: string,
+  conditions: string[] = [],
 ): WarmupResult {
   const focus = SESSION_MUSCLE_FOCUS[sessionTitle] || ["push", "pull", "legs", "hinge"];
   const allFocus = [...new Set(focus)];
@@ -132,16 +135,27 @@ export function buildWarmup(
   }
   injuryItems = injuryItems.slice(0, 2);
 
+  // Condition mods - cap at 2, deduped against injury items
+  let conditionItems: WarmupItem[] = [];
+  for (const cond of conditions || []) {
+    for (const item of WARMUP_CONDITION_MODS[cond] || []) {
+      if (!conditionItems.find((i) => i.name === item.name) && !injuryItems.find((i) => i.name === item.name)) {
+        conditionItems.push(item);
+      }
+    }
+  }
+  conditionItems = conditionItems.slice(0, 2);
+
   // Ramp-up sets
   const rampSets = buildRampSets(firstEx, expLevel);
 
   // Total time
-  const allItems = [...general, ...activation, ...(stabiliserExtra ? [stabiliserExtra] : []), ...injuryItems];
+  const allItems = [...general, ...activation, ...(stabiliserExtra ? [stabiliserExtra] : []), ...injuryItems, ...conditionItems];
   let totalSec = allItems.reduce((acc, item) => acc + (parseInt(item.duration) || 45), 0);
   if (rampSets.length) totalSec += rampSets.length * 90;
   const totalMin = Math.ceil(totalSec / 60);
 
-  return { general, activation, stabiliserExtra, injuryItems, rampSets, totalMin, firstExName: firstEx?.name || null };
+  return { general, activation, stabiliserExtra, injuryItems, conditionItems, rampSets, totalMin, firstExName: firstEx?.name || null };
 }
 
 /** Build cooldown for a session */

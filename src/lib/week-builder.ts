@@ -232,17 +232,17 @@ Trainee:
 - Schedule: ${daysCount} days/week (${dayNames}), ${durationLabel}
 - Injuries: ${injuryStr}${conditionCtx}
 - Program: ${prog}
-- Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance for upper body accessories.${bodyCtx}${dayDurCtx}
+- Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance — especially upper body (prescribe +1 set on upper body accessories vs lower body). Women recover faster between sets — rest periods can be shorter than male-derived defaults.${bodyCtx}${dayDurCtx}
 ${cycleCtx}
 ${phaseCtx}${historyCtx}${weekFeedbackCtx}${injuryAvoidCtx}
 
 EXERCISE POOL — only use exercises from this list:
 ${poolStr}
 
-PRESCRIPTION GUIDE:
-- Strength: Primary compounds 4-5 sets, 3-6 reps, 3-5 min rest. Accessories 3 sets, 8-12 reps, 90s rest.
-- Muscle: Primary movements 3-4 sets, 8-12 reps, 90s-2 min rest. Isolation 3 sets, 12-15 reps, 60s rest.
-- General: All exercises 3 sets, 8-12 reps, 60-90s rest.
+PRESCRIPTION GUIDE (female-optimised — women recover faster between sets and tolerate higher volume at moderate loads):
+- Strength: Primary compounds 4-5 sets, 3-6 reps, 2-3 min rest (up to 4 min on peak week only). Upper body accessories 4 sets, 8-12 reps, 60-90s rest. Lower body accessories 3 sets, 8-12 reps, 60-90s rest.
+- Muscle: Primary movements 3-4 sets, 8-12 reps, 60-90s rest (up to 2 min for heavy compounds only). Upper body isolation 4 sets, 12-15 reps, 60s rest. Lower body isolation 3 sets, 12-15 reps, 60s rest. VOLUME PROGRESSION: prioritise adding sets across the block (week 1: 3 sets → week 3: 4 sets on primary movements) over adding load. Load increases are secondary — hypertrophy is driven by total weekly volume, not weight on the bar.
+- General: All exercises 3 sets, 10-15 reps, 60-90s rest. Keep it simple and undaunting — consistency matters more than intensity.
 - Bodyweight exercises: prescribe reps (not weight). Timed exercises: use reps for duration e.g. "30 sec". Cardio: sets "1", reps as duration.
 
 Return ONLY valid JSON, no markdown:
@@ -371,27 +371,35 @@ function applyEquipmentSwaps(exercises: string[], userEquip: string[]): string[]
   });
 }
 
-/** Build prescription (sets/reps/rest) based on goal */
+/** Build prescription (sets/reps/rest) based on goal — female-optimised */
 function buildFallbackPrescription(name: string, goal: string): Exercise {
   const libEx = EXERCISE_LIBRARY.find((e) => e.name === name);
   const isCompound = libEx?.tags.includes("Compound") ?? true;
   const isBodyweight = libEx?.logType === "bodyweight" || libEx?.logType === "bodyweight_unilateral";
   const isTimed = libEx?.logType === "timed";
+  const isUpperBody = libEx?.muscle === "push" || libEx?.muscle === "pull";
 
   if (isTimed) {
     return { name, sets: "3", reps: "30 sec", rest: "60 sec" };
   }
   if (goal === "strength") {
-    return isCompound
-      ? { name, sets: isBodyweight ? "3" : "4", reps: isBodyweight ? "6-8" : "5-6", rest: "2-3 min" }
-      : { name, sets: "3", reps: "8-10", rest: "90 sec" };
+    if (isCompound) {
+      return { name, sets: isBodyweight ? "3" : "4", reps: isBodyweight ? "6-8" : "5-6", rest: "2-3 min" };
+    }
+    // +1 set for upper body accessories (women benefit from more upper body volume)
+    const accSets = isUpperBody ? "4" : "3";
+    return { name, sets: accSets, reps: "8-10", rest: "60-90 sec" };
   }
   if (goal === "muscle") {
-    return isCompound
-      ? { name, sets: isBodyweight ? "3" : "3-4", reps: "8-12", rest: "90 sec-2 min" }
-      : { name, sets: "3", reps: "12-15", rest: "60 sec" };
+    if (isCompound) {
+      return { name, sets: isBodyweight ? "3" : "3-4", reps: "8-12", rest: "60-90 sec" };
+    }
+    // +1 set for upper body isolation
+    const isoSets = isUpperBody ? "4" : "3";
+    return { name, sets: isoSets, reps: "12-15", rest: "60 sec" };
   }
-  return { name, sets: "3", reps: isBodyweight ? "10-15" : "8-12", rest: "60-90 sec" };
+  // General/habit goal: 10-15 reps (wider range, less intimidating, plays to fatigue resistance)
+  return { name, sets: "3", reps: isBodyweight ? "10-15" : "10-15", rest: "60-90 sec" };
 }
 
 /** Generic full-body fallback when no split template matches */

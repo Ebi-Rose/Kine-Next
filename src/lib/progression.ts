@@ -3,19 +3,25 @@
 import { useKineStore } from "@/store/useKineStore";
 
 /**
- * Suggest next weight for an exercise based on history.
+ * Suggest next weight for an exercise based on history and goal.
+ *
+ * Strength goal: load progression is primary — add weight when target reps are hit.
+ * Muscle/body comp goal: volume progression is primary — hold weight longer,
+ *   prioritise completing more sets/reps before increasing load.
+ * General/habit goal: hold weight until movement is comfortable, then small increases.
+ *
  * Returns a string like "40kg" or "BW" or null if no history.
  */
 export function suggestNextWeight(exerciseName: string): string | null {
   const store = useKineStore.getState();
   const history = store.progressDB.lifts[exerciseName];
+  const goal = store.goal || "general";
 
   if (!history || history.length === 0) return null;
 
   const latest = history[history.length - 1];
   if (!latest.weight) return null;
 
-  // If they hit target reps at this weight, suggest slight increase
   const targetReps = parseInt(String(latest.reps)) || 8;
   const equipType = getEquipType(exerciseName, store.equip);
 
@@ -24,12 +30,34 @@ export function suggestNextWeight(exerciseName: string): string | null {
   else if (equipType === "kettlebell") increment = 4;
   else if (equipType === "machine") increment = 2.5;
 
-  // If they completed target reps, suggest next weight
-  if (targetReps >= 8) {
+  if (goal === "strength") {
+    // Strength: load progression is primary
+    // If they hit the top of their rep range, increase weight
+    if (targetReps >= 6) {
+      return `${latest.weight + increment}kg`;
+    }
     return `${latest.weight}kg`;
   }
 
-  // If they're building reps, keep same weight
+  if (goal === "muscle") {
+    // Muscle/body comp: volume progression is primary
+    // Hold weight longer — only increase after consistently hitting top of range
+    // across multiple sessions (the AI handles set progression across the block)
+    if (targetReps >= 12 && history.length >= 2) {
+      const prev = history[history.length - 2];
+      const prevReps = parseInt(String(prev.reps)) || 0;
+      // Only increase if they hit top-of-range in BOTH recent sessions
+      if (prevReps >= 12) {
+        return `${latest.weight + increment}kg`;
+      }
+    }
+    return `${latest.weight}kg`;
+  }
+
+  // General/habit: conservative progression — comfort first
+  if (targetReps >= 15 && history.length >= 2) {
+    return `${latest.weight + increment}kg`;
+  }
   return `${latest.weight}kg`;
 }
 

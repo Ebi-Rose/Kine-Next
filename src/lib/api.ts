@@ -1,5 +1,7 @@
 // ── API utilities for Claude AI calls ──
 
+import { getSession } from "./auth";
+
 interface ApiRequest {
   model: string;
   max_tokens: number;
@@ -10,6 +12,15 @@ interface ApiRequest {
 
 interface ApiResponse {
   content: { type: string; text: string }[];
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const session = await getSession();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+  return headers;
 }
 
 /**
@@ -24,9 +35,10 @@ export async function apiFetchStreaming(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const headers = await authHeaders();
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ ...body, stream: true }),
       signal: controller.signal,
     });
@@ -78,9 +90,10 @@ export async function apiFetchStreaming(
  * Non-streaming fetch to /api/chat.
  */
 export async function apiFetch(body: ApiRequest): Promise<ApiResponse> {
+  const headers = await authHeaders();
   const res = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ ...body, stream: false }),
   });
 

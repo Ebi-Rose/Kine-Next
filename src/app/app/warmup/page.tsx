@@ -35,6 +35,20 @@ const INJURY_WARMUP_MODS: Record<string, WarmupExercise[]> = {
   ],
 };
 
+// Condition-specific warmup modifications
+const CONDITION_WARMUP_MODS: Record<string, WarmupExercise[]> = {
+  pelvic_floor: [
+    { name: "Diaphragmatic Breathing", duration: "1 min", cue: "Breathe into your belly, not chest. Connects breath to pelvic floor.", category: "general" },
+    { name: "Pelvic Floor Awareness", duration: "8 reps", cue: "Gentle lift on exhale, full release on inhale. Awareness, not effort.", category: "activation" },
+  ],
+  endometriosis: [
+    { name: "Gentle Hip Circles", duration: "10 each direction", cue: "Slow and controlled — opens up the pelvic region gently.", category: "mobility" },
+  ],
+  fibroids: [
+    { name: "Gentle Hip Circles", duration: "10 each direction", cue: "Low-impact mobilisation without intra-abdominal pressure.", category: "mobility" },
+  ],
+};
+
 // #8: Ramp set generator for compound exercises
 function getRampSets(exercises: { name: string; sets: string; reps: string }[]): { name: string; sets: { reps: string; load: string }[] }[] {
   const ramps: { name: string; sets: { reps: string; load: string }[] }[] = [];
@@ -61,7 +75,7 @@ export default function WarmupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
-  const { weekData, injuries } = useKineStore();
+  const { weekData, injuries, conditions } = useKineStore();
 
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
@@ -81,6 +95,19 @@ export default function WarmupPage() {
       for (const mod of mods) {
         if (!injuryWarmups.some(w => w.name === mod.name)) {
           injuryWarmups.push(mod);
+        }
+      }
+    }
+  }
+
+  // Condition-specific warmup exercises
+  const conditionWarmups: WarmupExercise[] = [];
+  for (const cond of conditions) {
+    const mods = CONDITION_WARMUP_MODS[cond];
+    if (mods) {
+      for (const mod of mods) {
+        if (!conditionWarmups.some(w => w.name === mod.name) && !injuryWarmups.some(w => w.name === mod.name)) {
+          conditionWarmups.push(mod);
         }
       }
     }
@@ -129,6 +156,26 @@ export default function WarmupPage() {
           <p className="mb-2 text-[10px] tracking-wider text-muted uppercase">For your {injuries.join(" & ")}</p>
           <div className="flex flex-col gap-2">
             {injuryWarmups.map((ex, i) => (
+              <div key={i} className="rounded-[var(--radius-default)] border border-accent/20 bg-accent-dim/30 p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text">{ex.name}</p>
+                    <p className="text-xs text-muted2">{ex.cue}</p>
+                  </div>
+                  <span className="text-xs text-accent">{ex.duration}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Condition-specific warmup */}
+      {conditionWarmups.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 text-[10px] tracking-wider text-muted uppercase">For your body</p>
+          <div className="flex flex-col gap-2">
+            {conditionWarmups.map((ex, i) => (
               <div key={i} className="rounded-[var(--radius-default)] border border-accent/20 bg-accent-dim/30 p-3">
                 <div className="flex items-center justify-between">
                   <div>

@@ -18,6 +18,7 @@ import {
   DAY_LABELS,
   CYCLE_OPTIONS,
   INJURY_OPTIONS,
+  CONDITION_OPTIONS,
 } from "@/data/constants";
 
 type Panel = "overview" | "personal" | "training" | "coaching" | "cycle" | "subscription" | "settings";
@@ -109,7 +110,7 @@ function PersonalPanel({ onBack }: { onBack: () => void }) {
 
 function TrainingPanel({ onBack }: { onBack: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, injuries, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setInjuries, setWeekData } = store;
+  const { goal, exp, equip, trainingDays, duration, injuries, conditions, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setInjuries, setConditions, setWeekData } = store;
   const [editing, setEditing] = useState<string | null>(null);
 
   function saveAndClearWeek() {
@@ -217,6 +218,28 @@ function TrainingPanel({ onBack }: { onBack: () => void }) {
           ))}
         </div>
         <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save injuries</Button>
+      </EditableRow>
+
+      {/* Health conditions */}
+      <EditableRow label="Health conditions" value={conditions.length > 0 ? conditions.map(c => CONDITION_OPTIONS.find(o => o.value === c)?.label || c).join(", ") : "None"} isEditing={editing === "conditions"} onEdit={() => setEditing("conditions")}>
+        <div className="flex flex-wrap gap-2">
+          {CONDITION_OPTIONS.map((opt) => (
+            <button key={opt.value} onClick={() => {
+              const newConditions = conditions.includes(opt.value)
+                ? conditions.filter((c) => c !== opt.value)
+                : [...conditions, opt.value];
+              setConditions(newConditions);
+            }}
+              className={`rounded-full border px-3 py-1.5 text-xs transition-all ${
+                conditions.includes(opt.value)
+                  ? "border-accent bg-accent-dim text-text"
+                  : "border-border text-muted2 hover:border-border-active"
+              }`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save conditions</Button>
       </EditableRow>
 
       {/* Per-day durations */}
@@ -405,14 +428,16 @@ function SubscriptionPanel({ onBack }: { onBack: () => void }) {
   async function openPortal() {
     setPortalLoading(true);
     try {
-      const { getUser } = await import("@/lib/auth");
-      const user = await getUser();
-      if (!user) { toast("Not logged in", "error"); setPortalLoading(false); return; }
+      const { getSession } = await import("@/lib/auth");
+      const session = await getSession();
+      if (!session) { toast("Not logged in", "error"); setPortalLoading(false); return; }
 
       const res = await fetch("/api/create-portal", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -426,14 +451,17 @@ function SubscriptionPanel({ onBack }: { onBack: () => void }) {
   async function handleResubscribe(plan: "monthly" | "yearly") {
     setCheckoutLoading(true);
     try {
-      const { getUser } = await import("@/lib/auth");
-      const user = await getUser();
-      if (!user) { toast("Not logged in", "error"); setCheckoutLoading(false); return; }
+      const { getSession } = await import("@/lib/auth");
+      const session = await getSession();
+      if (!session) { toast("Not logged in", "error"); setCheckoutLoading(false); return; }
 
       const res = await fetch("/api/create-checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, userId: user.id, email: user.email }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;

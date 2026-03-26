@@ -124,6 +124,13 @@ export const INJURY_OPTIONS: { value: string; label: string }[] = [
   { value: "limited_mobility", label: "Limited mobility" },
 ];
 
+export const CONDITION_OPTIONS: { value: string; label: string; description: string }[] = [
+  { value: "pcos", label: "PCOS", description: "Polycystic ovary syndrome — affects hormones, metabolism, and energy." },
+  { value: "fibroids", label: "Fibroids", description: "Uterine fibroids — can cause pain, heavy bleeding, and fatigue." },
+  { value: "endometriosis", label: "Endometriosis", description: "Endometrial tissue outside the uterus — flares, pain, fatigue." },
+  { value: "pelvic_floor", label: "Pelvic floor", description: "Pelvic floor concerns — leaking, pressure, or discomfort during exercise." },
+];
+
 export const PROGRAM_MAP: Record<string, Record<string, string>> = {
   strength: {
     new: "Starting Strength LP",

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getAuthenticatedUser } from "../_lib/auth";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -8,17 +9,18 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Stripe not configured" }, { status: 500 });
   }
 
+  const user = await getAuthenticatedUser(request);
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   try {
-    const { userId } = await request.json();
-
-    if (!userId) {
-      return Response.json({ error: "Missing userId" }, { status: 400 });
-    }
+    const userId = user.id;
 
     const { data: sub, error: subError } = await supabase
       .from("subscriptions")
@@ -50,13 +52,12 @@ export async function POST(request: NextRequest) {
 
     if (!resp.ok) {
       console.error("[portal] Stripe error:", data.error?.message);
-      return Response.json({ error: data.error?.message || "Stripe error" }, { status: 500 });
+      return Response.json({ error: "Failed to create portal session" }, { status: 500 });
     }
 
     return Response.json({ url: data.url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[portal] Error:", message);
-    return Response.json({ error: message }, { status: 500 });
+    console.error("[portal] Error:", err instanceof Error ? err.message : err);
+    return Response.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

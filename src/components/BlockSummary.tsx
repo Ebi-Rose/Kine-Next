@@ -1,7 +1,7 @@
 "use client";
 
 import { useKineStore } from "@/store/useKineStore";
-import { getPhase, getBlockNumber, getBlockWeek, getNextPhase, shouldDeload, getEffectiveNextPhase } from "@/lib/periodisation";
+import { getBlockNumber, getBlockWeek, shouldDeload, getEffectiveNextPhase } from "@/lib/periodisation";
 
 interface Props {
   weekNum: number;
@@ -12,12 +12,21 @@ export default function BlockSummary({ weekNum }: Props) {
   const phaseOffset = progressDB.phaseOffset;
   const blockWeek = getBlockWeek(weekNum, phaseOffset);
   const blockNum = getBlockNumber(weekNum, phaseOffset);
-  const currentPhase = getPhase(weekNum, phaseOffset);
   const plannedDays = parseInt(days || "3");
 
-  // Only show at end of block (week 4) or if deload needed
-  const isBlockEnd = blockWeek === 4;
-  const needsDeload = shouldDeload(weekNum, phaseOffset, progressDB.sessions as { weekNum?: number; soreness?: number }[]);
+  // Block ends at week 3 (3-week progressive blocks)
+  const isBlockEnd = blockWeek === 3;
+
+  // Autoregulated deload check
+  const lastDeloadWeek = (progressDB as { lastDeloadWeek?: number }).lastDeloadWeek || 0;
+  const feedbackHistory = progressDB.weekFeedbackHistory as { effort: number; soreness: number }[] | undefined;
+  const latestCheckIn = feedbackHistory?.length ? feedbackHistory[feedbackHistory.length - 1] : undefined;
+  const needsDeload = shouldDeload(
+    weekNum, phaseOffset,
+    progressDB.sessions as { weekNum?: number; soreness?: number }[],
+    lastDeloadWeek,
+    latestCheckIn,
+  );
 
   // Get week sessions stats
   const weekSessions = (progressDB.sessions as { weekNum?: number; effort?: number; soreness?: number }[])
@@ -30,18 +39,20 @@ export default function BlockSummary({ weekNum }: Props) {
     : "—";
 
   // Next week preview
-  const { phase: nextPhase, held, adherence } = getEffectiveNextPhase(
+  const { phase: nextPhase, held, deloading, adherence } = getEffectiveNextPhase(
     weekNum, phaseOffset, plannedDays,
-    progressDB.sessions as { weekNum?: number }[],
-    progressDB.skippedSessions as { weekNum?: number; movedTo?: number | null }[]
+    progressDB.sessions as { weekNum?: number; soreness?: number }[],
+    progressDB.skippedSessions as { weekNum?: number; movedTo?: number | null }[],
+    lastDeloadWeek,
+    latestCheckIn,
   );
 
-  if (!isBlockEnd && !needsDeload && blockWeek < 4) return null;
+  if (!isBlockEnd && !needsDeload) return null;
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4 mb-4 animate-fade-up">
       {/* Block completion */}
-      {isBlockEnd && (
+      {isBlockEnd && !deloading && (
         <div className="mb-3">
           <p className="text-[10px] text-accent font-display tracking-wider">BLOCK {blockNum} COMPLETE</p>
           <p className="text-xs text-muted2 font-light mt-1">
@@ -50,12 +61,12 @@ export default function BlockSummary({ weekNum }: Props) {
         </div>
       )}
 
-      {/* Emergency deload */}
-      {needsDeload && !isBlockEnd && (
+      {/* Autoregulated deload triggered */}
+      {deloading && (
         <div className="mb-3">
           <p className="text-[10px] text-accent font-display tracking-wider">RECOVERY WEEK TRIGGERED</p>
           <p className="text-xs text-muted2 font-light mt-1">
-            Your body is telling you it needs recovery. Average soreness was high — next week is a deload.
+            Your body is asking for recovery — next week is lighter. This is based on your recent effort and soreness, not a fixed schedule.
           </p>
         </div>
       )}

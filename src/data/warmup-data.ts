@@ -244,6 +244,25 @@ export const WARMUP_INJURY_MODS: Record<string, WarmupItem[]> = {
   ],
 };
 
+// ── Condition mods ──
+// Health condition-specific warmup additions. Same structure as injury mods.
+export const WARMUP_CONDITION_MODS: Record<string, WarmupItem[]> = {
+  pelvic_floor: [
+    { name: "Diaphragmatic breathing", detail: "6 slow breaths - breathe into your belly, not chest. Connects breath to pelvic floor.", duration: "60s",
+      _why: "Coordinates the diaphragm and pelvic floor before loading. Exhale-on-exertion starts here.", _injuryProtective: true, replaces: null },
+    { name: "Pelvic floor awareness", detail: "Seated or lying - gentle lift on exhale, full release on inhale. 8 reps.", duration: "45s",
+      _why: "Primes the pelvic floor to respond to load. Awareness before effort prevents bearing down.", _injuryProtective: true, replaces: null },
+  ],
+  endometriosis: [
+    { name: "Gentle hip circles", detail: "10 each direction - slow and controlled.", duration: "30s",
+      _why: "Gentle mobilisation can reduce pelvic tension associated with endometriosis.", _injuryProtective: true, replaces: null },
+  ],
+  fibroids: [
+    { name: "Gentle hip circles", detail: "10 each direction - slow and controlled.", duration: "30s",
+      _why: "Low-impact mobilisation to warm up without high intra-abdominal pressure.", _injuryProtective: true, replaces: null },
+  ],
+};
+
 // ── Cooldown breathwork ──
 export const COOLDOWN_BREATH: WarmupItem[] = [
   { name: "Box breathing", detail: "4 counts in, 4 hold, 4 out, 4 hold - 6 cycles. Activates parasympathetic.", duration: "90s",

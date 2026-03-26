@@ -243,9 +243,92 @@ export const EXERCISE_MUSCLE_MAP: Record<string, MuscleTag> = {
   "Farmers Carry": { primary: ["Core"], secondary: ["Upper Back"] },
 };
 
+// ── CONDITION EDUCATION ──
+// Per-condition cues surfaced during exercises (1 max per exercise, full eduMode only)
+
+export const CONDITION_EDUCATION: Record<string, { tag: string; cue: (exerciseName: string) => string | null }> = {
+  pcos: {
+    tag: "PCOS",
+    cue: (name) => {
+      if (isCompound(name)) return "Compound movements like this are especially beneficial for insulin sensitivity — exactly what your body needs.";
+      return null;
+    },
+  },
+  fibroids: {
+    tag: "Fibroids",
+    cue: (name) => {
+      if (/jump|plyo|box jump|burpee/i.test(name)) return "This has been swapped to a lower-impact alternative to reduce intra-abdominal pressure.";
+      if (isCompound(name)) return "Strength training supports bone density and counteracts potential anaemia-related fatigue. Go at your pace.";
+      return null;
+    },
+  },
+  endometriosis: {
+    tag: "Endometriosis",
+    cue: (name) => {
+      if (/jump|plyo|box jump|burpee/i.test(name)) return "Low-impact variation selected — less jarring, same training effect.";
+      if (isCompound(name)) return "Resistance training has anti-inflammatory effects that can help manage symptoms over time.";
+      return null;
+    },
+  },
+  pelvic_floor: {
+    tag: "Pelvic floor",
+    cue: (name) => {
+      if (isCompound(name)) return "Exhale on effort, don't hold your breath. Coordinating breath with movement supports your pelvic floor.";
+      return null;
+    },
+  },
+};
+
+/** Get first matching condition education cue for an exercise (max 1) */
+export function getConditionCue(exerciseName: string, conditions: string[]): { tag: string; cue: string } | null {
+  for (const cond of conditions) {
+    const entry = CONDITION_EDUCATION[cond];
+    if (entry) {
+      const cue = entry.cue(exerciseName);
+      if (cue) return { tag: entry.tag, cue };
+    }
+  }
+  return null;
+}
+
+// ── PELVIC FLOOR BREATHING OVERRIDES ──
+// Exhale-on-exertion cues replace Valsalva-style bracing for pelvic floor users
+
+export const BREATHING_CUES_PELVIC_FLOOR: Record<string, string> = {
+  "Barbell Back Squat": "Gentle breath in at the top, exhale as you drive up. No breath-holding.",
+  "Front Squat": "Gentle breath in at the top, exhale as you drive up. No breath-holding.",
+  "Goblet Squat": "Gentle breath in at the top, exhale as you drive up. No breath-holding.",
+  "Box Squat": "Gentle breath in at the top, exhale as you drive up. No breath-holding.",
+  "Sumo Squat": "Gentle breath in at the top, exhale as you drive up. No breath-holding.",
+  "Leg Press": "Breath in as you lower, exhale steadily as you press. Avoid bearing down.",
+  "Bulgarian Split Squat": "Breath in as you lower, exhale as you drive up. Keep it flowing.",
+  "Conventional Deadlift": "Breath in before the pull, exhale steadily as you stand. No max-effort bracing.",
+  "Sumo Deadlift": "Breath in before the pull, exhale steadily as you stand. No max-effort bracing.",
+  "Trap Bar Deadlift": "Breath in before the pull, exhale steadily as you stand. No max-effort bracing.",
+  "Romanian Deadlift": "Breath in at the top, exhale as you stand. Keep the breath flowing.",
+  "Dumbbell Romanian Deadlift": "Breath in at the top, exhale as you stand. Keep the breath flowing.",
+  "Good Morning": "Breath in at the top, exhale as you stand. Keep the breath flowing.",
+  "Hip Thrust": "Exhale as you drive up, squeeze at the top. Inhale as you lower.",
+  "Barbell Bench Press": "Breath in at the top, exhale as you press. Avoid bearing down.",
+  "Incline Barbell Press": "Breath in at the top, exhale as you press. Avoid bearing down.",
+  "Dumbbell Bench Press": "Breath in at the top, exhale as you press. Avoid bearing down.",
+  "Incline Dumbbell Press": "Breath in at the top, exhale as you press. Avoid bearing down.",
+  "Overhead Press": "Exhale as you press up. Keep your core engaged but don't bear down.",
+  "Dumbbell Shoulder Press": "Exhale as you press up. Keep your core engaged but don't bear down.",
+  "Barbell Row": "Breath in, pull as you exhale. No breath-holding.",
+  "Pull-Up": "Breath in at the bottom, exhale as you pull up.",
+  "Chin-Up": "Breath in at the bottom, exhale as you pull up.",
+  "Dips": "Breath in at the top, exhale as you press up.",
+};
+
 // ── HELPERS ──
 
-export function getBreathingCue(exerciseName: string): string | null {
+export function getBreathingCue(exerciseName: string, conditions?: string[]): string | null {
+  // Pelvic floor users get exhale-on-exertion overrides
+  if (conditions?.includes("pelvic_floor")) {
+    const override = BREATHING_CUES_PELVIC_FLOOR[exerciseName];
+    if (override) return override;
+  }
   return BREATHING_CUES[exerciseName] || null;
 }
 

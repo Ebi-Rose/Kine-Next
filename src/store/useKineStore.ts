@@ -82,6 +82,8 @@ interface KineState {
   duration: Duration;
   injuries: string[];
   injuryNotes: string;
+  conditions: string[];    // 'pcos' | 'fibroids' | 'endometriosis' | 'pelvic_floor'
+  comfortFlags: string[];  // derived: 'impactSensitive' | 'proneSensitive'
   cycleType: CycleType;
   cyclePhase: string | null;
   dayDurations: Record<number, number>;
@@ -126,6 +128,7 @@ interface KineState {
   setDuration: (duration: Duration) => void;
   setInjuries: (injuries: string[]) => void;
   setInjuryNotes: (notes: string) => void;
+  setConditions: (conditions: string[]) => void;
   setCycleType: (cycleType: CycleType) => void;
   setCycle: (cycle: { periodLog: PeriodLog[]; avgLength: number | null }) => void;
   setDayDurations: (durations: Record<number, number>) => void;
@@ -155,6 +158,8 @@ const initialOnboarding = {
   duration: null as Duration,
   injuries: [] as string[],
   injuryNotes: "",
+  conditions: [] as string[],
+  comfortFlags: [] as string[],
   cycleType: null as CycleType,
   cyclePhase: null as string | null,
   dayDurations: {} as Record<number, number>,
@@ -224,6 +229,15 @@ export const useKineStore = create<KineState>()(
       setDuration: (duration) => set({ duration }),
       setInjuries: (injuries) => set({ injuries }),
       setInjuryNotes: (notes) => set({ injuryNotes: notes }),
+      setConditions: (conditions) => {
+        // Derive comfortFlags from conditions
+        const comfortFlags: string[] = [];
+        if (conditions.includes("fibroids") || conditions.includes("endometriosis"))
+          comfortFlags.push("impactSensitive");
+        if (conditions.includes("pelvic_floor"))
+          comfortFlags.push("proneSensitive");
+        set({ conditions, comfortFlags });
+      },
       setCycleType: (cycleType) => set({ cycleType }),
       setCycle: (cycle) => set({ cycle }),
       setDayDurations: (durations) => set({ dayDurations: durations }),

@@ -5,10 +5,15 @@ import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
 
-/** Returns the access mode from localStorage (set by /access page) */
-function getAccessMode(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("kine_mode"); // "new" | "demo" | null (real)
+/** Fetches the validated access mode from the server-side httpOnly cookie */
+async function getAccessMode(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/check-access");
+    const { mode } = await res.json();
+    return mode || null; // "new" | "demo" | "real" | null
+  } catch {
+    return null;
+  }
 }
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -22,7 +27,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function check() {
-      const mode = getAccessMode();
+      const mode = await getAccessMode();
 
       // ── Demo / New mode: skip auth and subscription checks ──
       if (mode === "demo" || mode === "new") {

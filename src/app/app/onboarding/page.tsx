@@ -16,11 +16,12 @@ import {
   DAY_LABELS,
   CYCLE_OPTIONS,
   INJURY_OPTIONS,
+  CONDITION_OPTIONS,
   PROGRAM_MAP,
 } from "@/data/constants";
 import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
 
-type Step = "welcome" | "goal" | "experience" | "equipment" | "schedule" | "cycle" | "injuries" | "summary";
+type Step = "welcome" | "goal" | "experience" | "equipment" | "schedule" | "cycle" | "conditions" | "injuries" | "summary";
 
 const STEP_ORDER: Step[] = [
   "welcome",
@@ -29,6 +30,7 @@ const STEP_ORDER: Step[] = [
   "equipment",
   "schedule",
   "cycle",
+  "conditions",
   "injuries",
   "summary",
 ];
@@ -91,7 +93,8 @@ export default function OnboardingPage() {
             numberedStep={numberedStep}
           />
         )}
-        {step === "cycle" && <CycleStep onNext={() => goToStep("injuries")} />}
+        {step === "cycle" && <CycleStep onNext={() => goToStep("conditions")} />}
+        {step === "conditions" && <ConditionsStep onNext={() => goToStep("injuries")} />}
         {step === "injuries" && <InjuriesStep onNext={() => goToStep("summary")} />}
         {step === "summary" && <SummaryStep onFinish={finishOnboarding} />}
       </div>
@@ -441,7 +444,65 @@ function CycleStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-// ── Step 5: Injuries ──
+// ── Step 5: Conditions ──
+
+function ConditionsStep({ onNext }: { onNext: () => void }) {
+  const { conditions, setConditions } = useKineStore();
+
+  function toggleCondition(val: string) {
+    if (conditions.includes(val)) {
+      setConditions(conditions.filter((c) => c !== val));
+    } else {
+      setConditions([...conditions, val]);
+    }
+  }
+
+  return (
+    <div className="animate-fade-up">
+      <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
+        Your body
+      </p>
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
+        Anything we should know about?
+      </h2>
+      <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
+        Some conditions change how your body responds to training. Select
+        anything relevant — Kinē adapts around it, not through it.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-2">
+        {CONDITION_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => toggleCondition(opt.value)}
+            className={`text-left rounded-[var(--radius-default)] border px-4 py-3 transition-all ${
+              conditions.includes(opt.value)
+                ? "border-accent bg-accent-dim text-text"
+                : "border-border bg-surface text-muted2 hover:border-border-active"
+            }`}
+          >
+            <span className="text-sm font-medium">{opt.label}</span>
+            <span className="block text-xs font-light mt-0.5 opacity-70">{opt.description}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8 flex flex-col gap-3">
+        <Button onClick={onNext} className="w-full">
+          Continue
+        </Button>
+        <button
+          onClick={onNext}
+          className="text-xs text-muted2 hover:text-text transition-colors"
+        >
+          Nothing here — skip
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 6: Injuries ──
 
 function InjuriesStep({ onNext }: { onNext: () => void }) {
   const { injuries, setInjuries, injuryNotes, setInjuryNotes } = useKineStore();
@@ -512,7 +573,7 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
 
 function SummaryStep({ onFinish }: { onFinish: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, injuries, cycleType, dayDurations, setDayDurations, personalProfile, setPersonalProfile } = store;
+  const { goal, exp, equip, trainingDays, duration, injuries, conditions, cycleType, dayDurations, setDayDurations, personalProfile, setPersonalProfile } = store;
   const [showLifts, setShowLifts] = useState(false);
   const [lifts, setLifts] = useState<Record<string, string>>({});
   const [startDate, setStartDate] = useState<"today" | "monday">("today");
@@ -590,10 +651,16 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
             <span>↗</span>
             <span>{equip.map((e) => EQUIP_LABELS[e]).join(", ")}</span>
           </div>
+          {conditions.length > 0 && (
+            <div className="flex items-center gap-2 text-muted2">
+              <span>ℹ</span>
+              <span>Adapted for {conditions.map(c => CONDITION_OPTIONS.find(o => o.value === c)?.label || c).join(", ")}</span>
+            </div>
+          )}
           {injuries.length > 0 && (
             <div className="flex items-center gap-2 text-muted2">
               <span>⚠</span>
-              <span>Modified for {injuries.join(", ")}</span>
+              <span>Modified for {injuries.map(i => INJURY_OPTIONS.find(o => o.value === i)?.label || i).join(", ")}</span>
             </div>
           )}
           {cycleType && cycleType !== "na" && (

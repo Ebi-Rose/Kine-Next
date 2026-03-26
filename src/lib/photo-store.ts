@@ -55,10 +55,21 @@ export async function deletePhoto(id: string): Promise<void> {
   });
 }
 
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 /**
  * Convert a File to a data URL for storage.
+ * Validates file type and size before processing.
  */
 export function fileToDataUrl(file: File): Promise<string> {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return Promise.reject(new Error("Invalid file type. Use JPEG, PNG, or WebP."));
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return Promise.reject(new Error("File too large. Maximum size is 10 MB."));
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);

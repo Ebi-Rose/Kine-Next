@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
+import { getAuthenticatedUser } from "../_lib/auth";
 
 export const maxDuration = 60;
 
-// Rate limiting (in-memory, per serverless instance)
+// Rate limiting per user (in-memory, per serverless instance).
+// For production-grade distributed limiting, replace with @upstash/ratelimit.
 const RATE_LIMIT = 10;
 const RATE_WINDOW = 60 * 1000;
 const MAX_BODY_SIZE = 50000;
@@ -12,13 +14,13 @@ const ALLOWED_MODELS = [
 ];
 const MAX_TOKENS_CAP = 4096;
 
-const ipRequests = new Map<string, { start: number; count: number }>();
+const userRequests = new Map<string, { start: number; count: number }>();
 
-function isRateLimited(ip: string): boolean {
+function isRateLimited(key: string): boolean {
   const now = Date.now();
-  const entry = ipRequests.get(ip);
+  const entry = userRequests.get(key);
   if (!entry || now - entry.start > RATE_WINDOW) {
-    ipRequests.set(ip, { start: now, count: 1 });
+    userRequests.set(key, { start: now, count: 1 });
     return false;
   }
   entry.count++;
@@ -26,10 +28,15 @@ function isRateLimited(ip: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const user = await getAuthenticatedUser(request);
+  if (!user) {
+    return Response.json(
+      { error: { type: "auth_error", message: "Unauthorized" } },
+      { status: 401 }
+    );
+  }
 
-  if (isRateLimited(ip)) {
+  if (isRateLimited(user.id)) {
     return Response.json(
       { error: { type: "rate_limit", message: "Too many requests. Please wait a minute." } },
       { status: 429 }
@@ -95,14 +102,11 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errData = await response.text();
-      try {
-        return Response.json(JSON.parse(errData), { status: response.status });
-      } catch {
-        return Response.json(
-          { error: { type: "api_error", message: errData.slice(0, 200) } },
-          { status: response.status }
-        );
-      }
+      console.error("Anthropic API error:", response.status, errData.slice(0, 500));
+      return Response.json(
+        { error: { type: "api_error", message: "AI service error" } },
+        { status: response.status }
+      );
     }
 
     if (wantsStream) {

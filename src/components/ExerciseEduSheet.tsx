@@ -1,7 +1,7 @@
 "use client";
 
 import { findExercise } from "@/data/exercise-library";
-import { getMuscleTags, getBreathingCue, isSquat, isHinge, isCompound, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, DEPTH_BEFORE_LOAD } from "@/data/education";
+import { getMuscleTags, getBreathingCue, getConditionCue, isSquat, isHinge, isCompound, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, DEPTH_BEFORE_LOAD } from "@/data/education";
 // @ts-ignore
 import { EXERCISE_EDU_LIBRARY } from "@/data/exercise-edu";
 import { getSkillPath } from "@/data/skill-paths";
@@ -16,6 +16,7 @@ interface Props {
   feel?: string;
   context?: string;
   cues?: string[];
+  conditions?: string[];
 }
 
 /** Try exact match first, then partial/fuzzy match against the edu library keys */
@@ -32,10 +33,11 @@ function findEduData(name: string, library: Record<string, unknown>): unknown {
   return undefined;
 }
 
-export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp }: Props) {
+export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp, conditions = [] }: Props) {
   const lib = findExercise(exerciseName);
   const muscleTags = getMuscleTags(exerciseName);
-  const breathCue = getBreathingCue(exerciseName);
+  const breathCue = getBreathingCue(exerciseName, conditions);
+  const condCue = getConditionCue(exerciseName, conditions);
   const skillPath = getSkillPath(exerciseName, []);
 
   // Fall back to EXERCISE_EDU_LIBRARY when AI fields aren't provided
@@ -123,6 +125,14 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
               {isHinge(exerciseName) && <p>{HIP_HINGE_FIRST}</p>}
               {isCompound(exerciseName) && <p>{NEUTRAL_SPINE_CUE}</p>}
             </div>
+          </div>
+        )}
+
+        {/* Condition-specific education */}
+        {condCue && (
+          <div>
+            <p className="text-[10px] text-accent/80 font-display tracking-wider mb-1">ℹ {condCue.tag.toUpperCase()}</p>
+            <p className="text-xs text-muted2 font-light leading-relaxed">{condCue.cue}</p>
           </div>
         )}
 
