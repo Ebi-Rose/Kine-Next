@@ -245,6 +245,14 @@ PRESCRIPTION GUIDE (female-optimised — women recover faster between sets and t
 - General: All exercises 3 sets, 10-15 reps, 60-90s rest. Keep it simple and undaunting — consistency matters more than intensity.
 - Bodyweight exercises: prescribe reps (not weight). Timed exercises: use reps for duration e.g. "30 sec". Cardio: sets "1", reps as duration.
 
+SPLIT STRUCTURE — posterior chain priority means more lower body than upper body:
+- 2 days: Full Body A, Full Body B (both sessions include squat + hinge)
+- 3 days: Lower Body, Upper Body, Lower Body (2:1 lower-to-upper ratio). Or Full Body x3 for beginners.
+- 4 days: Legs (quads/glutes), Push (chest/shoulders), Legs (glutes/hamstrings), Pull (back/biceps). 2:2 lower:upper split.
+- 5 days: Legs, Push, Legs, Pull, Full Body or Conditioning. 2-3 lower body sessions minimum.
+- 6 days: Push/Pull/Legs x2. Equal coverage.
+NEVER programme 2 upper body days with only 1 lower body day. Lower body always gets equal or more sessions than upper body.
+
 Return ONLY valid JSON, no markdown:
 {"programName":"string","weekCoachNote":"2 sentences","days":[{"dayNumber":1,"isRest":false,"sessionTitle":"string","sessionDuration":"string","coachNote":"1 sentence","exercises":[{"name":"Exercise Name","sets":"3","reps":"8-10","rest":"90 sec"}]}]}
 

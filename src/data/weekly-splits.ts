@@ -57,17 +57,17 @@ export const WEEKLY_SPLITS: Record<string, Record<string, Split>> = {
       { title: "Full Body C", coachNote: "Three sessions in. That's the pattern starting to stick.", exercises: ["Goblet Squat", "Dumbbell Bench Press", "Dumbbell Row", "Hip Thrust", "Plank"] },
     ]},
     developing: { sessions: [
-      { title: "Upper Body", coachNote: "Push and pull balanced - leave the gym feeling like you used your whole upper body.", exercises: ["Barbell Bench Press", "Barbell Row", "Overhead Press", "Pull-Up", "Lateral Raise"] },
-      { title: "Lower Body", coachNote: "Squat and hinge are the two fundamental patterns - keep the weight manageable.", exercises: ["Barbell Back Squat", "Romanian Deadlift", "Walking Lunges", "Glute Bridge", "Calf Raises"] },
-      { title: "Upper Body B", coachNote: "Upper body again, different angles. Notice which exercises feel familiar now.", exercises: ["Incline Barbell Press", "Seated Cable Row", "Dips", "Lat Pulldown", "Face Pulls"] },
+      { title: "Lower Body - Quads & Glutes", coachNote: "Squat and lunge are the two fundamental patterns - keep the weight manageable.", exercises: ["Barbell Back Squat", "Walking Lunges", "Leg Press", "Glute Bridge", "Calf Raises"] },
+      { title: "Upper Body", coachNote: "Push and pull balanced - leave the gym feeling like you used your whole upper body.", exercises: ["Barbell Bench Press", "Barbell Row", "Overhead Press", "Lat Pulldown", "Lateral Raise"] },
+      { title: "Lower Body - Glutes & Hamstrings", coachNote: "Hinge and thrust together. These two develop the posterior chain through its full range.", exercises: ["Romanian Deadlift", "Hip Thrust", "Bulgarian Split Squat", "Leg Curl", "Calf Raises"] },
       { title: "Full Body - Conditioning", coachNote: "Full body session with a bit more pace. Shorter rests - the elevated heart rate is part of the point.", exercises: ["Goblet Squat", "Dumbbell Bench Press", "Dumbbell Row", "Romanian Deadlift", "Farmers Carry"] },
     ]},
     intermediate: { sessions: [
-      { title: "Upper - Strength", coachNote: "A session you leave feeling good about is worth more than one you drag yourself through.", exercises: ["Barbell Bench Press", "Pull-Up", "Overhead Press", "Barbell Row", "Tricep Pushdown"] },
       { title: "Lower - Strength", coachNote: "Squat and deadlift - the two movements that do the most.", exercises: ["Barbell Back Squat", "Conventional Deadlift", "Walking Lunges", "Glute Bridge", "Ab Wheel Rollout"] },
-      { title: "Upper - Volume", coachNote: "Slightly higher rep session today. The weight is lighter - that's intentional.", exercises: ["Incline Barbell Press", "Seated Cable Row", "Dips", "Lat Pulldown", "Lateral Raise"] },
+      { title: "Upper - Strength", coachNote: "A session you leave feeling good about is worth more than one you drag yourself through.", exercises: ["Barbell Bench Press", "Pull-Up", "Overhead Press", "Barbell Row", "Tricep Pushdown"] },
       { title: "Lower - Volume", coachNote: "Leave feeling like your legs worked - not destroyed, worked.", exercises: ["Romanian Deadlift", "Bulgarian Split Squat", "Hip Thrust", "Leg Curl", "Calf Raises"] },
-      { title: "Full Body - Athletic", coachNote: "Different kind of session today - more dynamic. That variety is good for you.", exercises: ["Kettlebell Swing", "Barbell Bench Press", "Barbell Row", "Box Jumps", "Farmers Carry"] },
+      { title: "Upper - Volume", coachNote: "Slightly higher rep session today. The weight is lighter - that's intentional.", exercises: ["Incline Barbell Press", "Seated Cable Row", "Dips", "Lat Pulldown", "Lateral Raise"] },
+      { title: "Full Body - Athletic", coachNote: "Different kind of session today - more dynamic. That variety is good for you.", exercises: ["Kettlebell Swing", "Barbell Bench Press", "Barbell Row", "Goblet Squat", "Farmers Carry"] },
     ]},
   },
 };
