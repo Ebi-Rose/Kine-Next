@@ -93,18 +93,21 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           phaseOffset: 0,
         });
         window.history.replaceState({}, "", pathname);
-        router.replace("/app/onboarding");
-        return;
-      }
+        // If already on onboarding, fall through to setAllowed(true)
+        if (pathname !== "/app/onboarding") {
+          router.replace("/app/onboarding");
+          return;
+        }
+      } else {
+        // Brief wait for store hydration from localStorage
+        await new Promise((r) => setTimeout(r, 300));
+        const { progressDB, goal } = useKineStore.getState();
 
-      // Brief wait for store hydration from localStorage
-      await new Promise((r) => setTimeout(r, 300));
-      const { progressDB, goal } = useKineStore.getState();
-
-      // Onboarding not complete unless both goal and programStartDate are set
-      if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
-        router.replace("/app/onboarding");
-        return;
+        // Onboarding not complete unless both goal and programStartDate are set
+        if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
+          router.replace("/app/onboarding");
+          return;
+        }
       }
 
       setAllowed(true);
