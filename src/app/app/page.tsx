@@ -259,7 +259,7 @@ function WeekView({
         )}
         <div className="mt-1 flex items-center gap-2">
           <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10px] text-muted2">
-            Block {trainingPhase.blockNum} · {trainingPhase.label} · Week {trainingPhase.blockWeek}/4
+            Block {trainingPhase.blockNum} · {trainingPhase.label} · Week {trainingPhase.blockWeek}/3
           </span>
         </div>
       </div>

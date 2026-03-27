@@ -74,7 +74,7 @@ export default function WeekCheckinPage() {
   const phase = getPhase(weekNum, progressDB.phaseOffset);
   const blockWeek = getBlockWeek(weekNum, progressDB.phaseOffset);
   const blockNum = getBlockNumber(weekNum, progressDB.phaseOffset);
-  const isBlockEnd = blockWeek === 4;
+  const isBlockEnd = blockWeek === 3;
 
   // Week stats
   const weekSessions = useMemo(() =>
@@ -126,7 +126,7 @@ export default function WeekCheckinPage() {
             Week {weekNum} review
           </h1>
           <p className="mt-1 text-[10px] text-muted font-display tracking-wider">
-            Block {blockNum} · {phase.label} · Week {blockWeek}/4
+            Block {blockNum} · {phase.label} · Week {blockWeek}/3
           </p>
 
           {/* Stats */}
@@ -167,7 +167,7 @@ export default function WeekCheckinPage() {
             <div className="mt-4 rounded-xl border border-accent/30 bg-accent-dim p-4 text-center animate-celebrate">
               <p className="font-display text-lg text-accent tracking-wider">BLOCK {blockNum} COMPLETE</p>
               <p className="text-xs text-muted2 font-light mt-1">
-                4 weeks of structured training done. Your body has adapted.
+                3 weeks of structured training done. Your body has adapted.
               </p>
             </div>
           )}

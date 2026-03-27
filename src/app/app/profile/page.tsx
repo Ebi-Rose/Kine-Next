@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import type { EduMode, CycleType, PeriodLog } from "@/store/useKineStore";
-import { signOut, getSubscriptionStatus } from "@/lib/auth";
+import { signOut, getSubscriptionStatus, getUser } from "@/lib/auth";
 import { getCurrentPhase } from "@/lib/cycle";
 import { syncNow } from "@/lib/sync";
 import Button from "@/components/Button";
@@ -85,6 +85,11 @@ function PersonalPanel({ onBack }: { onBack: () => void }) {
   const [name, setName] = useState(personalProfile.name);
   const [weight, setWeight] = useState(personalProfile.weight);
   const [height, setHeight] = useState(personalProfile.height);
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    getUser().then((u) => setEmail(u?.email || null));
+  }, []);
 
   function save() {
     setPersonalProfile({ ...personalProfile, name, weight, height });
@@ -97,6 +102,12 @@ function PersonalPanel({ onBack }: { onBack: () => void }) {
       <BackButton onClick={onBack} />
       <h2 className="mt-4 text-xs tracking-wider text-muted uppercase">About you</h2>
       <div className="mt-4 flex flex-col gap-3">
+        {email && (
+          <div>
+            <label className="text-xs text-muted">Email</label>
+            <p className="mt-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-muted2">{email}</p>
+          </div>
+        )}
         <Input label="Name" value={name} onChange={setName} />
         <Input label="Weight (kg)" value={weight} onChange={setWeight} type="number" />
         <Input label="Height (cm)" value={height} onChange={setHeight} type="number" />

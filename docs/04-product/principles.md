@@ -63,7 +63,7 @@ Language matters. It's a "session," not a "workout." It's "training," not "exerc
 Every prescribed exercise should be learnable within the app. Cues, common mistakes, video reference. Don't just tell users what to do — help them understand why and how.
 
 ### 17. Rest Is Programming
-Deload weeks, recovery days, and rest periods are as intentional as heavy sets. The app should prescribe rest as confidently as it prescribes work.
+Recovery days and rest periods are as intentional as heavy sets. The app should prescribe rest as confidently as it prescribes work. Deloads are autoregulated — triggered by the user's soreness, energy, and body signals — not scheduled on a fixed calendar. Fixed-schedule deloads can impair progress when the body doesn't need them.
 
 ### 18. Equipment Reality
 Not everyone has a full gym. The app must generate excellent programs with limited equipment. A bodyweight-only user should get a program that's thoughtful, not a consolation prize.

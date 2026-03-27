@@ -21,10 +21,11 @@ import {
 } from "@/data/constants";
 import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
 
-type Step = "welcome" | "goal" | "experience" | "equipment" | "schedule" | "cycle" | "conditions" | "injuries" | "summary";
+type Step = "welcome" | "name" | "goal" | "experience" | "equipment" | "schedule" | "cycle" | "conditions" | "injuries" | "summary";
 
 const STEP_ORDER: Step[] = [
   "welcome",
+  "name",
   "goal",
   "experience",
   "equipment",
@@ -41,7 +42,7 @@ export default function OnboardingPage() {
   const store = useKineStore();
 
   const stepIndex = STEP_ORDER.indexOf(step);
-  // Steps 1-4 shown as "STEP X OF 4" (goal, experience, equipment, schedule)
+  // Steps 1-4 shown as "STEP X OF 4" (goal, experience, equipment, schedule) — name is pre-numbered
   const numberedStep = ["goal", "experience", "equipment", "schedule"].indexOf(step) + 1;
 
   function next() {
@@ -84,6 +85,7 @@ export default function OnboardingPage() {
           </div>
         )}
         {step === "welcome" && <WelcomeStep onNext={next} />}
+        {step === "name" && <NameStep onNext={next} />}
         {step === "goal" && <GoalStep onNext={next} numberedStep={numberedStep} />}
         {step === "experience" && <ExperienceStep onNext={next} numberedStep={numberedStep} />}
         {step === "equipment" && <EquipmentStep onNext={next} numberedStep={numberedStep} />}
@@ -115,6 +117,40 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       </p>
       <Button className="mt-10" size="lg" onClick={onNext}>
         Build my programme →
+      </Button>
+    </div>
+  );
+}
+
+// ── Step 0b: Name ──
+
+function NameStep({ onNext }: { onNext: () => void }) {
+  const { personalProfile, setPersonalProfile } = useKineStore();
+  const [name, setName] = useState(personalProfile.name);
+
+  function handleContinue() {
+    setPersonalProfile({ ...personalProfile, name: name.trim() });
+    onNext();
+  }
+
+  return (
+    <div className="animate-fade-up flex min-h-[80vh] flex-col items-center justify-center text-center">
+      <h2 className="font-display text-xl tracking-wide text-text">
+        What should we call you?
+      </h2>
+      <p className="mt-2 text-xs text-muted2">
+        First name is fine.
+      </p>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Your name"
+        autoFocus
+        className="mt-6 w-full max-w-xs rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-center text-sm text-text placeholder:text-muted outline-none focus:border-accent"
+      />
+      <Button className="mt-6 w-full max-w-xs" size="lg" onClick={handleContinue} disabled={!name.trim()}>
+        Continue
       </Button>
     </div>
   );

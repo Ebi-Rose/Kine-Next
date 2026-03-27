@@ -37,8 +37,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
 
         if (mode === "new") {
-          const goal = useKineStore.getState().goal;
-          if (goal === null && pathname !== "/app/onboarding") {
+          const { progressDB } = useKineStore.getState();
+          if (!progressDB.programStartDate && pathname !== "/app/onboarding") {
             router.replace("/app/onboarding");
             return;
           }
@@ -80,9 +80,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       // Brief wait for store hydration from localStorage
       await new Promise((r) => setTimeout(r, 300));
-      const goal = useKineStore.getState().goal;
+      const { progressDB } = useKineStore.getState();
 
-      if (goal === null && pathname !== "/app/onboarding") {
+      if (!progressDB.programStartDate && pathname !== "/app/onboarding") {
         router.replace("/app/onboarding");
         return;
       }
