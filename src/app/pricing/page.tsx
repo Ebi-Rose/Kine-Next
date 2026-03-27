@@ -47,7 +47,7 @@ export default function PricingPage() {
         </a>
 
         <p className="mt-6 text-[10px] tracking-[0.3em] text-accent uppercase">Choose your plan</p>
-        <p className="mt-1 text-xs text-muted2">Full access to everything. 14-day money-back guarantee.</p>
+        <p className="mt-1 text-xs text-muted2">Your coach in your pocket. 14-day money-back guarantee.</p>
 
         <div className="mt-6 flex flex-col gap-3">
           <button
@@ -83,11 +83,14 @@ export default function PricingPage() {
         </div>
 
         <ul className="mt-6 flex flex-col gap-2 text-xs text-muted2">
-          <li>✓ Personalized weekly programs</li>
-          <li>✓ AI-powered session coaching</li>
-          <li>✓ Progress tracking & analytics</li>
-          <li>✓ Cycle-aware adjustments</li>
-          <li>✓ Works offline as a PWA</li>
+          <li>✓ AI-built weekly programs, personalised to you</li>
+          <li>✓ Adapts to your equipment, injuries & experience</li>
+          <li>✓ Cycle-aware programming</li>
+          <li>✓ Smart warm-ups & cooldowns</li>
+          <li>✓ Weekly check-ins that shape your next week</li>
+          <li>✓ 4-week periodised training blocks</li>
+          <li>✓ Progress tracking & photos</li>
+          <li>✓ 150+ exercise library with coaching cues</li>
         </ul>
 
         <button

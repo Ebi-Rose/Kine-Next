@@ -32,11 +32,11 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 export async function signUp(email: string, password: string) {
-  return supabase.auth.signUp({ email, password });
+  return supabase.auth.signUp({ email: email.trim(), password });
 }
 
 export async function signIn(email: string, password: string) {
-  return supabase.auth.signInWithPassword({ email, password });
+  return supabase.auth.signInWithPassword({ email: email.trim(), password });
 }
 
 export async function signInWithOAuth(provider: "google" | "apple") {

@@ -1078,7 +1078,7 @@ body {
       <p>Experience gates filter exercises based on confidence, not calendar time. A beginner never sees advanced movements. An experienced lifter isn't insulted with progressions she's outgrown.</p>
       <ul class="principle-details">
         <li>Three tiers: "Still learning the basics" → "Comfortable with the main lifts" → "Confident programming my own training"</li>
-        <li>Equipment and injury filters ensure you only see exercises you can safely do</li>
+        <li>Equipment, injury, and condition filters ensure you only see exercises you can safely do</li>
       </ul>
       <div class="principle-contrast">
         <div class="contrast-label">The difference</div>
@@ -1388,8 +1388,8 @@ body {
 
     <div class="feature-card">
       <span class="tag tag-ux">Onboarding</span>
-      <h3>6-Step Smart Onboarding</h3>
-      <p>Six focused questions — goal, experience, equipment, schedule, cycle, injuries — and the first personalised programme is ready.</p>
+      <h3>7-Step Smart Onboarding</h3>
+      <p>Seven focused questions — goal, experience, equipment, schedule, cycle, health conditions, injuries — and the first personalised programme is ready.</p>
       <ul>
         <li>Experience-gated exercise access from the start</li>
         <li>Equipment multi-select with smart filtering</li>
@@ -1435,7 +1435,7 @@ body {
         <li>Session timing mode selection: Timed / Stopwatch / Off</li>
         <li>Compound and isolation rest period configuration with time impact estimate</li>
         <li>Duration adjustment with live feedback on what changes</li>
-        <li>Cycle phase and injury context surfaced when relevant</li>
+        <li>Cycle phase, injury, and health condition context surfaced when relevant</li>
       </ul>
       <div class="feature-highlight">Your session, your way. Every setting is a suggestion, not a requirement.</div>
     </div>
@@ -1525,7 +1525,7 @@ body {
     <div class="feature-card">
       <span class="tag tag-ux">Education</span>
       <h3>Contextual Education Layer</h3>
-      <p>13 muscle groups, breathing cues, DOMS education, anatomy cues — all delivered at the exact moment they're useful. See Deep Dive for the full education system.</p>
+      <p>13 muscle groups, breathing cues, condition-specific education, DOMS education, anatomy cues — all delivered at the exact moment they're useful. See Deep Dive for the full education system.</p>
       <ul>
         <li>Three modes: full detail / feel-only / silent — adapting to experience</li>
         <li>Week 12 graduation: most cues retire automatically</li>
@@ -1537,9 +1537,9 @@ body {
     <div class="feature-card">
       <span class="tag tag-rule">Rule-Based</span>
       <h3>Smart Warmup Engine</h3>
-      <p>Personalised warmups generated instantly — injury-aware, experience-scaled, specific to the session. No AI dependency. See Deep Dive for the 5-phase structure.</p>
+      <p>Personalised warmups generated instantly — injury-aware, condition-aware, experience-scaled, specific to the session. No AI dependency. See Deep Dive for the 6-phase structure.</p>
       <ul>
-        <li>General prep → activation → stabiliser extras → injury mods → ramp sets</li>
+        <li>General prep → activation → stabiliser extras → injury mods → condition mods → ramp sets</li>
         <li>Works offline — no network required</li>
       </ul>
       <div class="feature-highlight">The warmup most trainers forget to programme. Kinē never does.</div>
@@ -1876,6 +1876,12 @@ body {
       <div class="warmup-layer">
         <div class="warmup-num">5</div>
         <div class="warmup-content">
+          <strong>Condition Mods</strong> — Up to 2 condition-specific movements, deduped against injury mods. Pelvic floor adds diaphragmatic breathing and pelvic floor awareness drills. Endometriosis and fibroids add gentle hip circles.
+        </div>
+      </div>
+      <div class="warmup-layer">
+        <div class="warmup-num">6</div>
+        <div class="warmup-content">
           <strong>Ramp-up Sets</strong> — Compounds only. New users get 2 ramp sets, developing get 3, intermediate get 4 — scaling from empty bar to working weight.
         </div>
       </div>
@@ -1915,6 +1921,31 @@ body {
     <p class="deep-note">Each swap is scored for session integrity (0–100). "Ideal" swaps match muscle group and session focus. "Compromise" swaps flag potential imbalances.</p>
   </div>
 
+  <!-- ── Condition Swaps ── -->
+  <div class="deep-block">
+    <h3>🩺 Condition-Aware Swaps</h3>
+    <p>Health conditions trigger automatic exercise substitutions — low-impact alternatives that preserve training effect without aggravating symptoms. Condition-aware, not condition-defined.</p>
+    <div class="swap-grid">
+      <div class="swap-card">
+        <div class="swap-injury">Fibroids</div>
+        <div class="swap-examples">Box Jump → Step Up, Jump Squat → Bodyweight Squat, Burpee → Squat to Press, Jump Rope → Incline Walk</div>
+      </div>
+      <div class="swap-card">
+        <div class="swap-injury">Endometriosis</div>
+        <div class="swap-examples">Box Jump → Step Up, Jump Squat → Bodyweight Squat, Burpee → Squat to Press, Jump Rope → Incline Walk</div>
+      </div>
+      <div class="swap-card">
+        <div class="swap-injury">Pelvic Floor</div>
+        <div class="swap-examples">Box Jump → Step Up, Jump Squat → Goblet Squat, Barbell Back Squat → Goblet Squat, Jump Rope → Incline Walk</div>
+      </div>
+      <div class="swap-card">
+        <div class="swap-injury">PCOS</div>
+        <div class="swap-examples">No swaps — compound-priority programming via AI context instead. Metabolic conditioning beneficial.</div>
+      </div>
+    </div>
+    <p class="deep-note">Condition swaps run after injury swaps in the same pipeline. PCOS uses AI prompt context to prioritise compound movements for insulin sensitivity rather than swapping exercises.</p>
+  </div>
+
   <!-- ── AI Architecture ── -->
   <div class="deep-block">
     <h3>🤖 AI Architecture</h3>
@@ -1922,7 +1953,7 @@ body {
     <div class="ai-grid">
       <div class="ai-card">
         <div class="ai-name">Week Builder</div>
-        <div class="ai-desc">Generates the full weekly programme — session titles, exercise selection, sets/reps/load, session briefs. Takes goal, experience, equipment, schedule, injuries, cycle phase, current lifts, bodyweight, and age-based recovery profile.</div>
+        <div class="ai-desc">Generates the full weekly programme — session titles, exercise selection, sets/reps/load, session briefs. Takes goal, experience, equipment, schedule, injuries, health conditions, cycle phase, current lifts, bodyweight, and age-based recovery profile.</div>
         <div class="ai-tokens">4,000 tokens · Retries at 2,000 then 1,000 · Falls back to template week</div>
       </div>
       <div class="ai-card">
@@ -1938,10 +1969,10 @@ body {
       <div class="ai-card">
         <div class="ai-name">Custom Session</div>
         <div class="ai-desc">Builds a rest-day or extra session from a focus selection (push/pull/legs/core/full) using training history from the last 6 sessions.</div>
-        <div class="ai-tokens">Respects time budget and injury constraints</div>
+        <div class="ai-tokens">Respects time budget, injury, and condition constraints</div>
       </div>
     </div>
-    <p class="deep-note">All calls share: female-first system prompt, posterior chain priority, no jargon, plain language load guidance, goal-specific context, and age-adaptive recovery profile.</p>
+    <p class="deep-note">All calls share: female-first system prompt, posterior chain priority, no jargon, plain language load guidance, goal-specific context, condition context, and age-adaptive recovery profile.</p>
   </div>
 
   <!-- ── Rest & Education ── -->
@@ -1974,6 +2005,12 @@ body {
       </div>
       <div class="edu-item">
         <strong>Anatomy cues</strong> — 21 exercises with body-feedback signs ("Knees caving inward?") and context-specific fixes. Tap-to-reveal during sessions.
+      </div>
+      <div class="edu-item">
+        <strong>Condition education</strong> — Per-condition cues surfaced during exercises (1 max per exercise, full edu mode only). PCOS: compound/insulin sensitivity messaging. Fibroids: low-impact encouragement, anaemia awareness. Endometriosis: anti-inflammatory framing. Pelvic floor: breathing coordination, physio referral context.
+      </div>
+      <div class="edu-item">
+        <strong>Pelvic floor breathing overrides</strong> — Users with pelvic floor concerns see exhale-on-exertion cues replacing Valsalva-style bracing on all compound exercises. Map-based lookup with automatic fallback to standard cues when no override exists.
       </div>
       <div class="edu-item">
         <strong>Interaction tracking</strong> — Developer-only counters track education opens, muscle explainer views, and anatomy cue interactions via progressDB.eduInteractions.

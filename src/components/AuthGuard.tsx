@@ -37,8 +37,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
 
         if (mode === "new") {
-          const { progressDB } = useKineStore.getState();
-          if (!progressDB.programStartDate && pathname !== "/app/onboarding") {
+          const { progressDB, goal } = useKineStore.getState();
+          if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
             router.replace("/app/onboarding");
             return;
           }
@@ -78,19 +78,33 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Brief wait for store hydration from localStorage
-      await new Promise((r) => setTimeout(r, 300));
-      const { progressDB } = useKineStore.getState();
-
-      if (!progressDB.programStartDate && pathname !== "/app/onboarding") {
+      // Post-checkout: clear any stale demo/test data so onboarding starts fresh
+      if (isPostCheckout) {
+        const storeState = useKineStore.getState();
+        storeState.resetOnboarding();
+        storeState.setWeekData(null);
+        storeState.setProgressDB({
+          sessions: [],
+          lifts: { squat: [], bench: [], deadlift: [] },
+          currentWeek: 1,
+          weekFeedbackHistory: [],
+          programStartDate: null,
+          skippedSessions: [],
+          phaseOffset: 0,
+        });
+        window.history.replaceState({}, "", pathname);
         router.replace("/app/onboarding");
         return;
       }
 
-      if (cancelled) return;
+      // Brief wait for store hydration from localStorage
+      await new Promise((r) => setTimeout(r, 300));
+      const { progressDB, goal } = useKineStore.getState();
 
-      if (isPostCheckout) {
-        window.history.replaceState({}, "", pathname);
+      // Onboarding not complete unless both goal and programStartDate are set
+      if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
+        router.replace("/app/onboarding");
+        return;
       }
 
       setAllowed(true);
