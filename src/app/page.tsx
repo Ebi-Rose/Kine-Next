@@ -2,26 +2,26 @@
 
 import { useState } from "react";
 
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyQsA4Mi3mSja_dvyNmkGYtr9oi9kac8KLa3Uj-45-Bo5PWGmxu8ZpOZYgoinXFUPDe/exec";
-
 export default function LandingPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleWaitlist(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
-      await fetch(GOOGLE_SHEET_URL, {
+      const res = await fetch("/api/waitlist", {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (!res.ok) throw new Error();
       setSubmitted(true);
     } catch {
-      alert("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
     }
     setLoading(false);
   }
@@ -158,6 +158,11 @@ export default function LandingPage() {
           color: #c49098;
           letter-spacing: 0.3px;
           animation: lpFadeUp 0.4s ease-out;
+        }
+        .lp-waitlist-error {
+          font-size: 13px;
+          color: #e57373;
+          letter-spacing: 0.3px;
         }
         .lp-waitlist-note {
           font-size: 11px;
@@ -522,6 +527,7 @@ export default function LandingPage() {
             )}
           </div>
 
+          {error && <div className="lp-waitlist-error">{error}</div>}
           <div className="lp-waitlist-note">Currently in private beta testing.</div>
 
           <div className="lp-access">
