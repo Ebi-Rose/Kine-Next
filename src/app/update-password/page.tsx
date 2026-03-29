@@ -140,6 +140,8 @@ export default function UpdatePasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Confirm new password"
             aria-label="Confirm new password"
+            aria-invalid={!!error}
+            aria-describedby={error ? "pw-error" : undefined}
             autoComplete="new-password"
             required
             minLength={6}

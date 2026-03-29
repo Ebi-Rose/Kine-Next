@@ -261,7 +261,7 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
               className="py-3 border-b border-white/[0.04] last:border-b-0"
             >
               <div className="text-[13px] font-medium mb-1.5">{section.title}</div>
-              <div className="text-[11px] text-[#998e8e] font-light leading-[1.6]">
+              <div className="text-[11px] text-[#a8a0a0] font-light leading-[1.6]">
                 {section.body}
               </div>
             </div>

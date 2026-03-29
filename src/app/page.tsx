@@ -148,7 +148,7 @@ export default function LandingPage() {
           outline-offset: -2px;
           border-radius: 4px;
         }
-        .lp-waitlist-form input::placeholder { color: #666; }
+        .lp-waitlist-form input::placeholder { color: #808080; }
         .lp-waitlist-form button {
           padding: 14px 28px;
           background: #c49098;

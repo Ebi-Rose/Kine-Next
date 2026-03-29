@@ -270,6 +270,17 @@ When building or modifying a component, verify:
 - Link underline contrast: #555 -> #888 (3.7:1)
 - Update password page title via layout metadata
 
+### Round 4 — Final verification pass (2026-03-29)
+
+7 files modified. Key fixes:
+- Global CSS rule for input/select/textarea focus-visible (fixes ~15 inputs with outline-none)
+- Onboarding: aria-label on session duration selects and lift weight inputs
+- Onboarding: focus-visible on name input, date input, selects, and lift inputs
+- GuideDrawer: body text contrast #998e8e -> #a8a0a0 (4.5:1)
+- Toast: error toasts now use role="alert" with aria-live="assertive" (was polite)
+- Update-password: aria-invalid and aria-describedby on confirm password input
+- Landing page: placeholder contrast #666 -> #808080
+
 ---
 
 ## Testing approach

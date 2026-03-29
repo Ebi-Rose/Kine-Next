@@ -37,10 +37,12 @@ export default function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div role="status" aria-live="polite" className="fixed top-4 left-1/2 z-[999] flex -translate-x-1/2 flex-col gap-2 pointer-events-none">
+    <div className="fixed top-4 left-1/2 z-[999] flex -translate-x-1/2 flex-col gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
+          role={t.type === "error" ? "alert" : "status"}
+          aria-live={t.type === "error" ? "assertive" : "polite"}
           className={`pointer-events-auto rounded-xl px-4 py-2.5 text-[13px] font-light shadow-lg backdrop-blur-md animate-slide-down ${
             t.type === "error"
               ? "bg-red-950/80 text-red-200 border border-red-800/30"

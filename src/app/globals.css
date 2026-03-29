@@ -101,6 +101,14 @@ body::before {
   outline-offset: 3px;
 }
 
+/* Ensure inputs with outline-none still show focus-visible */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-accent) !important;
+  outline-offset: 2px;
+}
+
 /* ── Placeholder contrast ── */
 ::placeholder {
   color: #808080;

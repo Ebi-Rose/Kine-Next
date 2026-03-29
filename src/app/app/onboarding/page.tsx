@@ -149,7 +149,7 @@ function NameStep({ onNext }: { onNext: () => void }) {
         placeholder="Your name"
         aria-label="Your name"
         autoFocus
-        className="mt-6 w-full max-w-xs rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-center text-sm text-text placeholder:text-muted outline-none focus:border-accent"
+        className="mt-6 w-full max-w-xs rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-center text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       />
       <Button className="mt-6 w-full max-w-xs" size="lg" onClick={handleContinue} disabled={!name.trim()}>
         Continue
@@ -460,7 +460,7 @@ function CycleStep({ onNext }: { onNext: () => void }) {
             type="date"
             value={periodDate}
             onChange={(e) => setPeriodDate(e.target.value)}
-            className="mt-1 w-full rounded-[var(--radius-default)] border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent"
+            className="mt-1 w-full rounded-[var(--radius-default)] border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           />
           <p className="mt-1 text-[10px] text-muted">
             Approximate is fine — you can update it any time.
@@ -722,7 +722,8 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
               <select
                 value={dayDurations[dow] || (duration === "short" ? 40 : duration === "medium" ? 50 : duration === "long" ? 75 : 90)}
                 onChange={(e) => updateDayDuration(dow, parseInt(e.target.value))}
-                className="rounded border border-border bg-bg px-2 py-1 text-xs text-text outline-none"
+                aria-label={`Session duration for ${DAY_LABELS[dow]}`}
+                className="rounded border border-border bg-bg px-2 py-1 text-xs text-text outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <option value={30}>30 min</option>
                 <option value={40}>40 min</option>
@@ -756,9 +757,10 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
                     type="number"
                     inputMode="decimal"
                     placeholder={field.placeholder}
+                    aria-label={`${field.name} weight in ${field.unit}`}
                     value={lifts[field.name] || ""}
                     onChange={(e) => setLifts({ ...lifts, [field.name]: e.target.value })}
-                    className="w-16 rounded border border-border bg-bg px-2 py-1 text-center text-xs text-text outline-none focus:border-accent"
+                    className="w-16 rounded border border-border bg-bg px-2 py-1 text-center text-xs text-text outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   />
                   <span className="text-[10px] text-muted">{field.unit}</span>
                 </div>
