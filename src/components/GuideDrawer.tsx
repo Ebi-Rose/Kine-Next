@@ -206,11 +206,15 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
         className={`fixed inset-0 z-[90] bg-black/50 backdrop-blur-[3px] transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
+        role="presentation"
         onClick={handleBackdropClick}
       />
 
       {/* Drawer */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Guide: ${label}`}
         className={`fixed top-0 right-0 bottom-0 z-[95] w-[78%] max-w-[340px] bg-[#151515] border-l border-white/[0.06] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] overflow-y-auto ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
@@ -230,9 +234,9 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
           </div>
 
           {/* Page label */}
-          <div className="text-[9px] tracking-[1px] uppercase text-accent/50 mb-2">
+          <h2 className="text-[9px] tracking-[1px] uppercase text-accent/50 mb-2">
             {label}
-          </div>
+          </h2>
 
           {/* Intro */}
           <p className="text-[12px] text-muted2 font-light leading-[1.7] mb-4 pb-4 border-b border-white/[0.06]">
@@ -246,7 +250,7 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
               className="py-3 border-b border-white/[0.04] last:border-b-0"
             >
               <div className="text-[13px] font-medium mb-1.5">{section.title}</div>
-              <div className="text-[11px] text-[#7a7070] font-light leading-[1.6]">
+              <div className="text-[11px] text-[#998e8e] font-light leading-[1.6]">
                 {section.body}
               </div>
             </div>

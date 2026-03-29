@@ -146,6 +146,7 @@ function NameStep({ onNext }: { onNext: () => void }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Your name"
+        aria-label="Your name"
         autoFocus
         className="mt-6 w-full max-w-xs rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-center text-sm text-text placeholder:text-muted outline-none focus:border-accent"
       />
@@ -450,10 +451,11 @@ function CycleStep({ onNext }: { onNext: () => void }) {
 
       {cycleType === "regular" && (
         <div className="mt-4">
-          <label className="text-xs text-muted2">
+          <label htmlFor="period-date" className="text-xs text-muted2">
             When did your last period start?
           </label>
           <input
+            id="period-date"
             type="date"
             value={periodDate}
             onChange={(e) => setPeriodDate(e.target.value)}
@@ -584,6 +586,7 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
         <textarea
           value={injuryNotes}
           onChange={(e) => setInjuryNotes(e.target.value)}
+          aria-label="Additional injury notes"
           placeholder="Anything else? E.g. 'recovering from surgery', 'can't do overhead pressing'…"
           rows={3}
           className="w-full rounded-[var(--radius-default)] border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none"

@@ -106,7 +106,8 @@ export default function WeekCheckinPage() {
           weekNum,
           effort: energy || 2,
           soreness: motivation || 2,
-          notes: `${scheduleFeeling ? `Schedule: ${scheduleFeeling}. ` : ""}${notes}`,
+          scheduleFeeling: scheduleFeeling ?? undefined,
+          notes: notes || undefined,
         },
       ],
     });
@@ -251,6 +252,7 @@ export default function WeekCheckinPage() {
 
           <div className="mt-4">
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
+              aria-label="Additional notes"
               placeholder="Anything else? Sleep, stress, life outside training..."
               rows={3}
               className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none" />

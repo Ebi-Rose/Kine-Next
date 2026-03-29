@@ -77,6 +77,8 @@ export default function LandingPage() {
           font-size: 48px;
           letter-spacing: 6px;
           line-height: 1;
+          margin: 0;
+          font-weight: normal;
         }
         .lp-logo .lp-k { color: #c49098; }
         .lp-logo .lp-rest { color: #f0f0f0; }
@@ -99,7 +101,7 @@ export default function LandingPage() {
         .lp-body {
           font-size: 14px;
           line-height: 1.6;
-          color: #666;
+          color: #999;
           max-width: 360px;
         }
         .lp-body em {
@@ -137,7 +139,7 @@ export default function LandingPage() {
           font-weight: 300;
           outline: none;
         }
-        .lp-waitlist-form input::placeholder { color: #333; }
+        .lp-waitlist-form input::placeholder { color: #666; }
         .lp-waitlist-form button {
           padding: 14px 28px;
           background: #c49098;
@@ -166,7 +168,7 @@ export default function LandingPage() {
         }
         .lp-waitlist-note {
           font-size: 11px;
-          color: #333;
+          color: #888;
           max-width: 300px;
         }
         .lp-access {
@@ -174,7 +176,7 @@ export default function LandingPage() {
         }
         .lp-access a {
           font-size: 12px;
-          color: #444;
+          color: #999;
           text-decoration: none;
           transition: color 0.2s;
           letter-spacing: 0.3px;
@@ -198,7 +200,7 @@ export default function LandingPage() {
           height: 30px;
           border-radius: 50%;
           border: 1px solid #1a1a1a;
-          color: #383838;
+          color: #999;
           transition: border-color 0.2s, color 0.2s;
           text-decoration: none;
         }
@@ -213,7 +215,7 @@ export default function LandingPage() {
         }
         .lp-footer-text {
           font-size: 10px;
-          color: #222;
+          color: #999;
         }
 
         /* Phone */
@@ -490,9 +492,9 @@ export default function LandingPage() {
 
       <div className="lp-layout">
         <div className="lp-content">
-          <div className="lp-logo">
+          <h1 className="lp-logo">
             <span className="lp-k">K</span><span className="lp-rest">INĒ</span>
-          </div>
+          </h1>
 
           <p className="lp-headline">
             <strong>Most programmes weren&apos;t built for your body.</strong>
@@ -513,6 +515,7 @@ export default function LandingPage() {
                   type="email"
                   placeholder="your@email.com"
                   required
+                  aria-label="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />

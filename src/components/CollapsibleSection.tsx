@@ -22,6 +22,7 @@ export default function CollapsibleSection({
       <button
         className="flex w-full items-center gap-2.5 py-3.5 text-left active:opacity-70 select-none"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
       >
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-medium text-text leading-tight mb-0.5">

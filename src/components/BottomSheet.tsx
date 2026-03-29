@@ -88,10 +88,11 @@ export default function BottomSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100]">
+    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={title || "Dialog"}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-[6px] animate-fade-in"
+        role="presentation"
         onClick={onClose}
       />
 

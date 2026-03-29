@@ -866,7 +866,7 @@ function ExerciseCard({
             className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border"
             onClick={(e) => { e.stopPropagation(); if (vidUrl && onVideoPlay) onVideoPlay(vidUrl); }}
           >
-            <img src={videoThumb} alt="" className="h-full w-full object-cover" />
+            <img src={videoThumb} alt={`Play video for ${exercise.name}`} className="h-full w-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
               <span className="text-white text-[10px]">▶</span>
             </div>
@@ -1010,7 +1010,7 @@ function ExerciseCard({
               ))}
             </div>
 
-            <textarea placeholder="Notes (optional)" value={log.note}
+            <textarea placeholder="Notes (optional)" aria-label={`Notes for ${exercise.name}`} value={log.note}
               onChange={(e) => onUpdateNote(index, e.target.value)} rows={2}
               className="mt-3 w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none" />
 

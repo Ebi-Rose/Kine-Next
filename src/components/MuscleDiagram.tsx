@@ -91,7 +91,7 @@ export default function MuscleDiagram({ sessionMuscleGroups, collapsed = true }:
 
   return (
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between p-3 text-left">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between p-3 text-left">
         <div>
           <span className="text-xs font-medium text-text">Muscles trained</span>
           <span className="text-[10px] text-muted ml-2">{pri.size} primary, {sec.size} secondary</span>

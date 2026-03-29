@@ -240,9 +240,9 @@ export default function ProgressPage() {
       <BottomSheet open={showORM} onClose={() => setShowORM(false)} title="1RM Calculator">
         <p className="text-xs text-muted2 mb-4">Enter a weight and reps to estimate your one-rep max (Brzycki formula).</p>
         <div className="flex gap-3 mb-4">
-          <input type="number" placeholder="Weight (kg)" value={ormWeight} onChange={(e) => setOrmWeight(e.target.value)}
+          <input type="number" placeholder="Weight (kg)" aria-label="Weight in kg" value={ormWeight} onChange={(e) => setOrmWeight(e.target.value)}
             className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
-          <input type="number" placeholder="Reps" value={ormReps} onChange={(e) => setOrmReps(e.target.value)}
+          <input type="number" placeholder="Reps" aria-label="Number of reps" value={ormReps} onChange={(e) => setOrmReps(e.target.value)}
             className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
         </div>
         {ormWeight && ormReps && (

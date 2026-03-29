@@ -372,9 +372,9 @@ function CyclePanel({ onBack }: { onBack: () => void }) {
       {/* Log new period */}
       {cycleType === "regular" && (
         <div className="mt-4">
-          <p className="mb-2 text-xs text-muted2">Log period start</p>
+          <label htmlFor="period-log-date" className="mb-2 text-xs text-muted2 block">Log period start</label>
           <div className="flex gap-2">
-            <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
+            <input id="period-log-date" type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
               className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
             <Button size="sm" onClick={logPeriod} disabled={!newDate}>Log</Button>
           </div>
@@ -665,10 +665,11 @@ function Row({ label, value }: { label: string; value: string }) {
 function Input({ label, value, onChange, type = "text", placeholder }: {
   label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
 }) {
+  const id = `profile-${label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
   return (
     <div>
-      <label className="text-xs text-muted">{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+      <label htmlFor={id} className="text-xs text-muted">{label}</label>
+      <input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
     </div>
   );
