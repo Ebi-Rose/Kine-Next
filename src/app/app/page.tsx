@@ -85,12 +85,12 @@ export default function AppHome() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
         {loading ? (
-          <>
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-            <p className="mt-4 text-sm text-muted2 animate-pulse">
+          <div role="status" aria-label="Building your week">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" aria-hidden="true" />
+            <p className="mt-4 text-sm text-muted2 animate-pulse" aria-live="polite">
               {LOADING_MESSAGES[loadingMsg]}
             </p>
-          </>
+          </div>
         ) : (
           <>
             <h2 className="font-display text-2xl tracking-wide text-text">

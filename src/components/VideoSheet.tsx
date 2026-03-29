@@ -24,6 +24,7 @@ export default function VideoSheet({ open, onClose, exerciseName }: Props) {
           loop
           muted
           playsInline
+          aria-label={`${exerciseName} demonstration video`}
           className="w-full rounded-lg"
           style={{ maxHeight: "50vh" }}
         />

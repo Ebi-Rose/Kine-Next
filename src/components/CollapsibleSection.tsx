@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -16,6 +16,7 @@ export default function CollapsibleSection({
   children,
 }: CollapsibleSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const panelId = useId();
 
   return (
     <div className="border-b border-border pb-0.5 mb-1.5">
@@ -23,6 +24,7 @@ export default function CollapsibleSection({
         className="flex w-full items-center gap-2.5 py-3.5 text-left active:opacity-70 select-none"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
+        aria-controls={panelId}
       >
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-medium text-text leading-tight mb-0.5">
@@ -40,7 +42,7 @@ export default function CollapsibleSection({
           ▼
         </span>
       </button>
-      {open && <div className="pb-3.5">{children}</div>}
+      {open && <div id={panelId} className="pb-3.5">{children}</div>}
     </div>
   );
 }

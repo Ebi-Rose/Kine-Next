@@ -113,7 +113,7 @@ export default function ExerciseSwapSheet({
         className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent mb-3" />
 
       {/* Grouped candidates */}
-      <div className="max-h-[50vh] overflow-y-auto">
+      <div className="max-h-[50vh] overflow-y-auto" aria-live="polite">
         {grouped.length === 0 && (
           <p className="text-center text-xs text-muted2 py-6">No matching exercises found</p>
         )}

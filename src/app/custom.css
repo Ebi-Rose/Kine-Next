@@ -34,3 +34,14 @@
 .stagger-fade-up > *:nth-child(6) { animation-delay: 0.30s; }
 .stagger-fade-up > *:nth-child(7) { animation-delay: 0.36s; }
 .stagger-fade-up > *:nth-child(8) { animation-delay: 0.42s; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-celebrate,
+  .stagger-fade-up > * {
+    animation: none !important;
+  }
+  .stagger-fade-up > * {
+    opacity: 1 !important;
+  }
+}

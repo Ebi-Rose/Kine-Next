@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useId } from "react";
 
 interface BottomSheetProps {
   open: boolean;
@@ -17,15 +17,24 @@ export default function BottomSheet({
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+  const titleId = useId();
   const dragState = useRef<{ startY: number; startTime: number; currentY: number; dragging: boolean }>({
     startY: 0, startTime: 0, currentY: 0, dragging: false,
   });
 
   useEffect(() => {
     if (open) {
+      triggerRef.current = document.activeElement;
       document.body.style.overflow = "hidden";
+      // Move focus into sheet
+      requestAnimationFrame(() => sheetRef.current?.focus());
     } else {
       document.body.style.overflow = "";
+      // Restore focus to trigger
+      if (triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus();
+      }
     }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
@@ -88,7 +97,7 @@ export default function BottomSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={title || "Dialog"}>
+    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-labelledby={title ? titleId : undefined} aria-label={!title ? "Dialog" : undefined}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-[6px] animate-fade-in"
@@ -101,6 +110,7 @@ export default function BottomSheet({
         ref={sheetRef}
         className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border/50 bg-surface animate-slide-up"
         style={{ boxShadow: "0 -8px 30px rgba(0,0,0,0.3)", transition: "transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)" }}
+        tabIndex={-1}
       >
         {/* Handle — swipe target */}
         <div
@@ -117,7 +127,7 @@ export default function BottomSheet({
 
         {title && (
           <div className="px-6 pb-3 pt-1">
-            <h3 className="font-display text-lg tracking-wide text-text">
+            <h3 id={titleId} className="font-display text-lg tracking-wide text-text">
               {title}
             </h3>
           </div>

@@ -17,7 +17,10 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "KINĒ",
+  title: {
+    default: "KINĒ",
+    template: "%s — KINĒ",
+  },
   description: "Intelligent training — so you don't have to figure it out alone.",
   manifest: "/manifest.json",
   appleWebApp: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 interface GuideSection {
   title: string;
@@ -180,6 +180,8 @@ interface GuideDrawerProps {
 
 export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) {
   const { label, intro, sections } = getGuideForRoute(route);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
 
   // Escape key to close
   useEffect(() => {
@@ -189,12 +191,19 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  // Prevent body scroll when open
+  // Focus management + prevent body scroll
   useEffect(() => {
     if (open) {
+      triggerRef.current = document.activeElement;
       document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
+      requestAnimationFrame(() => drawerRef.current?.focus());
+    } else {
+      document.body.style.overflow = "";
+      if (triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus();
+      }
     }
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   const handleBackdropClick = useCallback(() => onClose(), [onClose]);
@@ -212,9 +221,11 @@ export default function GuideDrawer({ open, onClose, route }: GuideDrawerProps) 
 
       {/* Drawer */}
       <div
+        ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Guide: ${label}`}
+        tabIndex={-1}
         className={`fixed top-0 right-0 bottom-0 z-[95] w-[78%] max-w-[340px] bg-[#151515] border-l border-white/[0.06] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] overflow-y-auto ${
           open ? "translate-x-0" : "translate-x-full"
         }`}

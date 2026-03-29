@@ -46,7 +46,9 @@ export default function PricingPage() {
           ← Back
         </a>
 
-        <p className="mt-6 text-[10px] tracking-[0.3em] text-accent uppercase">Choose your plan</p>
+        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
+
+        <h2 className="mt-4 text-[10px] tracking-[0.3em] text-accent uppercase font-normal m-0">Choose your plan</h2>
         <p className="mt-1 text-xs text-muted2">Your coach in your pocket. 14-day money-back guarantee.</p>
 
         <div className="mt-6 flex flex-col gap-3">
@@ -85,12 +87,12 @@ export default function PricingPage() {
         <ul className="mt-6 flex flex-col gap-2 text-xs text-muted2">
           <li>✓ AI-built weekly programs, personalised to you</li>
           <li>✓ Adapts to your equipment, injuries & experience</li>
-          <li>✓ Cycle-aware programming</li>
+          <li>✓ Body-aware programming — cycle, conditions & life stage</li>
           <li>✓ Smart warm-ups & cooldowns</li>
           <li>✓ Weekly check-ins that shape your next week</li>
           <li>✓ 4-week periodised training blocks</li>
           <li>✓ Progress tracking & photos</li>
-          <li>✓ 150+ exercise library with coaching cues</li>
+          <li>✓ 170+ exercise library with coaching cues</li>
         </ul>
 
         <button
@@ -101,7 +103,7 @@ export default function PricingPage() {
           {loading ? "Loading..." : "SUBSCRIBE →"}
         </button>
 
-        {error && <p className="mt-3 text-center text-xs text-red-400">{error}</p>}
+        {error && <p className="mt-3 text-center text-xs text-red-400" role="alert">{error}</p>}
 
         <p className="mt-3 text-center text-[10px] text-muted">
           14-day money-back guarantee. Cancel anytime from your profile.

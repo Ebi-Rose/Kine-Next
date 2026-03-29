@@ -96,14 +96,14 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
         {cues && cues.length > 0 && (
           <div>
             <p className="text-[10px] text-accent font-display tracking-wider mb-1.5">FORM CUES</p>
-            <div className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
               {cues.map((cue, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs">
-                  <span className="text-accent shrink-0 mt-0.5">•</span>
+                <li key={i} className="flex items-start gap-2 text-xs">
+                  <span className="text-accent shrink-0 mt-0.5" aria-hidden="true">•</span>
                   <span className="text-muted2 font-light leading-relaxed">{cue}</span>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
 

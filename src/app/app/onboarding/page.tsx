@@ -71,7 +71,7 @@ export default function OnboardingPage() {
       <div className="mx-auto max-w-[var(--container-max)]">
         {/* Progress dots */}
         {step !== "welcome" && (
-          <div className="mb-6 flex justify-center gap-1.5">
+          <div className="mb-6 flex justify-center gap-1.5" role="progressbar" aria-label={`Step ${stepIndex} of ${STEP_ORDER.length - 1}`} aria-valuenow={stepIndex} aria-valuemin={1} aria-valuemax={STEP_ORDER.length - 1}>
             {STEP_ORDER.filter(s => s !== "welcome").map((s, i) => (
               <div
                 key={s}
@@ -80,6 +80,7 @@ export default function OnboardingPage() {
                     ? "w-6 bg-accent"
                     : "w-1.5 bg-border"
                 }`}
+                aria-hidden="true"
               />
             ))}
           </div>

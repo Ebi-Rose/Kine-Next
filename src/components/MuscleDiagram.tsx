@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { getMuscleInfo } from "@/data/education";
 import BottomSheet from "@/components/BottomSheet";
 
@@ -57,6 +57,7 @@ export default function MuscleDiagram({ sessionMuscleGroups, collapsed = true }:
   const [open, setOpen] = useState(!collapsed);
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null);
   const svgRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
 
   // Derive primary/secondary
   const pri = new Set<string>();
@@ -91,7 +92,7 @@ export default function MuscleDiagram({ sessionMuscleGroups, collapsed = true }:
 
   return (
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between p-3 text-left">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} aria-controls={panelId} className="flex w-full items-center justify-between p-3 text-left">
         <div>
           <span className="text-xs font-medium text-text">Muscles trained</span>
           <span className="text-[10px] text-muted ml-2">{pri.size} primary, {sec.size} secondary</span>
@@ -100,12 +101,13 @@ export default function MuscleDiagram({ sessionMuscleGroups, collapsed = true }:
       </button>
 
       {open && (
-        <div ref={svgRef} className="border-t border-border px-3 pb-3 pt-2">
+        <div id={panelId} ref={svgRef} className="border-t border-border px-3 pb-3 pt-2">
           <div className="flex justify-center gap-2">
             {/* FRONT */}
             <div className="flex flex-col items-center">
               <span className="text-[8px] text-muted uppercase tracking-wider mb-1">Front</span>
-              <svg width="120" height="230" viewBox="0 0 100 240">
+              <svg width="120" height="230" viewBox="0 0 100 240" role="img" aria-label="Front view of muscle groups">
+                <title>Front Muscle Diagram</title>
                 <ellipse className="fill-[#0a1420]" cx="50" cy="11" rx="9" ry="11"/>
                 <path className="fill-[#0a1420]" d="M46,21 C46,26 47,28 50,29 C53,28 54,26 54,21 Z"/>
                 <path id="sd-f-trap" d="M46,29 C42,30 36,34 30,39 C32,41 36,41 40,40 L50,35 L60,40 C64,41 68,41 70,39 C64,34 58,30 54,29 Z"/>
@@ -145,7 +147,8 @@ export default function MuscleDiagram({ sessionMuscleGroups, collapsed = true }:
             {/* BACK */}
             <div className="flex flex-col items-center">
               <span className="text-[8px] text-muted uppercase tracking-wider mb-1">Back</span>
-              <svg width="120" height="230" viewBox="0 0 100 240">
+              <svg width="120" height="230" viewBox="0 0 100 240" role="img" aria-label="Back view of muscle groups">
+                <title>Back Muscle Diagram</title>
                 <ellipse className="fill-[#0a1420]" cx="50" cy="11" rx="9" ry="11"/>
                 <path className="fill-[#0a1420]" d="M46,21 C46,26 47,28 50,29 C53,28 54,26 54,21 Z"/>
                 <path id="sd-b-trapu" d="M46,29 C41,32 35,36 29,41 C31,45 36,47 41,45 L50,39 L59,45 C64,47 69,45 71,41 C65,36 59,32 54,29 Z"/>

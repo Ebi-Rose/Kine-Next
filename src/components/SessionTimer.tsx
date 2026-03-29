@@ -69,8 +69,8 @@ export default function SessionTimer({ mode, restDuration, restActive, onRestDis
       <div className="flex items-center justify-between px-4 py-2">
         {/* Elapsed time */}
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="font-display text-sm tracking-wider text-muted2">
+          <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true" />
+          <span className="font-display text-sm tracking-wider text-muted2" aria-label={`Session time: ${formatTime(elapsed)}`} role="timer">
             {formatTime(elapsed)}
           </span>
         </div>

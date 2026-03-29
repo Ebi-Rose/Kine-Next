@@ -27,7 +27,7 @@ export default function BottomNav() {
               key={href}
               href={href}
               onClick={() => hapticLight()}
-              className={`flex flex-col items-center gap-0.5 px-5 py-1.5 text-[10px] tracking-[0.5px] transition-colors duration-200 ${
+              className={`flex flex-col items-center gap-0.5 px-5 py-1.5 min-h-[44px] justify-center text-[10px] tracking-[0.5px] transition-colors duration-200 ${
                 isActive ? "text-accent" : "text-muted hover:text-muted2"
               }`}
             >
