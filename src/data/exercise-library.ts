@@ -1,6 +1,6 @@
-// ── Exercise Library — 200 exercises ──
+// ── Exercise Library ──
 
-export type MuscleGroup = "legs" | "hinge" | "push" | "pull" | "core" | "cardio";
+export type MuscleGroup = "legs" | "hinge" | "push" | "pull" | "core" | "cardio" | "calisthenics";
 export type LogType = "weighted" | "weighted_unilateral" | "bodyweight" | "bodyweight_unilateral" | "timed" | "cardio";
 
 export interface Exercise {
@@ -103,6 +103,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Dumbbell Row",muscle:"pull",equip:["dumbbells"],tags:["Compound"],logType:"weighted_unilateral"},
   {name:"Chest-Supported Row",muscle:"pull",equip:["dumbbells","machines"],tags:["Compound"],logType:"weighted"},
   {name:"Seated Cable Row",muscle:"pull",equip:["machines"],tags:["Compound"],logType:"weighted"},
+  {name:"Single-Arm Cable Row",muscle:"pull",equip:["machines"],tags:["Compound"],logType:"weighted_unilateral"},
   {name:"Lat Pulldown",muscle:"pull",equip:["machines"],tags:["Compound"],logType:"weighted"},
   {name:"Close-Grip Lat Pulldown",muscle:"pull",equip:["machines"],tags:["Compound"],logType:"weighted"},
   {name:"Straight-Arm Pulldown",muscle:"pull",equip:["machines"],tags:["Isolation"],logType:"weighted"},
@@ -141,6 +142,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Farmers Carry",muscle:"core",equip:["dumbbells","barbell"],tags:["Stability"],logType:"weighted"},
   {name:"V-Up",muscle:"core",equip:["bodyweight"],tags:["Compound"],logType:"bodyweight"},
   {name:"Ab Machine",muscle:"core",equip:["machines"],tags:["Isolation"],logType:"weighted"},
+  {name:"Woodchop",muscle:"core",equip:["machines","dumbbells"],tags:["Rotation"],logType:"weighted"},
   // CARDIO
   {name:"Treadmill Run",muscle:"cardio",equip:["machines"],tags:["Cardio"],logType:"cardio"},
   {name:"Rowing Machine",muscle:"cardio",equip:["machines"],tags:["Cardio"],logType:"cardio"},
@@ -150,11 +152,18 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Box Jumps",muscle:"cardio",equip:["bodyweight"],tags:["Plyometric"],logType:"bodyweight"},
   {name:"Burpees",muscle:"cardio",equip:["bodyweight"],tags:["Cardio","Calisthenics"],logType:"bodyweight"},
   {name:"Jump Rope",muscle:"cardio",equip:["bodyweight"],tags:["Cardio"],logType:"timed"},
+  {name:"Mountain Climbers",muscle:"cardio",equip:["bodyweight"],tags:["Cardio"],logType:"timed"},
+  {name:"Elliptical",muscle:"cardio",equip:["machines"],tags:["Cardio"],logType:"cardio"},
+  {name:"Running (Outdoor)",muscle:"cardio",equip:["bodyweight"],tags:["Cardio"],logType:"cardio"},
+  {name:"Incline Walk",muscle:"cardio",equip:["machines"],tags:["Cardio"],logType:"cardio"},
   // KETTLEBELL
   {name:"Kettlebell Goblet Squat",muscle:"legs",equip:["kettlebell"],tags:["Compound"],logType:"weighted"},
   {name:"Kettlebell Romanian Deadlift",muscle:"hinge",equip:["kettlebell"],tags:["Compound"],logType:"weighted"},
   {name:"Kettlebell Press",muscle:"push",equip:["kettlebell"],tags:["Compound"],logType:"weighted"},
   {name:"Kettlebell Row",muscle:"pull",equip:["kettlebell"],tags:["Compound"],logType:"weighted_unilateral"},
+  {name:"Kettlebell Clean",muscle:"hinge",equip:["kettlebell"],tags:["Compound"],logType:"weighted",minExp:"developing"},
+  {name:"Kettlebell Front Rack Squat",muscle:"legs",equip:["kettlebell"],tags:["Compound"],logType:"weighted",minExp:"developing"},
+  {name:"Kettlebell Sumo Deadlift",muscle:"hinge",equip:["kettlebell"],tags:["Compound"],logType:"weighted"},
   {name:"Kettlebell Turkish Get-Up",muscle:"core",equip:["kettlebell"],tags:["Compound"],logType:"weighted",minExp:"developing"},
   // RESISTANCE BANDS
   {name:"Banded Squat",muscle:"legs",equip:["bands"],tags:["Compound"],logType:"bodyweight"},
@@ -171,6 +180,30 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Bodyweight Calf Raises",muscle:"legs",equip:["bodyweight"],tags:["Isolation"],logType:"bodyweight"},
   {name:"Bodyweight Walking Lunges",muscle:"legs",equip:["bodyweight"],tags:["Compound"],logType:"bodyweight"},
   {name:"Bodyweight Step-Ups",muscle:"legs",equip:["bodyweight"],tags:["Compound"],logType:"bodyweight_unilateral"},
+  {name:"Bodyweight Reverse Lunges",muscle:"legs",equip:["bodyweight"],tags:["Compound"],logType:"bodyweight"},
+  {name:"Bodyweight Curtsy Lunge",muscle:"legs",equip:["bodyweight"],tags:["Compound"],logType:"bodyweight_unilateral"},
+  // CALISTHENICS SKILLS
+  {name:"Archer Pull-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"developing"},
+  {name:"Archer Push-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"developing"},
+  {name:"Back Lever",muscle:"calisthenics",equip:["bodyweight"],tags:["Isometric","Calisthenics","Skill"],logType:"timed",minExp:"intermediate"},
+  {name:"Dragon Flag",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"intermediate"},
+  {name:"Front Lever",muscle:"calisthenics",equip:["bodyweight"],tags:["Isometric","Calisthenics","Skill"],logType:"timed",minExp:"intermediate"},
+  {name:"Hanging L-Sit",muscle:"calisthenics",equip:["bodyweight"],tags:["Isometric","Calisthenics","Skill"],logType:"timed",minExp:"developing"},
+  {name:"Human Flag",muscle:"calisthenics",equip:["bodyweight"],tags:["Isometric","Calisthenics","Skill"],logType:"timed",minExp:"intermediate"},
+  {name:"L-Sit",muscle:"calisthenics",equip:["bodyweight"],tags:["Isometric","Calisthenics","Skill"],logType:"timed",minExp:"developing"},
+  {name:"Muscle-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"intermediate"},
+  {name:"Ring Dips",muscle:"calisthenics",equip:["rings"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"developing"},
+  {name:"Scapular Pull-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Activation","Calisthenics","Skill"],logType:"bodyweight"},
+  {name:"Toes-to-Bar",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"developing"},
+  {name:"Typewriter Pull-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"intermediate"},
+  // WEIGHTED CALISTHENICS
+  {name:"Weighted Chin-Up",muscle:"pull",equip:["belt","plates"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},
+  {name:"Weighted Dips",muscle:"push",equip:["belt","plates"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},
+  {name:"Weighted Hanging Leg Raise",muscle:"core",equip:["dumbbells"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},
+  {name:"Weighted Nordic Curl",muscle:"hinge",equip:["plate","dumbbells"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"intermediate"},
+  {name:"Weighted Pull-Up",muscle:"pull",equip:["belt","plates"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},
+  {name:"Weighted Push-Up",muscle:"push",equip:["plate","vest"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},
+  {name:"Weighted Single-Leg Hip Thrust",muscle:"hinge",equip:["dumbbells"],tags:["Compound"],logType:"weighted_unilateral",minExp:"developing"},
 ];
 
 /** Look up an exercise by name */
