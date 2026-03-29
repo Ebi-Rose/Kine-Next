@@ -23,6 +23,7 @@ const CATEGORY_COLORS: Record<MuscleGroup, string> = {
   hinge: "var(--color-cat-hinge)",
   core: "var(--color-cat-core)",
   cardio: "var(--color-cat-cardio)",
+  calisthenics: "var(--color-cat-core)",
 };
 
 function getCategoryColor(exerciseName: string): string {

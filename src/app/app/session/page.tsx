@@ -823,7 +823,7 @@ function ExerciseCard({
 
   // Category color for left border accent
   const catColor = exInfo?.muscle
-    ? { push: "var(--color-cat-push)", pull: "var(--color-cat-pull)", legs: "var(--color-cat-legs)", hinge: "var(--color-cat-hinge)", core: "var(--color-cat-core)", cardio: "var(--color-cat-cardio)" }[exInfo.muscle] || "var(--color-border)"
+    ? { push: "var(--color-cat-push)", pull: "var(--color-cat-pull)", legs: "var(--color-cat-legs)", hinge: "var(--color-cat-hinge)", core: "var(--color-cat-core)", cardio: "var(--color-cat-cardio)", calisthenics: "var(--color-cat-core)" }[exInfo.muscle] || "var(--color-border)"
     : "var(--color-border)";
 
   return (
