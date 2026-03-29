@@ -5,50 +5,34 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import type { WeekData } from "@/lib/week-builder";
 import { analyseSession } from "@/lib/session-analysis";
-import type { AnalysisResult, ExerciseFeedback } from "@/lib/session-analysis";
+import type { AnalysisResult } from "@/lib/session-analysis";
 import { apiFetchStreaming } from "@/lib/api";
 import { findExercise } from "@/data/exercise-library";
-import { getBreathingCue, getMuscleTags, getConditionCue, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
-import { getSkillPath, hasSkillPath, SKILL_HINTS } from "@/data/skill-paths";
-import { getVideoThumb, hasVideo, getVideoUrl } from "@/data/exercise-videos";
-import { suggestNextWeight } from "@/lib/progression";
-import { buildWarmup, buildCooldown } from "@/lib/warmup-engine";
-import type { WarmupItem } from "@/data/warmup-data";
+import { buildWarmup } from "@/lib/warmup-engine";
 import { trimSessionToTime } from "@/lib/time-budget";
-import { getExerciseStallWeeks } from "@/lib/programme-age";
+import { toast } from "@/components/Toast";
+import Button from "@/components/Button";
+import MuscleDiagram from "@/components/MuscleDiagram";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
 import ExerciseEduSheet from "@/components/ExerciseEduSheet";
-import MuscleDiagram from "@/components/MuscleDiagram";
-import SkillPathSheet from "@/components/SkillPathSheet";
 import VideoSheet from "@/components/VideoSheet";
-import Button from "@/components/Button";
-import BottomSheet from "@/components/BottomSheet";
-import { toast } from "@/components/Toast";
-import { sharePR } from "@/lib/share-card";
+import SkillPathSheet from "@/components/SkillPathSheet";
 import SessionTimer from "@/components/SessionTimer";
 
-interface SetLog {
-  reps: string;
-  weight: string;
-  timestamp?: string;
-}
-
-interface ExerciseLog {
-  name: string;
-  planned: { sets: string; reps: string };
-  actual: SetLog[];
-  note: string;
-  saved: boolean;
-}
-
-type SessionStep = "workout" | "feedback" | "analysing" | "results";
+import type { ExerciseLog, SessionStep } from "./types";
+import { detectPRs } from "./detect-prs";
+import ExerciseCard from "./ExerciseCard";
+import FeedbackScreen from "./FeedbackScreen";
+import AnalysisScreen from "./AnalysisScreen";
+import SessionSummarySheet from "./SessionSummarySheet";
+import WarmupSection from "./WarmupSection";
 
 export default function SessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, conditions, exp } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, conditions, comfortFlags, exp, skillPreferences, setSkillPreferences } =
     useKineStore();
   // Store is ready if goal exists (set during onboarding)
   const hydrated = useKineStore((s) => s.goal !== null);
@@ -58,25 +42,20 @@ export default function SessionPage() {
   const [sessionStep, setSessionStep] = useState<SessionStep>("workout");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [sessionStartTime] = useState(() => new Date().toISOString());
-  const [swappingIdx, setSwappingIdx] = useState<number | null>(null);
-  const [swapLoading, setSwapLoading] = useState(false);
   const [swapSheetIdx, setSwapSheetIdx] = useState<number | null>(null);
   const [eduSheetIdx, setEduSheetIdx] = useState<number | null>(null);
-  const [showWarmup, setShowWarmup] = useState(true);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [sessionPRs, setSessionPRs] = useState<{ name: string; weight: number; reps: number }[]>([]);
-  // #14/#15: Video and skill path sheet state
   const [videoSheetEx, setVideoSheetEx] = useState<string | null>(null);
   const [skillPathEx, setSkillPathEx] = useState<string | null>(null);
   const [restActive, setRestActive] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showWarmupWarning, setShowWarmupWarning] = useState(false);
   const [currentRestDuration, setCurrentRestDuration] = useState(restConfig.compound);
 
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
 
-  // #12: Apply time budget trimming to exercises
+  // Apply time budget trimming to exercises
   const trimResult = (() => {
     if (!day || day.isRest) return null;
     const budget = sessionTimeBudgets[dayIdx];
@@ -189,68 +168,8 @@ export default function SessionPage() {
     });
   }, [logs]);
 
-  // ── Exercise Swap ──
-  async function handleSwap(exIdx: number) {
-    if (!day) return;
-    setSwapLoading(true);
-    setSwappingIdx(exIdx);
-
-    const store = useKineStore.getState();
-    const currentEx = day.exercises[exIdx];
-    const otherExercises = day.exercises.map((e) => e.name).filter((n) => n !== currentEx.name);
-
-    try {
-      const data = await apiFetchStreaming({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 200,
-        system: "You are Kinē. Suggest ONE alternative exercise. Return ONLY JSON: {\"name\":\"Exercise Name\",\"reason\":\"1 sentence why\"}",
-        messages: [{
-          role: "user",
-          content: `Replace "${currentEx.name}" in a ${day.sessionTitle} session. Equipment: ${store.equip.join(", ")}. Injuries: ${store.injuries.join(", ") || "none"}. Already in session: ${otherExercises.join(", ")}. Same muscle group, different movement pattern.`,
-        }],
-      }, { timeoutMs: 15000 });
-
-      const text = data.content.map((b) => b.text || "").join("").trim();
-      const j = text.indexOf("{");
-      const k = text.lastIndexOf("}");
-      if (j >= 0 && k >= 0) {
-        const swap = JSON.parse(text.slice(j, k + 1));
-        if (swap.name) {
-          // Update the exercise in weekData
-          const updatedWeek = { ...week! };
-          const updatedDays = [...updatedWeek.days];
-          const updatedDay = { ...updatedDays[dayIdx] };
-          const updatedExercises = [...updatedDay.exercises];
-          updatedExercises[exIdx] = {
-            ...updatedExercises[exIdx],
-            name: swap.name,
-          };
-          updatedDay.exercises = updatedExercises;
-          updatedDays[dayIdx] = updatedDay;
-          updatedWeek.days = updatedDays;
-          store.setWeekData(updatedWeek);
-
-          // Update logs
-          setLogs((prev) => ({
-            ...prev,
-            [exIdx]: { ...prev[exIdx], name: swap.name, saved: false, actual: prev[exIdx].actual.map(() => ({ reps: "", weight: "" })) },
-          }));
-
-          toast(`Swapped to ${swap.name}`, "success");
-        }
-      }
-    } catch {
-      toast("Swap unavailable — try a different exercise manually", "error");
-    }
-
-    setSwapLoading(false);
-    setSwappingIdx(null);
-  }
-
   // ── Complete Session ──
   function completeSession() {
-    // Every exercise must have at least one logged set OR be skipped
-    // Weighted exercises require weight; bodyweight/timed require reps only
     const incomplete: string[] = [];
     Object.entries(logs).forEach(([idx, ex]) => {
       const isSkipped = ex.saved && ex.actual.length === 0;
@@ -274,7 +193,6 @@ export default function SessionPage() {
         ? incomplete.join(", ")
         : `${incomplete.slice(0, 2).join(", ")} +${incomplete.length - 2} more`;
       toast(`Log or skip: ${names}`, "error");
-      // Expand the first incomplete exercise
       const firstIdx = Object.entries(logs).find(([, ex]) => {
         const isSkipped = ex.saved && ex.actual.length === 0;
         const hasData = ex.actual.some((s) => s.reps || s.weight);
@@ -417,7 +335,7 @@ export default function SessionPage() {
     );
   }
 
-  const warmup = buildWarmup(day.sessionTitle, effectiveExercises, injuries, exp || "developing", conditions);
+  const warmup = buildWarmup(day.sessionTitle, effectiveExercises, injuries, exp || "developing", conditions, comfortFlags);
   const timeBudget = sessionTimeBudgets[dayIdx];
   const isTrimmed = timeBudget && effectiveExercises.length < day.exercises.length;
 
@@ -457,7 +375,6 @@ export default function SessionPage() {
             onClick={() => {
               const store = useKineStore.getState();
               store.setGoal(store.goal); // trigger re-render
-              // Mark as seen
               const flags = { ...store.eduFlags, seen_set_notation: true };
               useKineStore.setState({ eduFlags: flags } as Partial<typeof store>);
             }}
@@ -468,7 +385,7 @@ export default function SessionPage() {
         </div>
       )}
 
-      {/* #12: Time budget notice */}
+      {/* Time budget notice */}
       {isTrimmed && (
         <div className="mb-4 rounded-lg border border-accent/20 bg-accent-dim/30 p-3">
           <p className="text-[10px] text-accent font-display tracking-wider">TRIMMED TO ~{timeBudget} MIN</p>
@@ -481,95 +398,8 @@ export default function SessionPage() {
         </div>
       )}
 
-      {/* Inline warmup */}
-      {showWarmup ? (
-        <div className="mb-6 rounded-xl border border-border bg-surface p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
-              <p className="text-[10px] text-muted2 mt-0.5">~{warmup.totalMin} min</p>
-            </div>
-            <button onClick={() => setShowWarmupWarning(true)} className="text-[10px] text-muted2 hover:text-text">
-              Skip
-            </button>
-          </div>
-
-          {/* General prep */}
-          {warmup.general.length > 0 && (
-            <div className="mb-2">
-              <p className="text-[8px] tracking-widest text-muted uppercase mb-1">General prep</p>
-              <div className="flex flex-col gap-1">
-                {warmup.general.map((wu, i) => (
-                  <FullWarmupItem key={`g-${i}`} item={wu} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Activation */}
-          {warmup.activation.length > 0 && (
-            <div className="mb-2">
-              <p className="text-[8px] tracking-widest text-muted uppercase mb-1">Activation</p>
-              <div className="flex flex-col gap-1">
-                {warmup.activation.map((wu, i) => (
-                  <FullWarmupItem key={`a-${i}`} item={wu} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Stabiliser prep */}
-          {warmup.stabiliserExtra && (
-            <div className="mb-2">
-              <p className="text-[8px] tracking-widest text-muted uppercase mb-1">Stabiliser prep</p>
-              <FullWarmupItem item={warmup.stabiliserExtra} />
-            </div>
-          )}
-
-          {/* Injury mods */}
-          {warmup.injuryItems.length > 0 && (
-            <div className="mb-2">
-              <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-1">For your injuries</p>
-              <div className="flex flex-col gap-1">
-                {warmup.injuryItems.map((wu, i) => (
-                  <FullWarmupItem key={`inj-${i}`} item={wu} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Condition mods */}
-          {warmup.conditionItems.length > 0 && (
-            <div className="mb-2">
-              <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-1">For your body</p>
-              <div className="flex flex-col gap-1">
-                {warmup.conditionItems.map((wu, i) => (
-                  <FullWarmupItem key={`cond-${i}`} item={wu} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Ramp-up sets */}
-          {warmup.rampSets.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-white/[0.04]">
-              <p className="text-[8px] tracking-widest text-muted uppercase mb-1.5">Ramp-up sets · {warmup.firstExName}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {warmup.rampSets.map((rs, i) => (
-                  <div key={i} className="rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px]">
-                    <span className="font-medium text-accent">{rs.label}</span>
-                    <span className="text-muted2 ml-1">{rs.spec}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <button onClick={() => setShowWarmup(true)} className="mb-6 w-full rounded-xl border border-border bg-surface px-4 py-3 text-[10px] text-muted2 hover:text-text transition-colors">
-          Show warm up · ~{warmup.totalMin} min
-        </button>
-      )}
+      {/* Warmup */}
+      <WarmupSection warmup={warmup} />
 
       {/* Muscle diagram */}
       <div className="mb-4">
@@ -620,65 +450,13 @@ export default function SessionPage() {
         </Button>
       </div>
 
-      {/* Warmup skip warning */}
-      {showWarmupWarning && (
-        <BottomSheet open={true} onClose={() => setShowWarmupWarning(false)}>
-          <div className="px-1 pb-4">
-            <h3 className="font-display text-lg tracking-wide text-text mb-2">Skip warm up?</h3>
-            <p className="text-xs text-muted2 leading-relaxed mb-4">
-              Warming up reduces injury risk and improves performance. Cold muscles are more prone to strain, especially on compound lifts.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" className="flex-1" onClick={() => setShowWarmupWarning(false)}>
-                Keep warm up
-              </Button>
-              <Button variant="ghost" size="sm" className="flex-1 text-muted" onClick={() => { setShowWarmup(false); setShowWarmupWarning(false); }}>
-                Skip anyway
-              </Button>
-            </div>
-          </div>
-        </BottomSheet>
-      )}
-
       {/* Confirmation popup */}
       {showConfirm && (
-        <BottomSheet open={true} onClose={() => setShowConfirm(false)}>
-          <div className="px-1 pb-4">
-            <h3 className="font-display text-lg tracking-wide text-text mb-4">Session summary</h3>
-            <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
-              {Object.entries(logs).map(([idx, ex]) => {
-                const isSkipped = ex.saved && ex.actual.length === 0;
-                const loggedSets = ex.actual.filter((s) => s.reps || s.weight);
-                return (
-                  <div key={idx} className={`rounded-lg border border-border bg-surface px-3 py-2 ${isSkipped ? "opacity-50" : ""}`}>
-                    <p className={`text-xs font-medium ${isSkipped ? "line-through text-muted" : "text-text"}`}>{ex.name}</p>
-                    {isSkipped ? (
-                      <p className="text-[10px] text-muted">Skipped</p>
-                    ) : loggedSets.length > 0 ? (
-                      <div className="flex flex-wrap gap-x-3 mt-0.5">
-                        {loggedSets.map((s, i) => (
-                          <span key={i} className="text-[10px] text-muted2">
-                            {s.reps}×{s.weight || "BW"}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[10px] text-amber-400">No sets logged</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Button variant="secondary" size="sm" className="flex-1" onClick={() => setShowConfirm(false)}>
-                Go back
-              </Button>
-              <Button size="sm" className="flex-1" onClick={confirmComplete}>
-                Confirm ✓
-              </Button>
-            </div>
-          </div>
-        </BottomSheet>
+        <SessionSummarySheet
+          logs={logs}
+          onClose={() => setShowConfirm(false)}
+          onConfirm={confirmComplete}
+        />
       )}
 
       {/* Swap sheet */}
@@ -690,13 +468,11 @@ export default function SessionPage() {
           sessionTitle={day.sessionTitle}
           sessionExercises={effectiveExercises.map((e) => e.name)}
           onSwap={(newName) => {
-            // Update weekData
             const store = useKineStore.getState();
             const updatedWeek = { ...week! };
             const updatedDays = [...updatedWeek.days];
             const updatedDay = { ...updatedDays[dayIdx] };
             const updatedExercises = [...updatedDay.exercises];
-            // Find the index in the original exercises array
             const origIdx = updatedExercises.findIndex(e => e.name === effectiveExercises[swapSheetIdx].name);
             if (origIdx >= 0) {
               updatedExercises[origIdx] = { ...updatedExercises[origIdx], name: newName };
@@ -705,7 +481,6 @@ export default function SessionPage() {
             updatedDays[dayIdx] = updatedDay;
             updatedWeek.days = updatedDays;
             store.setWeekData(updatedWeek);
-            // Update logs
             setLogs((prev) => ({
               ...prev,
               [swapSheetIdx]: { ...prev[swapSheetIdx], name: newName, saved: false, actual: prev[swapSheetIdx].actual.map(() => ({ reps: "", weight: "" })) },
@@ -716,7 +491,7 @@ export default function SessionPage() {
         />
       )}
 
-      {/* #14: Video sheet */}
+      {/* Video sheet */}
       {videoSheetEx && (
         <VideoSheet
           open={true}
@@ -725,18 +500,16 @@ export default function SessionPage() {
         />
       )}
 
-      {/* #15: Skill path sheet */}
+      {/* Skill path sheet */}
       {skillPathEx && (
         <SkillPathSheet
           open={true}
           onClose={() => setSkillPathEx(null)}
           exerciseName={skillPathEx}
           onSelect={(newName) => {
-            // Find which exercise index this is
             const idx = effectiveExercises.findIndex(e => e.name === skillPathEx);
             if (idx < 0) return;
 
-            // Update weekData
             const store = useKineStore.getState();
             const updatedWeek = { ...week! };
             const updatedDays = [...updatedWeek.days];
@@ -751,7 +524,9 @@ export default function SessionPage() {
             updatedWeek.days = updatedDays;
             store.setWeekData(updatedWeek);
 
-            // Update logs
+            // Persist skill preference for future weeks
+            setSkillPreferences({ ...skillPreferences, [skillPathEx]: newName });
+
             setLogs((prev) => ({
               ...prev,
               [idx]: { ...prev[idx], name: newName, saved: false, actual: prev[idx].actual.map(() => ({ reps: "", weight: "" })) },
@@ -788,620 +563,4 @@ export default function SessionPage() {
       )}
     </div>
   );
-}
-
-// ── Exercise Card ──
-
-function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full", conditions = [],
-}: {
-  index: number;
-  exercise: { name: string; sets: string; reps: string; rest: string };
-  log: ExerciseLog | undefined;
-  expanded: boolean;
-  onToggle: () => void;
-  onUpdateSet: (exIdx: number, setIdx: number, field: "reps" | "weight", val: string) => void;
-  onUpdateNote: (exIdx: number, note: string) => void;
-  onSave: (exIdx: number) => void;
-  onSkip: (exIdx: number) => void;
-  onUnskip: (exIdx: number) => void;
-  onSwap: (exIdx: number) => void;
-  swapLoading: boolean;
-  onVideoPlay?: (url: string) => void;
-  onVideoSheet?: (name: string) => void;
-  onSkillPath?: (name: string) => void;
-  onEduSheet?: (exIdx: number) => void;
-  eduMode?: string;
-  conditions?: string[];
-}) {
-  if (!log) return null;
-  const skipped = log.saved && log.actual.length === 0;
-  const exInfo = findExercise(exercise.name);
-  const muscleTags = getMuscleTags(exercise.name);
-  const videoThumb = getVideoThumb(exercise.name);
-  const vidUrl = getVideoUrl(exercise.name);
-
-  // Category color for left border accent
-  const catColor = exInfo?.muscle
-    ? { push: "var(--color-cat-push)", pull: "var(--color-cat-pull)", legs: "var(--color-cat-legs)", hinge: "var(--color-cat-hinge)", core: "var(--color-cat-core)", cardio: "var(--color-cat-cardio)", calisthenics: "var(--color-cat-core)" }[exInfo.muscle] || "var(--color-border)"
-    : "var(--color-border)";
-
-  return (
-    <div
-      className={`rounded-xl border transition-all duration-200 ${
-        skipped ? "border-border/50 bg-surface/50 opacity-50"
-          : log.saved ? "border-accent/30 bg-accent-dim/50"
-          : expanded ? "border-border-active bg-surface"
-          : "border-border bg-surface"
-      }`}
-      style={{ borderLeftWidth: "3px", borderLeftColor: skipped ? "var(--color-border)" : catColor }}
-    >
-      {/* Unskip row (when expanded and skipped) */}
-      {expanded && skipped && (
-        <div className="flex items-center justify-end gap-2 px-4 pt-3 pb-0">
-          <button onClick={(e) => { e.stopPropagation(); onUnskip(index); }}
-            className="text-[10px] text-accent hover:text-text transition-colors px-2 py-1">Undo skip</button>
-        </div>
-      )}
-
-      {/* Skip/Swap row at top (when expanded and not saved) */}
-      {expanded && !log.saved && !skipped && (
-        <div className="flex items-center justify-end gap-2 px-4 pt-3 pb-0">
-          <button onClick={(e) => { e.stopPropagation(); onSkip(index); }}
-            className="text-[10px] text-muted hover:text-text transition-colors px-2 py-1">Skip</button>
-          <button onClick={(e) => { e.stopPropagation(); onSwap(index); }}
-            className="text-[10px] text-muted border border-border rounded px-2 py-1 hover:border-border-active transition-all">Swap</button>
-          {hasSkillPath(exercise.name) && onSkillPath && (
-            <button onClick={(e) => { e.stopPropagation(); onSkillPath(exercise.name); }}
-              className="text-[10px] text-muted border border-border rounded px-2 py-1 hover:border-border-active transition-all">Easier/Harder</button>
-          )}
-        </div>
-      )}
-
-      {/* Header */}
-      <button onClick={onToggle} className="flex w-full items-center gap-3 p-4 pt-2 text-left">
-        {/* Thumbnail placeholder */}
-        {videoThumb ? (
-          <div
-            className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border"
-            onClick={(e) => { e.stopPropagation(); if (vidUrl && onVideoPlay) onVideoPlay(vidUrl); }}
-          >
-            <img src={videoThumb} alt={`Play video for ${exercise.name}`} className="h-full w-full object-cover" />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <span className="text-white text-[10px]">▶</span>
-            </div>
-          </div>
-        ) : (
-          <div className="h-10 w-10 shrink-0 rounded-lg border border-border flex items-center justify-center"
-            style={{ background: `${catColor}10` }}>
-            <div className="h-3 w-3 rounded-full" style={{ background: catColor }} />
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`text-[13px] font-medium truncate ${skipped ? "line-through text-muted" : "text-text"}`}>{exercise.name}</span>
-            {log.saved && !skipped && (
-              <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[9px] text-accent shrink-0">✓ saved</span>
-            )}
-            {skipped && (
-              <span className="rounded-full bg-border px-2 py-0.5 text-[9px] text-muted shrink-0">skipped</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[11px] text-muted2 font-light">
-              {exercise.sets}×{exercise.reps}
-              {exercise.rest !== "-" && ` · ${exercise.rest}`}
-            </span>
-            {exInfo && (
-              <span className="text-[10px] text-muted font-light">
-                · {exInfo.tags.includes("Compound") ? "Compound" : "Isolation"}
-              </span>
-            )}
-          </div>
-          {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0) && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {[...muscleTags.primary, ...muscleTags.secondary].slice(0, 3).map((tag) => (
-                <span key={tag} className="rounded-full bg-surface2/60 px-1.5 py-0.5 text-[9px] text-muted2 font-light">{tag}</span>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Education "?" button */}
-        {onEduSheet && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onEduSheet(index); }}
-            className="shrink-0 w-6 h-6 rounded-full bg-accent/8 border border-accent/25 text-accent text-[11px] flex items-center justify-center hover:bg-accent/15 transition-all"
-          >
-            ?
-          </button>
-        )}
-        <span className="text-muted text-[10px] shrink-0">{expanded ? "▾" : "▸"}</span>
-      </button>
-
-      {expanded && !log.saved && (() => {
-        const exInfo = findExercise(exercise.name);
-        const logType = exInfo?.logType || "weighted";
-        const breathCue = getBreathingCue(exercise.name, conditions);
-        const condCue = getConditionCue(exercise.name, conditions);
-        const weightSuggestion = suggestNextWeight(exercise.name);
-        const skillPath = hasSkillPath(exercise.name) ? getSkillPath(exercise.name, []) : null;
-
-        return (
-          <div className="border-t border-border/50 px-4 pb-4 pt-3">
-            {/* Education — respects coaching mode */}
-            {eduMode === "silent" ? null : (<>
-            {/* Breathing cue */}
-            {breathCue && (
-              <p className="mb-3 text-[10px] text-accent italic">{breathCue}</p>
-            )}
-
-            {/* Weight suggestion */}
-            {weightSuggestion && logType.startsWith("weighted") && (
-              <p className="mb-2 text-[10px] text-muted2">Last time: {weightSuggestion}</p>
-            )}
-
-            <p className="mb-3 text-[10px] tracking-wider text-muted uppercase">Log your sets</p>
-            <div className="flex flex-col gap-2">
-              {log.actual.map((set, setIdx) => (
-                <div key={setIdx} className="flex items-center gap-2 text-sm">
-                  <span className="w-12 text-xs text-muted">Set {setIdx + 1}</span>
-
-                  {/* Weighted: reps × weight */}
-                  {(logType === "weighted" || logType === "weighted_unilateral") && (
-                    <>
-                      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
-                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                      <span className="text-muted">×</span>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => {
-                          const cur = parseFloat(set.weight) || 0;
-                          const inc = logType.includes("unilateral") ? 2 : 2.5;
-                          if (cur >= inc) onUpdateSet(index, setIdx, "weight", String(cur - inc));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
-                        <input type="number" inputMode="decimal" placeholder="kg" value={set.weight}
-                          onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
-                          className="w-14 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                        <button onClick={() => {
-                          const cur = parseFloat(set.weight) || 0;
-                          const inc = logType.includes("unilateral") ? 2 : 2.5;
-                          onUpdateSet(index, setIdx, "weight", String(cur + inc));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
-                      </div>
-                      <span className="text-[10px] text-muted">{logType === "weighted_unilateral" ? "kg/side" : "kg"}</span>
-                    </>
-                  )}
-
-                  {/* Bodyweight: reps only */}
-                  {(logType === "bodyweight" || logType === "bodyweight_unilateral") && (
-                    <>
-                      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
-                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                        className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                      <span className="text-xs text-muted">{logType === "bodyweight_unilateral" ? "reps/side" : "reps"}</span>
-                    </>
-                  )}
-
-                  {/* Timed: seconds */}
-                  {logType === "timed" && (
-                    <>
-                      <input type="number" inputMode="numeric" placeholder="sec" value={set.reps}
-                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                        className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                      <span className="text-xs text-muted">sec</span>
-                    </>
-                  )}
-
-                  {/* Cardio: minutes + distance */}
-                  {logType === "cardio" && setIdx === 0 && (
-                    <>
-                      <input type="number" inputMode="numeric" placeholder="min" value={set.reps}
-                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                      <span className="text-xs text-muted">min</span>
-                      <input type="number" inputMode="numeric" placeholder="m" value={set.weight}
-                        onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
-                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                      <span className="text-xs text-muted">m</span>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <textarea placeholder="Notes (optional)" aria-label={`Notes for ${exercise.name}`} value={log.note}
-              onChange={(e) => onUpdateNote(index, e.target.value)} rows={2}
-              className="mt-3 w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none" />
-
-            <div className="mt-3 flex gap-2">
-              <Button size="sm" className="flex-1" onClick={() => onSave(index)}>Save</Button>
-            </div>
-
-            {/* #14: Video + #15: Skill path action buttons */}
-            <div className="mt-3 flex gap-2">
-              {hasVideo(exercise.name) && onVideoSheet && (
-                <button
-                  onClick={() => onVideoSheet(exercise.name)}
-                  className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
-                >
-                  <span>▶</span> Watch form
-                </button>
-              )}
-              {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && onSkillPath && (
-                <button
-                  onClick={() => onSkillPath(exercise.name)}
-                  className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
-                >
-                  ↕ Adjust difficulty
-                </button>
-              )}
-            </div>
-
-            {/* #17: Exercise stall detection */}
-            {(() => {
-              const stallWeeks = getExerciseStallWeeks(exercise.name);
-              if (stallWeeks >= 3) {
-                return (
-                  <div className="mt-3 rounded-lg border border-accent/20 bg-accent-dim/30 px-3 py-2">
-                    <p className="text-[10px] text-accent font-medium">
-                      Weight hasn&apos;t increased in {stallWeeks} sessions
-                    </p>
-                    <p className="text-[10px] text-muted2 font-light mt-0.5">
-                      {stallWeeks >= 5
-                        ? "Consider swapping to a variation, adjusting rep range, or taking a deload."
-                        : "This is normal — focus on form and rep quality. The weight will follow."}
-                    </p>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-
-            {/* Muscle tags */}
-            {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0) && (
-              <div className="mt-3 flex flex-wrap gap-1">
-                {muscleTags.primary.map((m) => (
-                  <span key={m} className="rounded-full bg-accent/10 px-2 py-0.5 text-[9px] text-accent">{m}</span>
-                ))}
-                {muscleTags.secondary.map((m) => (
-                  <span key={m} className="rounded-full bg-surface2 px-2 py-0.5 text-[9px] text-muted2">{m}</span>
-                ))}
-              </div>
-            )}
-
-            {/* Education cues — full mode only */}
-            {eduMode === "full" && isSquat(exercise.name) && (
-              <p className="mt-2 text-[10px] text-muted font-light">{KNEE_TRACKING_CUE}</p>
-            )}
-            {eduMode === "full" && isHinge(exercise.name) && (
-              <p className="mt-2 text-[10px] text-muted font-light">{HIP_HINGE_FIRST}</p>
-            )}
-            {eduMode === "full" && isCompound(exercise.name) && (
-              <p className="mt-2 text-[10px] text-muted font-light">{NEUTRAL_SPINE_CUE}</p>
-            )}
-            {/* Condition-specific education cue — full mode only, 1 max */}
-            {eduMode === "full" && condCue && (
-              <p className="mt-2 text-[10px] text-accent/80 font-light">ℹ {condCue.tag}: {condCue.cue}</p>
-            )}
-            </>)}
-
-            {/* Skill path hint (inline preview) */}
-            {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
-              <div className="mt-3 rounded-lg bg-surface2/50 px-3 py-2">
-                <p className="text-[9px] tracking-wider text-muted uppercase mb-1">Difficulty</p>
-                {skillPath.hint && <p className="text-[10px] text-muted2 mb-1.5">{skillPath.hint}</p>}
-                <div className="flex gap-3 text-[10px]">
-                  {skillPath.easier.length > 0 && (
-                    <span className="text-green-400">← Easier: {skillPath.easier.slice(-1)[0]}</span>
-                  )}
-                  {skillPath.harder.length > 0 && (
-                    <span className="text-accent">Harder: {skillPath.harder[0]} →</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {expanded && log.saved && !skipped && (
-        <div className="border-t border-border px-4 pb-4 pt-3">
-          <div className="flex flex-col gap-1 text-xs text-muted2">
-            {log.actual.filter((s) => s.reps || s.weight).map((s, i) => (
-              <span key={i}>Set {i + 1}: {s.reps} reps × {s.weight || "BW"} kg</span>
-            ))}
-          </div>
-          {log.note && <p className="mt-2 text-xs text-muted italic">{log.note}</p>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Feedback Screen ──
-
-function FeedbackScreen({ onSubmit }: { onSubmit: (effort: number, soreness: number) => void }) {
-  const [effort, setEffort] = useState<number | null>(null);
-  const [soreness, setSoreness] = useState<number | null>(null);
-  const { goal } = useKineStore();
-
-  // Goal-aware labels
-  const effortLabels = goal === "strength"
-    ? ["Light", "Moderate", "Heavy", "Maximal"]
-    : goal === "muscle"
-      ? ["Easy", "Working", "Intense", "Failure"]
-      : ["Too easy", "Moderate", "Hard", "Max effort"];
-
-  const effortQuestion = goal === "strength"
-    ? "How heavy did it feel?"
-    : goal === "muscle"
-      ? "How hard did you push?"
-      : "How was the effort?";
-
-  const sorenessLabels = ["Fresh", "A little sore", "Pretty sore", "Beat up"];
-
-  return (
-    <div className="flex min-h-[60vh] flex-col justify-center">
-      <div className="text-center mb-8">
-        <h2 className="font-display text-3xl tracking-wide text-accent">Session complete</h2>
-        <p className="mt-2 text-sm text-muted2">
-          {goal === "strength" ? "How did the bar move?"
-           : goal === "muscle" ? "Did you feel the muscles working?"
-           : "How did it go?"}
-        </p>
-      </div>
-
-      <div className="mb-6">
-        <p className="mb-2 text-xs tracking-wider text-muted uppercase">{effortQuestion}</p>
-        <div className="grid grid-cols-4 gap-2">
-          {effortLabels.map((label, i) => (
-            <button key={i} onClick={() => setEffort(i + 1)}
-              className={`rounded-[var(--radius-default)] border px-2 py-3 text-xs transition-all ${
-                effort === i + 1 ? "border-accent bg-accent-dim text-text" : "border-border bg-surface text-muted2 hover:border-border-active"
-              }`}>{label}</button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <p className="mb-2 text-xs tracking-wider text-muted uppercase">How does your body feel?</p>
-        <div className="grid grid-cols-4 gap-2">
-          {sorenessLabels.map((label, i) => (
-            <button key={i} onClick={() => setSoreness(i + 1)}
-              className={`rounded-[var(--radius-default)] border px-2 py-3 text-xs transition-all ${
-                soreness === i + 1 ? "border-accent bg-accent-dim text-text" : "border-border bg-surface text-muted2 hover:border-border-active"
-              }`}>{label}</button>
-          ))}
-        </div>
-      </div>
-
-      <Button size="lg" className="w-full" disabled={effort === null || soreness === null}
-        onClick={() => onSubmit(effort!, soreness!)}>
-        Save & get feedback
-      </Button>
-    </div>
-  );
-}
-
-// ── Analysis Results Screen ──
-
-function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResult | null; prs?: { name: string; weight: number; reps: number }[]; onDone: () => void }) {
-  const { progressDB } = useKineStore();
-  const verdictColors: Record<string, string> = {
-    strong: "text-green-400",
-    solid: "text-muted2",
-    building: "text-yellow-400",
-    adjust: "text-accent",
-  };
-
-  function handleSharePR(pr: { name: string; weight: number; reps: number }) {
-    const history = progressDB.lifts[pr.name] || [];
-    const prevBest = history.length > 1
-      ? history.slice(0, -1).reduce((best: number, entry: { weight: number }) => Math.max(best, entry.weight), 0)
-      : undefined;
-
-    sharePR({
-      name: pr.name,
-      weight: pr.weight,
-      reps: pr.reps,
-      prev: prevBest,
-      weekNum: progressDB.currentWeek || 1,
-      totalSessions: progressDB.sessions.length,
-    });
-  }
-
-  return (
-    <div>
-      <h2 className="font-display text-2xl tracking-wide text-accent">Session review</h2>
-
-      {/* PR cards with share */}
-      {prs.length > 0 && (
-        <div className="mt-4 flex flex-col gap-2">
-          {prs.map((pr, i) => (
-            <div key={i} className="rounded-[14px] border border-accent/30 bg-accent-dim p-4 flex items-center justify-between">
-              <div>
-                <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-0.5">New PR</p>
-                <p className="text-sm font-medium text-text">{pr.name}</p>
-                <p className="text-xs text-muted2">{pr.weight}kg x {pr.reps} reps</p>
-              </div>
-              <button
-                onClick={() => handleSharePR(pr)}
-                className="rounded-lg border border-accent/30 bg-accent/10 px-3 py-1.5 text-[10px] text-accent hover:bg-accent/20 transition-colors"
-              >
-                Share
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {analysis ? (
-        <>
-          <div className="mt-4 rounded-[var(--radius-default)] border border-border bg-surface p-4">
-            <p className="text-sm leading-relaxed text-text">{analysis.overallAssessment}</p>
-          </div>
-
-          {analysis.exerciseFeedback?.length > 0 && (
-            <div className="mt-6">
-              <p className="mb-2 text-xs tracking-wider text-muted uppercase">Exercise breakdown</p>
-              <div className="flex flex-col gap-2">
-                {analysis.exerciseFeedback.map((ef, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-[var(--radius-default)] border border-border bg-surface p-3">
-                    <span className={`mt-0.5 text-xs font-medium uppercase ${verdictColors[ef.verdict] || "text-muted2"}`}>
-                      {ef.verdict}
-                    </span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-text">{ef.name}</p>
-                      <p className="text-xs text-muted2">{ef.note}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {analysis.changes?.length > 0 && (
-            <div className="mt-6">
-              <p className="mb-2 text-xs tracking-wider text-muted uppercase">Changes for next time</p>
-              <div className="flex flex-col gap-2">
-                {analysis.changes.map((c, i) => (
-                  <div key={i} className="rounded-[var(--radius-default)] border border-border bg-surface p-3">
-                    <p className="text-sm font-medium text-text">{c.icon} {c.title}</p>
-                    <p className="text-xs text-muted2">{c.detail}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="mt-4 rounded-[var(--radius-default)] border border-border bg-surface p-4">
-          <p className="text-sm text-muted2">
-            AI analysis unavailable. Your session has been saved — great work.
-          </p>
-        </div>
-      )}
-
-      <div className="mt-8">
-        <Button className="w-full" size="lg" onClick={onDone}>
-          Back to week →
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// ── Warmup Item with "how to" popup ──
-
-function FullWarmupItem({ item }: { item: WarmupItem }) {
-  const [checked, setChecked] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [showAlts, setShowAlts] = useState(false);
-  const [current, setCurrent] = useState(item);
-
-  return (
-    <div className={`rounded-lg transition-all ${checked ? "opacity-50" : ""}`}>
-      <div className="flex items-start gap-2 px-2 py-1.5">
-        {/* Checkbox */}
-        <button
-          onClick={() => setChecked(!checked)}
-          className={`shrink-0 mt-0.5 w-4 h-4 rounded border transition-all flex items-center justify-center ${
-            checked ? "bg-accent border-accent" : "border-border hover:border-accent/50"
-          }`}
-        >
-          {checked && <span className="text-[8px] text-bg">✓</span>}
-        </button>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <button onClick={() => setExpanded(!expanded)} className="flex w-full items-center justify-between text-left">
-            <span className={`text-xs truncate ${checked ? "line-through text-muted" : "text-text"}`}>{current.name}</span>
-            <div className="flex items-center gap-1.5 shrink-0 ml-2">
-              {current._injuryProtective && (
-                <span className="text-[7px] bg-accent/10 text-accent px-1 py-0.5 rounded">protective</span>
-              )}
-              <span className="text-[10px] text-muted">{current.duration}</span>
-              <span className="text-[9px] text-muted2">{expanded ? "▾" : "▸"}</span>
-            </div>
-          </button>
-
-          {/* Expanded detail */}
-          {expanded && (
-            <div className="mt-1.5 animate-fade-up">
-              <p className="text-[10px] text-muted2 font-light leading-relaxed">{current.detail}</p>
-              {current._why && (
-                <p className="mt-1 text-[9px] text-accent/70 font-light italic leading-relaxed">{current._why}</p>
-              )}
-
-              {/* Alternatives */}
-              {current.alts && current.alts.length > 0 && (
-                <div className="mt-1.5">
-                  <button onClick={() => setShowAlts(!showAlts)} className="text-[9px] text-muted hover:text-accent transition-colors">
-                    {showAlts ? "Hide options" : `${current.alts.length} alternatives`}
-                  </button>
-                  {showAlts && (
-                    <div className="mt-1 flex flex-col gap-1">
-                      {current.alts.map((alt, i) => (
-                        <button
-                          key={i}
-                          onClick={() => { setCurrent({ ...alt, alts: current.alts }); setShowAlts(false); }}
-                          className="text-left rounded-lg bg-surface2/30 px-2 py-1.5 text-[10px] hover:bg-surface2/50 transition-all"
-                        >
-                          <span className="text-text">{alt.name}</span>
-                          <span className="text-muted2 ml-1">· {alt.duration}</span>
-                          <p className="text-muted2 font-light mt-0.5 text-[9px] leading-relaxed">{alt.detail}</p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── PR Detection ──
-
-function detectPRs(logs: Record<number, ExerciseLog>): { name: string; weight: number; reps: number }[] {
-  const store = useKineStore.getState();
-  const prs: { name: string; weight: number; reps: number }[] = [];
-
-  Object.values(logs).forEach((ex) => {
-    if (!ex.saved || ex.actual.length === 0) return;
-
-    const bestSet = ex.actual.reduce(
-      (best, s) => {
-        const w = parseFloat(s.weight) || 0;
-        const r = parseInt(s.reps) || 0;
-        if (w > best.w || (w === best.w && r > best.r)) return { w, r };
-        return best;
-      },
-      { w: 0, r: 0 }
-    );
-
-    if (bestSet.w <= 0) return;
-
-    const history = store.progressDB.lifts[ex.name] || [];
-    const previousBest = history.reduce(
-      (best, entry) => {
-        if (entry.weight > best.w || (entry.weight === best.w && entry.reps > best.r))
-          return { w: entry.weight, r: entry.reps };
-        return best;
-      },
-      { w: 0, r: 0 }
-    );
-
-    if (bestSet.w > previousBest.w || (bestSet.w === previousBest.w && bestSet.r > previousBest.r)) {
-      if (history.length > 0) {
-        prs.push({ name: ex.name, weight: bestSet.w, reps: bestSet.r });
-      }
-    }
-  });
-
-  return prs;
 }

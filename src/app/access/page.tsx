@@ -69,8 +69,12 @@ export default function AccessPage() {
             value={code}
             onChange={(e) => { setCode(e.target.value); setError(""); }}
             placeholder="Access code"
+            aria-label="Access code"
+            aria-invalid={!!error}
+            aria-describedby={error ? "access-error" : undefined}
+            autoComplete="off"
             autoFocus
-            className="rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-muted outline-none focus:border-accent"
+            className="rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           />
           <button
             type="submit"
@@ -82,7 +86,7 @@ export default function AccessPage() {
         </form>
 
         {error && (
-          <p className="mt-3 text-center text-xs text-red-400">{error}</p>
+          <p id="access-error" className="mt-3 text-center text-xs text-[#ff8a80]" role="alert">{error}</p>
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-
-// ── Types ──
+import { persist, type StateStorage } from "zustand/middleware";
+import { encrypt, decrypt } from "@/lib/store-encryption";
+import type { WeekData } from "@/lib/week-builder";
 
 export type Goal = "muscle" | "strength" | "general" | null;
 export type Experience = "new" | "developing" | "intermediate" | null;
@@ -45,8 +45,9 @@ export interface SkippedSession {
 
 export interface WeekFeedback {
   weekNum: number;
-  effort: number;
-  soreness: number;
+  effort: number;   // energy level: 1=Drained, 2=Low, 3=Normal, 4=High
+  soreness: number; // body feel: 1=Fresh, 2=Mild aches, 3=Sore, 4=Beat up
+  scheduleFeeling?: "too_easy" | "about_right" | "too_much";
   notes?: string;
 }
 
@@ -70,7 +71,16 @@ export interface FeedbackState {
   sessionStartTime: string | null;
 }
 
-// ── State shape ──
+export interface SessionRecord {
+  date?: string;
+  title?: string;
+  effort?: number;
+  soreness?: number;
+  weekNum?: number;
+  dayIdx?: number;
+  logs?: Record<string, unknown>;
+  prs?: { name: string; weight: number; reps: number }[];
+}
 
 interface KineState {
   // Onboarding / preferences
@@ -96,12 +106,12 @@ interface KineState {
   units: Units;
 
   // AI week
-  weekData: unknown | null;
-  weekHistory: unknown[]; // archived previous weeks
+  weekData: WeekData | null;
+  weekHistory: WeekData[];
 
   // Progress
   progressDB: {
-    sessions: unknown[];
+    sessions: SessionRecord[];
     lifts: Record<string, LiftEntry[]>;
     currentWeek: number;
     weekFeedbackHistory: WeekFeedback[];
@@ -133,13 +143,14 @@ interface KineState {
   setInjuryNotes: (notes: string) => void;
   setConditions: (conditions: string[]) => void;
   setCycleType: (cycleType: CycleType) => void;
+  setCyclePhase: (phase: string | null) => void;
   setCycle: (cycle: { periodLog: PeriodLog[]; avgLength: number | null }) => void;
   setDayDurations: (durations: Record<number, number>) => void;
   setProgressDB: (db: KineState["progressDB"]) => void;
   setEduMode: (mode: EduMode) => void;
   setUnits: (units: Units) => void;
-  setWeekData: (data: unknown | null) => void;
-  setWeekHistory: (history: unknown[]) => void;
+  setWeekData: (data: WeekData | null) => void;
+  setWeekHistory: (history: WeekData[]) => void;
   setCurrentDayIdx: (idx: number | null) => void;
   setSessionLogs: (logs: Record<number, SessionLog>) => void;
   setFeedbackState: (state: FeedbackState) => void;
@@ -147,10 +158,10 @@ interface KineState {
   setSessionTimeBudgets: (budgets: Record<number, number>) => void;
   setSessionMode: (mode: SessionMode) => void;
   setRestConfig: (config: RestConfig) => void;
+  setEduFlags: (flags: Record<string, boolean>) => void;
+  setSkillPreferences: (prefs: Record<string, string>) => void;
   resetOnboarding: () => void;
 }
-
-// ── Default values ──
 
 const initialOnboarding = {
   goal: null as Goal,
@@ -174,8 +185,6 @@ const initialOnboarding = {
   skillPreferences: {} as Record<string, string>,
   units: "kg" as Units,
 };
-
-// ── Store ──
 
 export const useKineStore = create<KineState>()(
   persist(
@@ -245,6 +254,7 @@ export const useKineStore = create<KineState>()(
         set({ conditions, comfortFlags, _lastModifiedAt: new Date().toISOString() });
       },
       setCycleType: (cycleType) => set({ cycleType, _lastModifiedAt: new Date().toISOString() }),
+      setCyclePhase: (phase) => set({ cyclePhase: phase, _lastModifiedAt: new Date().toISOString() }),
       setCycle: (cycle) => set({ cycle, _lastModifiedAt: new Date().toISOString() }),
       setDayDurations: (durations) => set({ dayDurations: durations, _lastModifiedAt: new Date().toISOString() }),
       setProgressDB: (db) => set({ progressDB: db, _lastModifiedAt: new Date().toISOString() }),
@@ -254,29 +264,64 @@ export const useKineStore = create<KineState>()(
         // Archive current week before replacing (if it has data)
         const history = [...state.weekHistory];
         if (state.weekData && data !== null) {
-          // Don't duplicate if same week
-          const existing = state.weekData as { _weekNum?: number };
           const alreadyArchived = history.some(
-            (h) => (h as { _weekNum?: number })._weekNum === existing._weekNum
+            (h) => h._weekNum === state.weekData?._weekNum
           );
           if (!alreadyArchived) {
             history.push(state.weekData);
           }
         }
-        return { weekData: data, weekHistory: history };
+        // Cap at 26 weeks (6 months) to prevent localStorage bloat
+        const trimmed = history.length > 26 ? history.slice(-26) : history;
+        return { weekData: data, weekHistory: trimmed, _lastModifiedAt: new Date().toISOString() };
       }),
       setWeekHistory: (history) => set({ weekHistory: history }),
       setCurrentDayIdx: (idx) => set({ currentDayIdx: idx }),
       setSessionLogs: (logs) => set({ sessionLogs: logs }),
       setFeedbackState: (state) => set({ feedbackState: state }),
-      setPersonalProfile: (profile) => set({ personalProfile: profile }),
+      setPersonalProfile: (profile) => set({ personalProfile: profile, _lastModifiedAt: new Date().toISOString() }),
       setSessionTimeBudgets: (budgets) => set({ sessionTimeBudgets: budgets }),
-      setSessionMode: (mode) => set({ sessionMode: mode }),
-      setRestConfig: (config) => set({ restConfig: config }),
+      setSessionMode: (mode) => set({ sessionMode: mode, _lastModifiedAt: new Date().toISOString() }),
+      setRestConfig: (config) => set({ restConfig: config, _lastModifiedAt: new Date().toISOString() }),
+      setEduFlags: (flags) => set({ eduFlags: flags, _lastModifiedAt: new Date().toISOString() }),
+      setSkillPreferences: (prefs) => set({ skillPreferences: prefs, _lastModifiedAt: new Date().toISOString() }),
       resetOnboarding: () => set(initialOnboarding),
     }),
     {
       name: "kine_v2",
+      version: 1,
+      storage: {
+        getItem: async (name: string) => {
+          const raw = localStorage.getItem(name);
+          if (!raw) return null;
+          // Support unencrypted legacy data (contains "{")
+          if (raw.startsWith("{")) return JSON.parse(raw);
+          const decrypted = await decrypt(raw);
+          return decrypted ? JSON.parse(decrypted) : null;
+        },
+        setItem: async (name: string, value: unknown) => {
+          const json = JSON.stringify(value);
+          const encrypted = await encrypt(json);
+          localStorage.setItem(name, encrypted);
+        },
+        removeItem: (name: string) => localStorage.removeItem(name),
+      } satisfies StateStorage,
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>;
+        // v0 → v1: add fields introduced after initial release
+        if (version === 0) {
+          state.conditions ??= [];
+          state.comfortFlags ??= [];
+          state.skillPreferences ??= {};
+          state.weekHistory ??= [];
+          state.sessionTimeBudgets ??= {};
+          state.sessionMode ??= "off";
+          state.restConfig ??= { compound: 150, isolation: 75 };
+          state.eduFlags ??= {};
+          state.units ??= "kg";
+        }
+        return state as unknown as KineState;
+      },
       onRehydrateStorage: () => () => {
         useKineStore.setState({ _hasHydrated: true } as Partial<KineState>);
       },

@@ -80,6 +80,35 @@ export function buildRampSets(firstEx: Exercise | null, expLevel: string): RampS
   }
 }
 
+/** Swap a flagged item for its first safe alt, or remove it */
+function applyComfortFilter(items: WarmupItem[], comfortFlags: string[]): WarmupItem[] {
+  if (comfortFlags.length === 0) return items;
+  const isImpact = comfortFlags.includes("impactSensitive");
+  const isProne = comfortFlags.includes("proneSensitive");
+
+  return items.reduce<WarmupItem[]>((out, item) => {
+    if ((isImpact && item._highImpact) || (isProne && item._prone)) {
+      // Try to find a safe alt
+      const safeAlt = item.alts?.find(
+        (a) => !(isImpact && a._highImpact) && !(isProne && a._prone),
+      );
+      if (safeAlt) out.push({ ...safeAlt, alts: item.alts });
+      // else: drop the item entirely
+    } else {
+      // Also filter flagged items out of alts
+      if (item.alts?.length) {
+        const safeAlts = item.alts.filter(
+          (a) => !(isImpact && a._highImpact) && !(isProne && a._prone),
+        );
+        out.push({ ...item, alts: safeAlts.length ? safeAlts : undefined });
+      } else {
+        out.push(item);
+      }
+    }
+    return out;
+  }, []);
+}
+
 /** Build warmup for a session */
 export function buildWarmup(
   sessionTitle: string,
@@ -87,6 +116,7 @@ export function buildWarmup(
   injuries: string[],
   expLevel: string,
   conditions: string[] = [],
+  comfortFlags: string[] = [],
 ): WarmupResult {
   const focus = SESSION_MUSCLE_FOCUS[sessionTitle] || ["push", "pull", "legs", "hinge"];
   const allFocus = [...new Set(focus)];
@@ -149,13 +179,28 @@ export function buildWarmup(
   // Ramp-up sets
   const rampSets = buildRampSets(firstEx, expLevel);
 
+  // Apply comfort filters (impactSensitive / proneSensitive)
+  const filteredGeneral = applyComfortFilter(general, comfortFlags);
+  const filteredActivation = applyComfortFilter(activation, comfortFlags);
+  const filteredInjury = applyComfortFilter(injuryItems, comfortFlags);
+  const filteredCondition = applyComfortFilter(conditionItems, comfortFlags);
+
+  // Filter stabiliser extra too
+  if (stabiliserExtra && comfortFlags.length > 0) {
+    const isImpact = comfortFlags.includes("impactSensitive");
+    const isProne = comfortFlags.includes("proneSensitive");
+    if ((isImpact && stabiliserExtra._highImpact) || (isProne && stabiliserExtra._prone)) {
+      stabiliserExtra = null;
+    }
+  }
+
   // Total time
-  const allItems = [...general, ...activation, ...(stabiliserExtra ? [stabiliserExtra] : []), ...injuryItems, ...conditionItems];
+  const allItems = [...filteredGeneral, ...filteredActivation, ...(stabiliserExtra ? [stabiliserExtra] : []), ...filteredInjury, ...filteredCondition];
   let totalSec = allItems.reduce((acc, item) => acc + (parseInt(item.duration) || 45), 0);
   if (rampSets.length) totalSec += rampSets.length * 90;
   const totalMin = Math.ceil(totalSec / 60);
 
-  return { general, activation, stabiliserExtra, injuryItems, conditionItems, rampSets, totalMin, firstExName: firstEx?.name || null };
+  return { general: filteredGeneral, activation: filteredActivation, stabiliserExtra, injuryItems: filteredInjury, conditionItems: filteredCondition, rampSets, totalMin, firstExName: firstEx?.name || null };
 }
 
 /** Build cooldown for a session */

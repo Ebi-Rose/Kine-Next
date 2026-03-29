@@ -50,12 +50,14 @@ function PasswordInput({
   placeholder,
   minLength,
   id,
+  autoComplete,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   minLength?: number;
   id?: string;
+  autoComplete?: string;
 }) {
   const [show, setShow] = useState(false);
   return (
@@ -67,6 +69,7 @@ function PasswordInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
+        autoComplete={autoComplete}
         required
         minLength={minLength}
         className="w-full rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 pr-10 text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
@@ -206,6 +209,7 @@ function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
             aria-label="Email address"
             aria-describedby={error ? "signup-error" : undefined}
             aria-invalid={error ? "true" : undefined}
+            autoComplete="email"
             required
             className="rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           />
@@ -214,6 +218,7 @@ function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
             onChange={setPassword}
             placeholder="Create password"
             minLength={6}
+            autoComplete="new-password"
           />
           <p className="text-[10px] text-muted -mt-1">Must be at least 6 characters</p>
           <button
@@ -226,7 +231,7 @@ function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
         </form>
 
         {error && (
-          <p id="signup-error" role="alert" className="mt-3 text-center text-xs text-red-400">{error}</p>
+          <p id="signup-error" role="alert" className="mt-3 text-center text-xs text-[#ff8a80]">{error}</p>
         )}
 
         <p className="mt-4 text-center text-[10px] text-muted">
@@ -315,6 +320,7 @@ function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
             aria-label="Email address"
             aria-describedby={error ? "login-error" : undefined}
             aria-invalid={error ? "true" : undefined}
+            autoComplete="email"
             required
             className="rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           />
@@ -322,6 +328,7 @@ function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
             value={password}
             onChange={setPassword}
             placeholder="Password"
+            autoComplete="current-password"
           />
           <button
             type="submit"
@@ -333,7 +340,7 @@ function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
         </form>
 
         {error && (
-          <p id="login-error" role="alert" className="mt-3 text-center text-xs text-red-400">{error}</p>
+          <p id="login-error" role="alert" className="mt-3 text-center text-xs text-[#ff8a80]">{error}</p>
         )}
 
         <button
@@ -429,6 +436,7 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
             aria-label="Email address"
             aria-describedby={error ? "reset-error" : undefined}
             aria-invalid={error ? "true" : undefined}
+            autoComplete="email"
             required
             autoFocus
             className="rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
@@ -443,7 +451,7 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
         </form>
 
         {error && (
-          <p id="reset-error" role="alert" className="mt-3 text-center text-xs text-red-400">{error}</p>
+          <p id="reset-error" role="alert" className="mt-3 text-center text-xs text-[#ff8a80]">{error}</p>
         )}
       </div>
     </div>

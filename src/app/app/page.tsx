@@ -178,7 +178,7 @@ function WeekView({
   onRebuild: () => void;
   loading: boolean;
 }) {
-  const { cycleType, cycle, setCycle, progressDB, weekHistory } = useKineStore();
+  const { cycleType, cycle, setCycle, progressDB, weekHistory, exp } = useKineStore();
   const [showRearrange, setShowRearrange] = useState(false);
   const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
   const today = new Date().getDay();
@@ -461,7 +461,7 @@ function WeekView({
       })()}
 
       {/* Actions */}
-      <div className="mt-8 flex justify-center gap-3">
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
           Check-in
         </Link>
@@ -471,6 +471,11 @@ function WeekView({
         <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading}>
           {loading ? "Rebuilding…" : "Regenerate"}
         </Button>
+        {exp === "intermediate" && (
+          <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+            Design Week
+          </Link>
+        )}
       </div>
 
       <SessionRearrange open={showRearrange} onClose={() => setShowRearrange(false)} />
@@ -767,7 +772,7 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
 
   function saveEdits() {
     // Update the session in progressDB
-    const updatedSessions = progressDB.sessions.map((s: unknown) => {
+    const updatedSessions = progressDB.sessions.map((s) => {
       const sess = s as { weekNum?: number; dayIdx?: number; logs?: Record<number, unknown> };
       if (sess.weekNum === session.weekNum && sess.dayIdx === session.dayIdx) {
         const updatedLogs = { ...sess.logs };

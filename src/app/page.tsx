@@ -172,7 +172,7 @@ export default function LandingPage() {
         }
         .lp-waitlist-error {
           font-size: 13px;
-          color: #e57373;
+          color: #ff8a80;
           letter-spacing: 0.3px;
         }
         .lp-waitlist-note {
@@ -539,7 +539,7 @@ export default function LandingPage() {
             )}
           </div>
 
-          {error && <div className="lp-waitlist-error">{error}</div>}
+          {error && <div className="lp-waitlist-error" role="alert">{error}</div>}
           <div className="lp-waitlist-note">Currently in private beta testing.</div>
 
           <div className="lp-access">
@@ -556,9 +556,9 @@ export default function LandingPage() {
               </a>
             </div>
             <div className="lp-footer-text">
-              <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#555' }}>Terms</a>
+              <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Terms</a>
               {' · '}
-              <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#555' }}>Privacy</a>
+              <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Privacy</a>
               {' · '}
               &copy; 2026 Kinē
             </div>

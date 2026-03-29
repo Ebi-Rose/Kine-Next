@@ -11,29 +11,38 @@ export interface SkillPath {
 export const SKILL_PATHS: SkillPath[] = [
   // PUSH
   { id: "push-up-chain", muscle: "push", pattern: "horizontal-push",
-    chain: ["Knee Push-Up", "Incline Push-Up", "Push-Up", "Diamond Push-Up", "Weighted Push-Up"] },
+    chain: ["Knee Push-Up", "Incline Push-Up", "Push-Up", "Diamond Push-Up",
+            "Weighted Push-Up", "Archer Push-Up"] },
+  { id: "pike-to-hspu", muscle: "push", pattern: "vertical-push-bw",
+    chain: ["Pike Push-Up", "Pseudo Planche Push-Up", "Handstand Push-Up"] },
   { id: "dip-chain", muscle: "push", pattern: "dip",
-    chain: [["Band-Assisted Dip", "Assisted Dip"], "Dips", "Weighted Dips"] },
+    chain: [["Band-Assisted Dip", "Assisted Dip"], "Dips", "Ring Dips", "Weighted Dips"] },
 
   // PULL
   { id: "pullup-chain", muscle: "pull", pattern: "vertical-pull",
     chain: [["Band-Assisted Chin-Up", "Band-Assisted Neutral-Grip Pull-Up", "Assisted Pull-Up"],
             "Band-Assisted Pull-Up", "Chin-Up", "Neutral-Grip Pull-Up", "Pull-Up",
-            ["Weighted Chin-Up", "Weighted Neutral-Grip Pull-Up"], "Weighted Pull-Up"] },
+            ["Weighted Chin-Up", "Weighted Pull-Up"],
+            "Archer Pull-Up", "Typewriter Pull-Up", "Muscle-Up"] },
   { id: "hang-chain", muscle: "pull", pattern: "hang",
     chain: ["Dead Hang", "Scapular Pull-Up"] },
+  { id: "lever-chain", muscle: "calisthenics", pattern: "lever",
+    chain: ["Scapular Pull-Up", "Back Lever", "Front Lever"] },
 
   // CORE
   { id: "core-hold", muscle: "core", pattern: "core-hold",
-    chain: ["Plank", "Hollow Body Hold", "L-Sit", "Hanging L-Sit"] },
+    chain: ["Plank", "Hollow Body Hold", "L-Sit", "Hanging L-Sit", "Dragon Flag"] },
   { id: "core-raise", muscle: "core", pattern: "core-raise",
-    chain: ["Lying Leg Raise", "Hanging Knee Raise", "Hanging Leg Raise", "Toes-to-Bar"] },
+    chain: ["Lying Leg Raise", "Hanging Knee Raise", "Hanging Leg Raise",
+            ["Toes-to-Bar", "Weighted Hanging Leg Raise"]] },
   { id: "core-floor", muscle: "core", pattern: "core-floor",
     chain: ["Crunch", "Bicycle Crunch", "V-Up"] },
+  { id: "core-lateral", muscle: "core", pattern: "core-lateral",
+    chain: ["Side Plank", "Human Flag"] },
 
   // LEGS
   { id: "squat-bw", muscle: "legs", pattern: "squat-bw",
-    chain: ["Bodyweight Squat", "Cossack Squat"] },
+    chain: ["Bodyweight Squat", "Cossack Squat", ["Pistol Squat", "Shrimp Squat"]] },
   { id: "squat-weighted", muscle: "legs", pattern: "squat-weighted", weighted: true,
     chain: ["Goblet Squat", "Barbell Back Squat"] },
   { id: "squat-front", muscle: "legs", pattern: "squat-front", weighted: true,
@@ -41,9 +50,10 @@ export const SKILL_PATHS: SkillPath[] = [
 
   // HINGE
   { id: "hinge-bw", muscle: "hinge", pattern: "hip-hinge",
-    chain: ["Bodyweight Glute Bridge", "Banded Hip Thrust", "Single-Leg Hip Thrust"] },
+    chain: ["Bodyweight Glute Bridge", "Banded Hip Thrust", "Single-Leg Hip Thrust",
+            "Weighted Single-Leg Hip Thrust"] },
   { id: "nordic", muscle: "hinge", pattern: "hamstring",
-    chain: ["Bodyweight Back Extension", "Back Extension", "Nordic Curl"] },
+    chain: ["Bodyweight Back Extension", "Back Extension", "Nordic Curl", "Weighted Nordic Curl"] },
 ];
 
 export const SKILL_HINTS: Record<string, string> = {
@@ -82,6 +92,26 @@ export const SKILL_HINTS: Record<string, string> = {
   "Bodyweight Back Extension": "Lower back endurance foundation",
   "Back Extension": "Add load once bodyweight is easy",
   "Nordic Curl": "Advanced — eccentric hamstring strength",
+  "Weighted Nordic Curl": "Added load on the eccentric — elite hamstring work",
+  "Weighted Single-Leg Hip Thrust": "Unilateral hip extension with load",
+  "Weighted Hanging Leg Raise": "Hold a dumbbell between feet for extra resistance",
+  "Weighted Chin-Up": "Supinated grip with belt + plates",
+  "Archer Pull-Up": "One arm does most of the work — unilateral strength",
+  "Archer Push-Up": "Wide push-up, shift weight to one arm at a time",
+  "Typewriter Pull-Up": "Traverse side to side at the top — extreme control",
+  "Muscle-Up": "Pull-up into a dip — the ultimate bar skill",
+  "Front Lever": "Horizontal hold face-up — full body tension",
+  "Back Lever": "Horizontal hold face-down — shoulder and core demand",
+  "Dragon Flag": "Lower your body as a plank from a bench — brutal core",
+  "Human Flag": "Lateral hold on a pole — full body isometric",
+  "Ring Dips": "Unstable rings demand stabiliser recruitment",
+  "Pike Push-Up": "Hips high, vertical push — HSPU prep",
+  "Pseudo Planche Push-Up": "Hands turned back, lean forward — shoulder intensive",
+  "Handstand Push-Up": "Full inverted press — wall-assisted at first",
+  "Pistol Squat": "Single-leg squat to full depth — balance and strength",
+  "Shrimp Squat": "Rear foot held behind — quad dominant single-leg",
+  "Toes-to-Bar": "Straight legs to the bar — full range core",
+  "Hanging L-Sit": "Hold legs at 90° from a bar — hip flexor and core",
 };
 
 /**

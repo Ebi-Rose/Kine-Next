@@ -51,9 +51,11 @@ export default function PricingPage() {
         <h2 className="mt-4 text-[10px] tracking-[0.3em] text-accent uppercase font-normal m-0">Choose your plan</h2>
         <p className="mt-1 text-xs text-muted2">Your coach in your pocket. 14-day money-back guarantee.</p>
 
-        <div className="mt-6 flex flex-col gap-3">
+        <div className="mt-6 flex flex-col gap-3" role="radiogroup" aria-label="Subscription plan">
           <button
             onClick={() => setPlan("monthly")}
+            role="radio"
+            aria-checked={plan === "monthly"}
             className={`rounded-[var(--radius-default)] border p-4 text-left transition-all ${
               plan === "monthly" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
             }`}
@@ -69,6 +71,8 @@ export default function PricingPage() {
 
           <button
             onClick={() => setPlan("yearly")}
+            role="radio"
+            aria-checked={plan === "yearly"}
             className={`rounded-[var(--radius-default)] border p-4 text-left transition-all relative ${
               plan === "yearly" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
             }`}
@@ -103,7 +107,7 @@ export default function PricingPage() {
           {loading ? "Loading..." : "SUBSCRIBE →"}
         </button>
 
-        {error && <p className="mt-3 text-center text-xs text-red-400" role="alert">{error}</p>}
+        {error && <p className="mt-3 text-center text-xs text-[#ff8a80]" role="alert">{error}</p>}
 
         <p className="mt-3 text-center text-[10px] text-muted">
           14-day money-back guarantee. Cancel anytime from your profile.

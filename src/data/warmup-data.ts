@@ -7,6 +7,8 @@ export interface WarmupItem {
   duration: string;
   _why?: string;
   _injuryProtective?: boolean;
+  _highImpact?: boolean;   // filtered for impactSensitive (fibroids/endo)
+  _prone?: boolean;        // filtered for proneSensitive (pelvic floor)
   alts?: Omit<WarmupItem, "alts">[];
   replaces?: string | null;
 }
@@ -25,7 +27,7 @@ export const WARMUP_GENERAL: Record<string, WarmupItem[]> = {
     { name: "Band pull-aparts", _why: "Counteracts forward shoulder posture from pressing. Imbalanced pushing without this leads to shoulder impingement.", _injuryProtective: true, detail: "2\u00d715 - wakes up the back of your shoulders before pressing.", duration: "45s",
       alts: [
         { name: "Towel pull-aparts", detail: "Same motion with a towel - squeeze your shoulder blades together.", duration: "45s" },
-        { name: "Prone T raises", detail: "Lie face down, arms out to sides - raise and hold 2s.", duration: "45s" },
+        { name: "Prone T raises", detail: "Lie face down, arms out to sides - raise and hold 2s.", duration: "45s", _prone: true },
         { name: "Wall angels", detail: "10 reps - back flat against wall, slide arms from waist to overhead.", duration: "40s" },
       ]},
     { name: "Arm circles", detail: "10 forward, 10 backward - get the shoulder moving freely before pressing.", duration: "30s",
@@ -50,7 +52,7 @@ export const WARMUP_GENERAL: Record<string, WarmupItem[]> = {
     { name: "Scapular pull-ups", _why: "Builds shoulder blade control to protect the rotator cuff during pulling.", _injuryProtective: true, detail: "2\u00d78 - pull shoulder blades down without bending arms.", duration: "40s",
       alts: [
         { name: "Band scapular retractions", detail: "2\u00d715 - band at chest height, pull elbows back.", duration: "40s" },
-        { name: "Prone Y raises", detail: "2\u00d710 - face down, arms in Y shape, raise and hold 2s.", duration: "45s" },
+        { name: "Prone Y raises", detail: "2\u00d710 - face down, arms in Y shape, raise and hold 2s.", duration: "45s", _prone: true },
       ]},
   ],
   legs: [
@@ -104,7 +106,7 @@ export const WARMUP_GENERAL: Record<string, WarmupItem[]> = {
   cardio: [
     { name: "March on the spot", detail: "60s - drive knees high, swing arms.", duration: "60s",
       alts: [
-        { name: "Jumping jacks", detail: "30 reps - full body warm-up.", duration: "45s" },
+        { name: "Jumping jacks", detail: "30 reps - full body warm-up.", duration: "45s", _highImpact: true },
         { name: "Step touch side-to-side", detail: "60s - low impact option.", duration: "60s" },
       ]},
   ],
@@ -127,7 +129,7 @@ export const WARMUP_ACTIVATION: Record<string, WarmupItem[]> = {
     { name: "Wall slides", detail: "10 reps - back against wall, slide arms overhead.", duration: "30s",
       alts: [
         { name: "Doorframe chest stretch", detail: "2\u00d720s each arm - elbow at 90\u00b0, rotate away.", duration: "40s" },
-        { name: "Prone swimmers", detail: "10 reps - face down, sweep arms hip to overhead.", duration: "40s" },
+        { name: "Prone swimmers", detail: "10 reps - face down, sweep arms hip to overhead.", duration: "40s", _prone: true },
       ]},
   ],
   pull: [
@@ -139,7 +141,7 @@ export const WARMUP_ACTIVATION: Record<string, WarmupItem[]> = {
       ]},
     { name: "Face pulls", detail: "Band or cable, 2\u00d720 - wakes up back of shoulder.", duration: "60s",
       alts: [
-        { name: "Prone rear delt raises", detail: "2\u00d712 light weight - face down, arms wide.", duration: "50s" },
+        { name: "Prone rear delt raises", detail: "2\u00d712 light weight - face down, arms wide.", duration: "50s", _prone: true },
         { name: "Band face pulls", detail: "Band at face height.", duration: "60s" },
       ]},
     { name: "Lat prayer stretch", detail: "2\u00d720s - forearms on bench, sit hips back.", duration: "40s",
@@ -197,7 +199,11 @@ export const WARMUP_ACTIVATION: Record<string, WarmupItem[]> = {
       ]},
   ],
   cardio: [
-    { name: "Jump rope or jog", detail: "2 min easy - elevate heart rate.", duration: "120s" },
+    { name: "Jump rope or jog", detail: "2 min easy - elevate heart rate.", duration: "120s", _highImpact: true,
+      alts: [
+        { name: "Brisk walking", detail: "2 min - elevate heart rate without impact.", duration: "120s" },
+        { name: "Cycling or rowing", detail: "2 min easy - low impact cardio.", duration: "120s" },
+      ]},
   ],
 };
 
@@ -282,7 +288,7 @@ export const COOLDOWN_RESET: Record<string, WarmupItem[]> = {
   push: [
     { name: "Doorframe chest stretch", detail: "Elbow at 90\u00b0, rotate away - 30s each side. Undoes chest shortening.", duration: "60s",
       alts: [
-        { name: "Pectoral stretch on floor", detail: "Face down, one arm out to side.", duration: "60s" },
+        { name: "Pectoral stretch on floor", detail: "Face down, one arm out to side.", duration: "60s", _prone: true },
         { name: "Hands-clasped chest opener", detail: "Clasp behind back, squeeze shoulder blades.", duration: "30s" },
       ]},
     { name: "Overhead tricep stretch", detail: "One arm overhead, drop forearm behind head - 30s each side.", duration: "60s",
@@ -328,7 +334,7 @@ export const COOLDOWN_RESET: Record<string, WarmupItem[]> = {
       ]},
   ],
   core: [
-    { name: "Cobra pose", detail: "2\u00d720s - press up from prone. Reverses lumbar flexion.", duration: "40s",
+    { name: "Cobra pose", detail: "2\u00d720s - press up from prone. Reverses lumbar flexion.", duration: "40s", _prone: true,
       alts: [
         { name: "Sphinx pose", detail: "Forearms on floor - easier.", duration: "40s" },
         { name: "Supported backbend", detail: "Foam roller across mid-back - 30s.", duration: "30s" },
