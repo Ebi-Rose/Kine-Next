@@ -326,16 +326,16 @@ function WeekView({
         </div>
       )}
 
-      {/* Adaptation card — surfaces why this week looks the way it does */}
-      {!isViewingPast && <AdaptationCard />}
+      {/* Adaptation card — surfaces why this week looks the way it does (training days only) */}
+      {!isViewingPast && !displayWeek.days[todayIdx]?.isRest && <AdaptationCard />}
 
       {/* Rest day home — shows cycle insight, tomorrow preview, form tip */}
       {!isViewingPast && displayWeek.days[todayIdx]?.isRest && (
         <RestDayHome week={displayWeek} todayIdx={todayIdx} />
       )}
 
-      {/* Coach note */}
-      {displayWeek.weekCoachNote && (
+      {/* Coach note — training days only (rest day has its own lighter content) */}
+      {!displayWeek.days[todayIdx]?.isRest && displayWeek.weekCoachNote && (
         <div className="mb-6 rounded-[var(--radius-default)] border border-border bg-surface p-4">
           <p className="text-xs leading-relaxed text-muted2">
             {displayWeek.weekCoachNote}
