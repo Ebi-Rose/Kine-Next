@@ -163,3 +163,10 @@ export async function syncNow() {
   }
   await doSync();
 }
+
+/**
+ * Returns true if there is a pending debounced sync that hasn't flushed yet.
+ */
+export function hasPendingSync(): boolean {
+  return syncTimer !== null;
+}
