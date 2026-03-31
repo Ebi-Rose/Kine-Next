@@ -54,6 +54,12 @@ export default function OnboardingPage() {
     }
   }
 
+  function back() {
+    if (stepIndex > 0) {
+      setStep(STEP_ORDER[stepIndex - 1]);
+    }
+  }
+
   function goToStep(s: Step) {
     setStep(s);
   }
@@ -71,20 +77,29 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-bg px-6 py-8" style={{ paddingLeft: 'max(24px, env(safe-area-inset-left))', paddingRight: 'max(24px, env(safe-area-inset-right))' }}>
       <div className="mx-auto max-w-[var(--container-max)]">
-        {/* Progress dots */}
+        {/* Back button + Progress dots */}
         {step !== "welcome" && (
-          <div className="mb-6 flex justify-center gap-1.5" role="progressbar" aria-label={`Step ${stepIndex} of ${STEP_ORDER.length - 1}`} aria-valuenow={stepIndex} aria-valuemin={1} aria-valuemax={STEP_ORDER.length - 1}>
-            {STEP_ORDER.filter(s => s !== "welcome").map((s, i) => (
-              <div
-                key={s}
-                className={`h-1.5 rounded-full transition-all ${
-                  STEP_ORDER.indexOf(s) <= stepIndex
-                    ? "w-6 bg-accent"
-                    : "w-1.5 bg-border"
-                }`}
-                aria-hidden="true"
-              />
-            ))}
+          <div className="mb-6">
+            <button
+              onClick={back}
+              className="mb-3 text-xs text-muted2 hover:text-text transition-colors"
+              aria-label="Go back"
+            >
+              ← Back
+            </button>
+            <div className="flex justify-center gap-1.5" role="progressbar" aria-label={`Step ${stepIndex} of ${STEP_ORDER.length - 1}`} aria-valuenow={stepIndex} aria-valuemin={1} aria-valuemax={STEP_ORDER.length - 1}>
+              {STEP_ORDER.filter(s => s !== "welcome").map((s) => (
+                <div
+                  key={s}
+                  className={`h-1.5 rounded-full transition-all ${
+                    STEP_ORDER.indexOf(s) <= stepIndex
+                      ? "w-6 bg-accent"
+                      : "w-1.5 bg-border"
+                  }`}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
           </div>
         )}
         {step === "welcome" && <WelcomeStep onNext={next} />}
