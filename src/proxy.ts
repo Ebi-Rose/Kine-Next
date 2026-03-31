@@ -16,11 +16,29 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function buildCsp(nonce: string): string {
+// Nonce-based CSP for /app/* routes (dynamically rendered, Next.js applies nonce)
+function buildAppCsp(nonce: string): string {
   const isDev = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.sentry.io",
+    "frame-src https://js.stripe.com https://checkout.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+// Relaxed CSP for public pages (statically rendered, nonces can't be applied)
+function buildPublicCsp(): string {
+  const isDev = process.env.NODE_ENV === "development";
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://res.cloudinary.com",
@@ -116,14 +134,20 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  // ── CSP nonce header on all responses ──
-  const nonce = generateNonce();
-  const csp = buildCsp(nonce);
-
-  // Set CSP + nonce on request headers so Next.js can extract the nonce
-  // and apply it to framework inline scripts during rendering
+  // ── CSP headers ──
+  // /app/* routes are dynamically rendered → use nonce-based strict CSP
+  // Public pages may be static → use relaxed CSP (nonces can't be applied)
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
+
+  let csp: string;
+  if (isAppRoute) {
+    const nonce = generateNonce();
+    csp = buildAppCsp(nonce);
+    requestHeaders.set("x-nonce", nonce);
+  } else {
+    csp = buildPublicCsp();
+  }
+
   requestHeaders.set("Content-Security-Policy", csp);
 
   const response = NextResponse.next({
@@ -134,7 +158,6 @@ export default async function proxy(request: NextRequest) {
 
   // ── Security headers ──
   response.headers.set("Content-Security-Policy", csp);
-  response.headers.set("x-nonce", nonce);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
