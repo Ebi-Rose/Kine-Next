@@ -40,7 +40,7 @@ export default function StreakMilestone() {
     <div className="flex gap-2 mb-3">
       {/* Streak card */}
       {streak >= 2 && (
-        <div className="flex-1 rounded-[10px] border border-accent/25 bg-accent-dim/30 p-3 text-center">
+        <div className="flex-1 rounded-[10px] border border-accent/25 bg-accent-dim/30 p-3 text-center" role="status" aria-label={`${streak} week streak`}>
           <p className="font-display text-lg tracking-wide text-accent">
             {streak}
           </p>
@@ -52,7 +52,7 @@ export default function StreakMilestone() {
 
       {/* Milestone card */}
       {milestone && (
-        <div className="flex-1 rounded-[10px] border border-border bg-surface p-3">
+        <div className="flex-1 rounded-[10px] border border-border bg-surface p-3" role="status" aria-label={`Milestone: ${milestone.label}`}>
           <p className="text-[9px] tracking-[0.15em] uppercase text-muted mb-1">
             {milestone.label}
           </p>
@@ -64,7 +64,7 @@ export default function StreakMilestone() {
 
       {/* Total weeks — only show without milestone to avoid clutter */}
       {!milestone && completedWeeks >= 2 && streak < 2 && (
-        <div className="flex-1 rounded-[10px] border border-border bg-surface p-3 text-center">
+        <div className="flex-1 rounded-[10px] border border-border bg-surface p-3 text-center" role="status" aria-label={`${completedWeeks} weeks completed`}>
           <p className="font-display text-lg tracking-wide text-text">
             {completedWeeks}
           </p>

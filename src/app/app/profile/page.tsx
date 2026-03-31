@@ -91,7 +91,7 @@ function OverviewPanel({ onNavigate }: { onNavigate: (p: Panel) => void }) {
             <span className="rounded-full bg-accent-dim px-2 py-0.5 text-[9px] text-accent">
               Week {progressDB.currentWeek}
             </span>
-            <span className="rounded-full bg-[rgba(106,154,122,0.15)] px-2 py-0.5 text-[9px] text-[#6a9a7a]">
+            <span className="rounded-full bg-[rgba(106,154,122,0.15)] px-2 py-0.5 text-[9px] text-[#8aba9a]">
               {progressDB.sessions.length} sessions
             </span>
             {phase && (
@@ -430,7 +430,7 @@ function HealthPanel({ onBack }: { onBack: () => void }) {
         {phase && (
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted2">Current phase</span>
-            <span className="text-xs text-[#6a9a7a]">{phase.label} · Day {phase.day}</span>
+            <span className="text-xs text-[#8aba9a]">{phase.label} · Day {phase.day}</span>
           </div>
         )}
 
@@ -471,6 +471,8 @@ function HealthPanel({ onBack }: { onBack: () => void }) {
           {CONDITION_OPTIONS.map((opt) => (
             <button key={opt.value}
               onClick={() => handleConditionToggle(opt.value)}
+              aria-pressed={conditions.includes(opt.value)}
+              aria-label={`Condition: ${opt.label}`}
               className={`rounded-full border px-3 py-1 text-[10px] transition-all ${
                 conditions.includes(opt.value)
                   ? "border-accent bg-accent-dim text-text"
@@ -481,7 +483,7 @@ function HealthPanel({ onBack }: { onBack: () => void }) {
           ))}
         </div>
         {conditionWarning && (
-          <div className="mt-2.5 rounded-lg border border-[rgba(196,168,114,0.2)] bg-[rgba(196,168,114,0.08)] px-3 py-2.5">
+          <div role="alert" className="mt-2.5 rounded-lg border border-[rgba(196,168,114,0.2)] bg-[rgba(196,168,114,0.08)] px-3 py-2.5">
             <p className="text-[10px] text-[#c4a872] leading-relaxed">
               <strong>This changes your comfort filters.</strong> Removing &ldquo;{CONDITION_OPTIONS.find((c) => c.value === conditionWarning)?.label}&rdquo; will turn off{" "}
               <em>{(CONDITION_COMFORT_MAP[conditionWarning] || []).join(", ")}</em> comfort adjustments. Your warmups and exercise selection may include movements that were previously filtered.
@@ -506,6 +508,8 @@ function HealthPanel({ onBack }: { onBack: () => void }) {
           {INJURY_OPTIONS.map((opt) => (
             <button key={opt.value}
               onClick={() => handleInjuryToggle(opt.value)}
+              aria-pressed={injuries.includes(opt.value)}
+              aria-label={`Injury: ${opt.label}`}
               className={`rounded-full border px-3 py-1 text-[10px] transition-all ${
                 injuries.includes(opt.value)
                   ? "border-[#c4a872] bg-[rgba(138,122,90,0.15)] text-text"
@@ -618,7 +622,7 @@ function SessionPreferencesPanel({ onBack }: { onBack: () => void }) {
         ))}
       </div>
       {showSilentWarning && (
-        <div className="mt-2 rounded-lg border border-[rgba(196,168,114,0.2)] bg-[rgba(196,168,114,0.08)] px-3 py-2.5 flex items-start gap-2">
+        <div role="alert" className="mt-2 rounded-lg border border-[rgba(196,168,114,0.2)] bg-[rgba(196,168,114,0.08)] px-3 py-2.5 flex items-start gap-2">
           <span className="text-sm shrink-0">⚡</span>
           <p className="text-[10px] text-[#c4a872] leading-relaxed">
             <strong>Coaching helps you lift safer.</strong> Form cues and breathing reminders reduce injury risk — especially on compound lifts. You can always turn it back on.
@@ -633,25 +637,29 @@ function SessionPreferencesPanel({ onBack }: { onBack: () => void }) {
           <span className="text-xs text-text">Compound exercises</span>
           <div className="flex items-center gap-2">
             <button onClick={() => adjustRest("compound", -15)}
-              className="rounded bg-surface2 px-2 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+              aria-label="Decrease compound rest time"
+              className="rounded bg-surface2 min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-muted2 hover:text-text">−</button>
             <span className={`text-sm font-medium w-10 text-center ${restCompoundLow ? "text-[#c4a872]" : "text-text"}`}>{restConfig.compound}s</span>
             <button onClick={() => adjustRest("compound", 15)}
-              className="rounded bg-surface2 px-2 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+              aria-label="Increase compound rest time"
+              className="rounded bg-surface2 min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-muted2 hover:text-text">+</button>
           </div>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-text">Isolation exercises</span>
           <div className="flex items-center gap-2">
             <button onClick={() => adjustRest("isolation", -15)}
-              className="rounded bg-surface2 px-2 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+              aria-label="Decrease isolation rest time"
+              className="rounded bg-surface2 min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-muted2 hover:text-text">−</button>
             <span className={`text-sm font-medium w-10 text-center ${restIsolationLow ? "text-[#c4a872]" : "text-text"}`}>{restConfig.isolation}s</span>
             <button onClick={() => adjustRest("isolation", 15)}
-              className="rounded bg-surface2 px-2 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+              aria-label="Increase isolation rest time"
+              className="rounded bg-surface2 min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-muted2 hover:text-text">+</button>
           </div>
         </div>
       </div>
       {(restCompoundLow || restIsolationLow) && (
-        <div className="mt-2 rounded-lg border border-[rgba(196,168,114,0.2)] bg-[rgba(196,168,114,0.08)] px-3 py-2.5 flex items-start gap-2">
+        <div role="alert" className="mt-2 rounded-lg border border-[rgba(196,168,114,0.2)] bg-[rgba(196,168,114,0.08)] px-3 py-2.5 flex items-start gap-2">
           <span className="text-sm shrink-0">⏱</span>
           <p className="text-[10px] text-[#c4a872] leading-relaxed">
             <strong>Short rest{restCompoundLow ? " for compound lifts" : ""}.</strong>{" "}

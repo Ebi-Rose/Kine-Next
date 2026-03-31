@@ -168,6 +168,8 @@ export default function StrengthTrend() {
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"
         style={{ height: "auto", maxHeight: "120px" }}
+        role="img"
+        aria-label={`Strength trend chart showing ${trendUp ? "upward" : "downward"} trend of ${trendPct.toFixed(1)}% across ${dataPoints.length} data points`}
       >
         {/* Phase background bands */}
         {phaseBands.map((band, i) => (
