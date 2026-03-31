@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Middleware: Security headers + route protection for /app/*.
+ * Proxy (Next.js 16 convention, replaces middleware.ts):
  *
  * 1. Generates a per-request nonce and sets a nonce-based CSP header
  * 2. Sets security headers (clickjacking, MIME sniffing, HSTS, referrer)
@@ -16,7 +16,8 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function buildCsp(nonce: string): string {
+// Nonce-based CSP for /app/* routes (dynamically rendered, Next.js applies nonce)
+function buildAppCsp(nonce: string): string {
   const isDev = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
@@ -32,10 +33,39 @@ function buildCsp(nonce: string): string {
   ].join("; ");
 }
 
-// ── Cookie signature verification (Edge-compatible Web Crypto) ──
+// Relaxed CSP for public pages (statically rendered, nonces can't be applied)
+function buildPublicCsp(): string {
+  const isDev = process.env.NODE_ENV === "development";
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.sentry.io",
+    "frame-src https://js.stripe.com https://checkout.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+// ── Cookie signature verification (Web Crypto) ──
+
+function getSecret(): string {
+  const secret = process.env.COOKIE_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      // In production this should never happen — cookie-sign.ts throws too
+      return "";
+    }
+    return "dev-only-insecure-key";
+  }
+  return secret;
+}
 
 async function verifySignature(signed: string): Promise<boolean> {
-  const secret = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secret = getSecret();
   if (!secret) return false;
 
   const lastDot = signed.lastIndexOf(".");
@@ -74,9 +104,9 @@ function extractMode(signed: string): string | null {
   return value.split(":")[1] || null;
 }
 
-// ── Main middleware ───────────────────────────────────────────
+// ── Main proxy ───────────────────────────────────────────
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAppRoute = pathname.startsWith("/app");
 
@@ -104,14 +134,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── CSP nonce header on all responses ──
-  const nonce = generateNonce();
-  const csp = buildCsp(nonce);
-
-  // Set CSP + nonce on request headers so Next.js can extract the nonce
-  // and apply it to framework inline scripts during rendering
+  // ── CSP headers ──
+  // /app/* routes are dynamically rendered → use nonce-based strict CSP
+  // Public pages may be static → use relaxed CSP (nonces can't be applied)
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
+
+  let csp: string;
+  if (isAppRoute) {
+    const nonce = generateNonce();
+    csp = buildAppCsp(nonce);
+    requestHeaders.set("x-nonce", nonce);
+  } else {
+    csp = buildPublicCsp();
+  }
+
   requestHeaders.set("Content-Security-Policy", csp);
 
   const response = NextResponse.next({
@@ -122,7 +158,6 @@ export async function middleware(request: NextRequest) {
 
   // ── Security headers ──
   response.headers.set("Content-Security-Policy", csp);
-  response.headers.set("x-nonce", nonce);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

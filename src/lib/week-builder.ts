@@ -286,6 +286,53 @@ Rules: exactly ${daysCount} training days + ${7 - daysCount} rest days across da
 
 // ── Parse AI Response ──
 
+function validateExercise(ex: unknown, dayNum: number, idx: number): Exercise {
+  if (!ex || typeof ex !== "object") {
+    throw new Error(`Day ${dayNum}, exercise ${idx}: not an object`);
+  }
+  const e = ex as Record<string, unknown>;
+  if (typeof e.name !== "string" || !e.name.trim()) {
+    throw new Error(`Day ${dayNum}, exercise ${idx}: missing or empty name`);
+  }
+  return {
+    name: String(e.name).trim(),
+    sets: String(e.sets ?? "3"),
+    reps: String(e.reps ?? "8"),
+    rest: String(e.rest ?? "90 sec"),
+    ...(e.load != null ? { load: String(e.load) } : {}),
+  };
+}
+
+function validateWeekDay(day: unknown, idx: number): WeekDay {
+  if (!day || typeof day !== "object") {
+    throw new Error(`Day at index ${idx}: not an object`);
+  }
+  const d = day as Record<string, unknown>;
+  const dayNumber = Number(d.dayNumber);
+  if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 7) {
+    throw new Error(`Day at index ${idx}: invalid dayNumber (${d.dayNumber})`);
+  }
+  const isRest = Boolean(d.isRest);
+  const exercises = Array.isArray(d.exercises)
+    ? d.exercises.map((ex, i) => validateExercise(ex, dayNumber, i))
+    : [];
+
+  if (!isRest && exercises.length === 0) {
+    throw new Error(`Day ${dayNumber}: training day has no exercises`);
+  }
+
+  return {
+    dayNumber,
+    isRest,
+    sessionTitle: String(d.sessionTitle ?? (isRest ? "Rest" : "")),
+    sessionDuration: String(d.sessionDuration ?? ""),
+    coachNote: String(d.coachNote ?? ""),
+    ...(d.sessionWhy != null ? { sessionWhy: String(d.sessionWhy) } : {}),
+    ...(d.sessionContext != null ? { sessionContext: String(d.sessionContext) } : {}),
+    exercises,
+  };
+}
+
 function parseWeekJSON(text: string): WeekData {
   // Strip markdown code fences
   const clean = text
@@ -301,12 +348,24 @@ function parseWeekJSON(text: string): WeekData {
 
   const rawWeek = JSON.parse(clean.slice(j, k + 1));
 
-  // Validate structure
-  if (!rawWeek.days || !Array.isArray(rawWeek.days)) {
+  // Validate top-level structure
+  if (!rawWeek || typeof rawWeek !== "object") {
+    throw new Error("AI response is not a JSON object");
+  }
+  if (!Array.isArray(rawWeek.days)) {
     throw new Error("Invalid week structure: missing days array");
   }
+  if (rawWeek.days.length !== 7) {
+    throw new Error(`Expected 7 days, got ${rawWeek.days.length}`);
+  }
 
-  return rawWeek as WeekData;
+  const days = rawWeek.days.map((d: unknown, i: number) => validateWeekDay(d, i));
+
+  return {
+    programName: String(rawWeek.programName ?? "Custom Program"),
+    weekCoachNote: String(rawWeek.weekCoachNote ?? ""),
+    days,
+  };
 }
 
 // ── Fallback Week ──

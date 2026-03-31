@@ -228,7 +228,7 @@ export async function syncFromSupabase(): Promise<boolean> {
 }
 
 /**
- * Immediate (non-debounced) sync for critical saves.
+ * Immediate (non-debounced) sync for critical saves (e.g. consent changes).
  */
 export async function syncNow() {
   if (shouldSkipSync()) return;
@@ -236,5 +236,6 @@ export async function syncNow() {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
+  syncPending = false;
   await doSync();
 }

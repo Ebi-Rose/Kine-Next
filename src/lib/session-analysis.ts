@@ -36,6 +36,62 @@ For each exercise, give a verdict:
 Return ONLY valid JSON:
 {"overallAssessment":"2-3 sentences","exerciseFeedback":[{"name":"Exercise","verdict":"solid","note":"1 sentence"}],"changes":[{"icon":"↗","title":"short","detail":"1 sentence"}],"nextSession":{"title":"string","coachNote":"1 sentence"}}`;
 
+const VALID_VERDICTS = new Set(["strong", "solid", "building", "adjust"]);
+
+function validateAnalysisResult(raw: unknown): AnalysisResult {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("Analysis response is not a JSON object");
+  }
+  const r = raw as Record<string, unknown>;
+
+  if (typeof r.overallAssessment !== "string" || !r.overallAssessment.trim()) {
+    throw new Error("Missing overallAssessment");
+  }
+
+  if (!Array.isArray(r.exerciseFeedback)) {
+    throw new Error("Missing exerciseFeedback array");
+  }
+
+  const exerciseFeedback: ExerciseFeedback[] = r.exerciseFeedback.map(
+    (fb: unknown, i: number) => {
+      if (!fb || typeof fb !== "object") {
+        throw new Error(`exerciseFeedback[${i}]: not an object`);
+      }
+      const f = fb as Record<string, unknown>;
+      if (typeof f.name !== "string" || !f.name.trim()) {
+        throw new Error(`exerciseFeedback[${i}]: missing name`);
+      }
+      const verdict = String(f.verdict ?? "solid");
+      return {
+        name: String(f.name),
+        verdict: (VALID_VERDICTS.has(verdict) ? verdict : "solid") as ExerciseFeedback["verdict"],
+        note: String(f.note ?? ""),
+      };
+    }
+  );
+
+  const changes = Array.isArray(r.changes)
+    ? r.changes.map((c: unknown) => {
+        const ch = (c && typeof c === "object" ? c : {}) as Record<string, unknown>;
+        return {
+          icon: String(ch.icon ?? "→"),
+          title: String(ch.title ?? ""),
+          detail: String(ch.detail ?? ""),
+        };
+      })
+    : [];
+
+  const nextSession =
+    r.nextSession && typeof r.nextSession === "object"
+      ? {
+          title: String((r.nextSession as Record<string, unknown>).title ?? ""),
+          coachNote: String((r.nextSession as Record<string, unknown>).coachNote ?? ""),
+        }
+      : undefined;
+
+  return { overallAssessment: r.overallAssessment.trim(), exerciseFeedback, changes, nextSession };
+}
+
 export async function analyseSession(
   sessionLogs: Record<string, unknown>,
   dayTitle: string,
@@ -105,27 +161,28 @@ Return JSON analysis with overallAssessment, exerciseFeedback (per exercise), ch
     const k = clean.lastIndexOf("}");
     if (j < 0 || k < 0) return null;
 
-    const parsed = JSON.parse(clean.slice(j, k + 1)) as AnalysisResult;
+    const raw = JSON.parse(clean.slice(j, k + 1));
+    const validated = validateAnalysisResult(raw);
 
     // Sanitize AI free-text fields to prevent injection
-    parsed.overallAssessment = sanitizeInput(parsed.overallAssessment || "", 2000);
-    parsed.exerciseFeedback = (parsed.exerciseFeedback || []).map((ef) => ({
+    validated.overallAssessment = sanitizeInput(validated.overallAssessment, 2000);
+    validated.exerciseFeedback = validated.exerciseFeedback.map((ef) => ({
       ...ef,
-      name: sanitizeInput(ef.name || "", 200),
-      note: sanitizeInput(ef.note || "", 1000),
+      name: sanitizeInput(ef.name, 200),
+      note: sanitizeInput(ef.note, 1000),
     }));
-    parsed.changes = (parsed.changes || []).map((c) => ({
+    validated.changes = validated.changes.map((c) => ({
       ...c,
-      icon: sanitizeInput(c.icon || "", 10),
-      title: sanitizeInput(c.title || "", 200),
-      detail: sanitizeInput(c.detail || "", 1000),
+      icon: sanitizeInput(c.icon, 10),
+      title: sanitizeInput(c.title, 200),
+      detail: sanitizeInput(c.detail, 1000),
     }));
-    if (parsed.nextSession) {
-      parsed.nextSession.title = sanitizeInput(parsed.nextSession.title || "", 200);
-      parsed.nextSession.coachNote = sanitizeInput(parsed.nextSession.coachNote || "", 1000);
+    if (validated.nextSession) {
+      validated.nextSession.title = sanitizeInput(validated.nextSession.title, 200);
+      validated.nextSession.coachNote = sanitizeInput(validated.nextSession.coachNote, 1000);
     }
 
-    return parsed;
+    return validated;
   } catch (err) {
     console.error("Session analysis failed:", apiErrorMessage(err));
     return null;
