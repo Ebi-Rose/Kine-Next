@@ -29,25 +29,19 @@ export const EXP_OPTIONS: { value: Experience & string; label: string }[] = [
 
 export const EXP_DESCRIPTIONS: Record<string, Record<string, string>> = {
   muscle: {
-    new: "Building foundational movement and gym confidence. Every exercise is chosen so you can actually feel what's working — that's where body change starts.",
-    developing:
-      "You know the movements. Now it's about structuring sessions that create real change — progressive overload, volume management, and smarter exercise selection.",
-    intermediate:
-      "You've been doing this a while. Kinē brings periodisation, autoregulation, and the nuance that separates training from just working out.",
+    new: "We'll start with the foundations — movements you can feel working.",
+    developing: "Smarter structure, progressive overload, real change.",
+    intermediate: "Periodisation, autoregulation, and nuance.",
   },
   strength: {
-    new: "Building foundational movement and gym confidence. Movement quality and technique come before heavy loads — the bar gets heavier once the foundations are solid.",
-    developing:
-      "You know the movements. Now it's about structured progression — building toward heavier loads with intelligent programming.",
-    intermediate:
-      "You've been doing this a while. Kinē brings periodisation, peaking cycles, and the programming precision that drives continued strength gains.",
+    new: "Technique first — the bar gets heavier once the foundations are solid.",
+    developing: "Structured progression toward heavier loads.",
+    intermediate: "Periodisation, peaking cycles, and precision.",
   },
   general: {
-    new: "Building foundational movement and gym confidence. We'll build the habit first — sessions that feel achievable and leave you wanting to come back.",
-    developing:
-      "You know the movements. Now it's about keeping things fresh, balanced, and sustainable — training that evolves with you.",
-    intermediate:
-      "You've been doing this a while. Kinē brings structure and variety to keep you progressing without overcomplicating things.",
+    new: "Achievable sessions that build the habit.",
+    developing: "Fresh, balanced, and sustainable.",
+    intermediate: "Structure and variety without overcomplicating things.",
   },
 };
 
@@ -66,8 +60,15 @@ export const EQUIP_LABELS: Record<string, string> = {
   kettlebell: "Kettlebell",
   machines: "Machines",
   bands: "Resistance bands",
-  bodyweight: "Bodyweight only",
+  bodyweight: "Bodyweight",
 };
+
+/** Quick-select presets for equipment step */
+export const EQUIP_PRESETS: { label: string; description: string; equip: string[] }[] = [
+  { label: "Home / yoga mat", description: "Bodyweight + bands — no equipment needed", equip: ["bodyweight", "bands"] },
+  { label: "Home gym", description: "Dumbbells, kettlebell, bands", equip: ["bodyweight", "dumbbells", "kettlebell", "bands"] },
+  { label: "Full gym", description: "Everything available", equip: ["barbell", "dumbbells", "kettlebell", "machines", "bands", "bodyweight"] },
+];
 
 export const DURATION_OPTIONS: { value: Duration & string; label: string }[] = [
   { value: "short", label: "Under 45 min" },
@@ -125,10 +126,10 @@ export const INJURY_OPTIONS: { value: string; label: string }[] = [
 ];
 
 export const CONDITION_OPTIONS: { value: string; label: string; description: string }[] = [
-  { value: "pcos", label: "PCOS", description: "Polycystic ovary syndrome — affects hormones, metabolism, and energy." },
-  { value: "fibroids", label: "Fibroids", description: "Uterine fibroids — can cause pain, heavy bleeding, and fatigue." },
-  { value: "endometriosis", label: "Endometriosis", description: "Endometrial tissue outside the uterus — flares, pain, fatigue." },
-  { value: "pelvic_floor", label: "Pelvic floor", description: "Pelvic floor concerns — leaking, pressure, or discomfort during exercise." },
+  { value: "pcos", label: "PCOS", description: "We adjust intensity cycling and prioritise resistance training that supports metabolic health." },
+  { value: "fibroids", label: "Fibroids", description: "We manage intra-abdominal pressure, moderate high-impact movements, and adapt around flare days." },
+  { value: "endometriosis", label: "Endometriosis", description: "We pace volume across the month, reduce load on high-pain days, and avoid aggravating movements." },
+  { value: "pelvic_floor", label: "Pelvic floor", description: "We modify bracing cues, swap high-pressure exercises, and progress loading gradually." },
 ];
 
 export const PROGRAM_MAP: Record<string, Record<string, string>> = {

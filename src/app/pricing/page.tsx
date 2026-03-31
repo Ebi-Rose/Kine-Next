@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { detectCurrency, formatCurrency, PRICE_TABLE, yearlySavingsPercent, yearlyPerMonth, type SupportedCurrency } from "@/lib/format";
 
 export default function PricingPage() {
   const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const currency = useMemo(() => detectCurrency(), []) as SupportedCurrency;
+  const prices = PRICE_TABLE[currency];
+  const savings = yearlySavingsPercent(currency);
+  const perMonth = yearlyPerMonth(currency);
 
   async function handleSubscribe() {
     setLoading(true);
@@ -25,7 +30,7 @@ export default function PricingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, currency }),
       });
       const data = await res.json();
       if (data.url) {
@@ -65,7 +70,7 @@ export default function PricingPage() {
                 <p className="text-sm font-medium text-text">Monthly</p>
                 <p className="text-xs text-muted2">Flexible, cancel anytime</p>
               </div>
-              <p className="text-lg font-display text-accent">£29.99<span className="text-xs text-muted2">/mo</span></p>
+              <p className="text-lg font-display text-accent">{formatCurrency(prices.monthly, currency)}<span className="text-xs text-muted2">/mo</span></p>
             </div>
           </button>
 
@@ -77,13 +82,13 @@ export default function PricingPage() {
               plan === "yearly" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
             }`}
           >
-            <span className="absolute -top-2 right-3 rounded-full bg-accent px-2 py-0.5 text-[9px] font-medium text-bg">SAVE 17%</span>
+            <span className="absolute -top-2 right-3 rounded-full bg-accent px-2 py-0.5 text-[9px] font-medium text-bg">SAVE {savings}%</span>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-text">Yearly</p>
-                <p className="text-xs text-muted2">£25/mo · Best value</p>
+                <p className="text-xs text-muted2">{formatCurrency(perMonth, currency)}/mo · Best value</p>
               </div>
-              <p className="text-lg font-display text-accent">£300<span className="text-xs text-muted2">/yr</span></p>
+              <p className="text-lg font-display text-accent">{formatCurrency(prices.yearly, currency)}<span className="text-xs text-muted2">/yr</span></p>
             </div>
           </button>
         </div>

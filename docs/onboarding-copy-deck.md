@@ -172,7 +172,30 @@ All user-facing text in the Kine onboarding flow. Use this document to review, e
 
 ---
 
-## Screen 6: Injuries (Unnumbered)
+## Screen 6: Health Conditions (Unnumbered, Skippable)
+
+**Headline:**
+> Anything we should know about?
+
+**Subtext:**
+> Some conditions affect how your body responds to training. Kine adapts silently — your programme just works differently. Nothing changes how you're treated.
+
+### Options
+
+| Condition | Description |
+|---|---|
+| PCOS | Polycystic ovary syndrome |
+| Fibroids | Uterine fibroids |
+| Endometriosis | Endometriosis |
+| Pelvic floor | Pelvic floor dysfunction |
+
+**Skip button:** Skip — nothing applies
+
+**Notes:** Multi-select. Skippable. The subtext is critical: "adapts silently" and "nothing changes how you're treated." These conditions are treated as programming context, not modes or identities. The programme adapts through existing systems (exercise swaps, warmup mods, breathing cue overrides, AI prompt context) without surfacing condition labels in session UI. See `condition-context.ts` and `injury-swaps.ts` (CONDITION_SWAPS) for implementation.
+
+---
+
+## Screen 7: Injuries (Unnumbered)
 
 **Headline:**
 > Anything to work around?
@@ -206,7 +229,7 @@ All user-facing text in the Kine onboarding flow. Use this document to review, e
 
 ---
 
-## Screen 7: Summary (Review & Confirm)
+## Screen 8: Summary (Review & Confirm)
 
 **Headline:**
 > Your program

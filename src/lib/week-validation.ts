@@ -1,12 +1,6 @@
-// ── AI Week Validation ──
-// Validates and repairs AI-generated week data against exercise library,
-// equipment, injuries, and structural rules.
-
 import { EXERCISE_LIBRARY, type Exercise as LibExercise } from "@/data/exercise-library";
 import { INJURY_SWAPS } from "@/data/injury-swaps";
 import type { WeekData, WeekDay, Exercise } from "./week-builder";
-
-// ── Types ──
 
 export interface ValidationIssue {
   type: "unknown_exercise" | "equipment_mismatch" | "injury_conflict" | "exercise_count" | "structural" | "duplicate_exercise";
@@ -22,21 +16,14 @@ export interface ValidationResult {
   weekData: WeekData; // repaired version
 }
 
-// ── Lookup caches ──
-
 const exerciseByName = new Map<string, LibExercise>();
-const exerciseNamesLower = new Map<string, string>(); // lowercase → canonical name
+const exerciseNamesLower = new Map<string, string>();
 for (const ex of EXERCISE_LIBRARY) {
   exerciseByName.set(ex.name, ex);
   exerciseNamesLower.set(ex.name.toLowerCase(), ex.name);
 }
 
-// ── Public API ──
-
-/**
- * Validate an AI-generated week and auto-repair what we can.
- * Returns the (possibly repaired) week data plus a list of issues found.
- */
+/** Validate an AI-generated week and auto-repair what we can. */
 export function validateWeek(
   weekData: WeekData,
   userEquip: string[],
@@ -50,23 +37,13 @@ export function validateWeek(
   for (const day of repaired.days) {
     if (day.isRest) continue;
 
-    // 1. Validate & repair exercise names
     validateExerciseNames(day, issues);
-
-    // 2. Check equipment compatibility & swap if needed
     validateEquipment(day, userEquip, issues);
-
-    // 3. Check injury conflicts & swap if needed
     validateInjuries(day, userInjuries, userEquip, issues);
-
-    // 4. Remove duplicate exercises within a session
     validateDuplicates(day, issues);
-
-    // 5. Check exercise count
     validateExerciseCount(day, expectedExCount, issues);
   }
 
-  // 6. Structural validation
   validateStructure(repaired, issues);
 
   return {
@@ -76,21 +53,17 @@ export function validateWeek(
   };
 }
 
-// ── Exercise Name Validation ──
-
 function validateExerciseNames(day: WeekDay, issues: ValidationIssue[]): void {
   for (let i = day.exercises.length - 1; i >= 0; i--) {
     const ex = day.exercises[i];
     if (exerciseByName.has(ex.name)) continue;
 
-    // Try case-insensitive match
     const canonical = exerciseNamesLower.get(ex.name.toLowerCase());
     if (canonical) {
       ex.name = canonical;
-      continue; // fixed silently — not worth logging
+      continue;
     }
 
-    // Try fuzzy match (common AI naming variants)
     const fuzzy = fuzzyMatchExercise(ex.name);
     if (fuzzy) {
       issues.push({
@@ -104,7 +77,6 @@ function validateExerciseNames(day: WeekDay, issues: ValidationIssue[]): void {
       continue;
     }
 
-    // No match — remove the exercise
     issues.push({
       type: "unknown_exercise",
       dayNumber: day.dayNumber,
@@ -116,15 +88,9 @@ function validateExerciseNames(day: WeekDay, issues: ValidationIssue[]): void {
   }
 }
 
-/**
- * Fuzzy matching for common AI naming variants.
- * Handles things like "Dumbbell Bench Press" vs "Dumbbell Flat Bench Press",
- * "Cable Row" vs "Seated Cable Row", etc.
- */
 function fuzzyMatchExercise(aiName: string): string | null {
   const normalised = aiName.toLowerCase().replace(/[^a-z\s]/g, "").trim();
 
-  // Common aliases AI might use
   const ALIASES: Record<string, string> = {
     "barbell squat": "Barbell Back Squat",
     "back squat": "Barbell Back Squat",
@@ -193,7 +159,6 @@ function fuzzyMatchExercise(aiName: string): string | null {
 
   if (ALIASES[normalised]) return ALIASES[normalised];
 
-  // Substring match — if AI name contains a library name or vice versa
   for (const [, libEx] of exerciseByName) {
     const libLower = libEx.name.toLowerCase();
     if (normalised.includes(libLower) || libLower.includes(normalised)) {
@@ -204,8 +169,6 @@ function fuzzyMatchExercise(aiName: string): string | null {
   return null;
 }
 
-// ── Equipment Validation ──
-
 function validateEquipment(
   day: WeekDay,
   userEquip: string[],
@@ -214,13 +177,11 @@ function validateEquipment(
   for (let i = day.exercises.length - 1; i >= 0; i--) {
     const ex = day.exercises[i];
     const libEx = exerciseByName.get(ex.name);
-    if (!libEx) continue; // already handled by name validation
+    if (!libEx) continue;
 
-    // Check if user has at least one of the required equipment types
     const hasEquip = libEx.equip.some((e) => userEquip.includes(e));
     if (hasEquip) continue;
 
-    // Find equipment-compatible alternative in the same muscle group
     const replacement = findEquipmentAlternative(libEx, userEquip, day.exercises);
     if (replacement) {
       issues.push({
@@ -251,7 +212,6 @@ function findEquipmentAlternative(
 ): LibExercise | null {
   const currentNames = new Set(currentExercises.map((e) => e.name));
 
-  // Find exercises in the same muscle group that the user can do
   const candidates = EXERCISE_LIBRARY.filter(
     (e) =>
       e.muscle === original.muscle &&
@@ -262,14 +222,11 @@ function findEquipmentAlternative(
 
   if (candidates.length === 0) return null;
 
-  // Prefer same tags (Compound→Compound, Isolation→Isolation)
   const sameTag = candidates.find((c) =>
     c.tags.some((t) => original.tags.includes(t)),
   );
   return sameTag || candidates[0];
 }
-
-// ── Injury Validation ──
 
 function validateInjuries(
   day: WeekDay,
@@ -288,10 +245,8 @@ function validateInjuries(
 
       const swapTarget = swaps[ex.name];
 
-      // Verify the swap target is equipment-compatible
       const swapLib = exerciseByName.get(swapTarget);
       if (swapLib && swapLib.equip.some((e) => userEquip.includes(e))) {
-        // Check it's not already in the session
         const alreadyInSession = day.exercises.some(
           (e, idx) => idx !== i && e.name === swapTarget,
         );
@@ -308,12 +263,10 @@ function validateInjuries(
         }
       }
 
-      // Swap target doesn't work — find an equipment-compatible alternative
       const libEx = exerciseByName.get(ex.name);
       if (libEx) {
         const alt = findEquipmentAlternative(libEx, userEquip, day.exercises);
         if (alt) {
-          // Verify the alternative isn't also injury-flagged
           let altConflicts = false;
           for (const inj of injuries) {
             if (INJURY_SWAPS[inj]?.[alt.name]) {
@@ -335,7 +288,6 @@ function validateInjuries(
         }
       }
 
-      // No viable alternative — remove
       issues.push({
         type: "injury_conflict",
         dayNumber: day.dayNumber,
@@ -348,8 +300,6 @@ function validateInjuries(
     }
   }
 }
-
-// ── Duplicate Detection ──
 
 function validateDuplicates(day: WeekDay, issues: ValidationIssue[]): void {
   const seen = new Set<string>();
@@ -370,8 +320,6 @@ function validateDuplicates(day: WeekDay, issues: ValidationIssue[]): void {
   }
 }
 
-// ── Exercise Count ──
-
 function validateExerciseCount(
   day: WeekDay,
   expected: number,
@@ -380,7 +328,6 @@ function validateExerciseCount(
   const actual = day.exercises.length;
   if (actual === expected) return;
 
-  // Only flag if significantly off — AI might reasonably give ±1
   if (Math.abs(actual - expected) <= 1) return;
 
   issues.push({
@@ -391,13 +338,10 @@ function validateExerciseCount(
   });
 }
 
-// ── Structural Validation ──
-
 function validateStructure(
   weekData: WeekData,
   issues: ValidationIssue[],
 ): void {
-  // Must have exactly 7 days
   if (weekData.days.length !== 7) {
     issues.push({
       type: "structural",
@@ -407,7 +351,6 @@ function validateStructure(
     });
   }
 
-  // Day numbers should be 1-7
   const dayNums = weekData.days.map((d) => d.dayNumber).sort();
   const expected = [1, 2, 3, 4, 5, 6, 7];
   if (JSON.stringify(dayNums) !== JSON.stringify(expected)) {
@@ -419,7 +362,6 @@ function validateStructure(
     });
   }
 
-  // Training days must have exercises
   for (const day of weekData.days) {
     if (!day.isRest && day.exercises.length === 0) {
       issues.push({
@@ -431,7 +373,6 @@ function validateStructure(
     }
   }
 
-  // Rest days must not have exercises
   for (const day of weekData.days) {
     if (day.isRest && day.exercises.length > 0) {
       issues.push({
@@ -444,7 +385,6 @@ function validateStructure(
     }
   }
 
-  // programName and weekCoachNote should exist
   if (!weekData.programName) {
     issues.push({
       type: "structural",

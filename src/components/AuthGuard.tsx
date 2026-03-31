@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
+import { isAuthenticated, getSession, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
 
 /** Fetches the validated access mode from the server-side httpOnly cookie */
@@ -62,10 +62,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       let sub = await getSubscriptionStatus();
       if (!sub.active && isPostCheckout) {
         setLoadingMsg("Activating your subscription…");
-        // Stripe webhook may not have fired yet — poll with backoff
-        const delays = [1000, 1500, 2000, 2500, 3000];
-        for (const delay of delays) {
-          await new Promise((r) => setTimeout(r, delay));
+        // Stripe webhook may not have fired yet — exponential backoff
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await new Promise((r) => setTimeout(r, 1000 * Math.pow(1.5, attempt)));
           if (cancelled) return;
           sub = await getSubscriptionStatus();
           if (sub.active) break;
@@ -76,6 +75,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!sub.active) {
         router.replace("/pricing");
         return;
+      }
+
+      // Set server-side subscription cookie so middleware can gate routes
+      const session = await getSession();
+      if (session?.access_token) {
+        fetch("/api/verify-subscription", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }).catch(() => {}); // best-effort — middleware falls back to /pricing
       }
 
       // Post-checkout: clear any stale demo/test data so onboarding starts fresh

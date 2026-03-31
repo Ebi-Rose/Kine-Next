@@ -21,12 +21,19 @@
     "stripe": "^20.4.1",
     "zustand": "^5.0.12"
   },
+  "pnpm": {
+    "overrides": {
+      "handlebars": ">=4.7.9",
+      "picomatch": ">=4.0.4",
+      "brace-expansion": ">=5.0.5"
+    }
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20",
+    "@types/node": "^22.19.15",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

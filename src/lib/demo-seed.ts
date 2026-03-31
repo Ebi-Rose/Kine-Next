@@ -94,12 +94,8 @@ export function seedDemoStore(store: any) {
 
   store.setPersonalProfile({
     name: "Demo User",
-    dob: "",
-    gender: "female",
     height: "165",
     weight: "62",
-    location: "",
-    notes: "",
     trainingAge: "1-2 years",
     currentLifts: {
       "Barbell Back Squat": 50,

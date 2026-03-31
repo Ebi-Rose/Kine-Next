@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       </a>
 
       <h1 className="mt-8 font-display text-3xl tracking-wide">Privacy Policy</h1>
-      <p className="mt-2 text-xs text-muted2">Last updated: 26 March 2026</p>
+      <p className="mt-2 text-xs text-muted2">Last updated: 30 March 2026</p>
 
       <div className="mt-8 space-y-6 text-sm text-muted2 leading-relaxed">
         <section>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           <p>Email address, password (hashed), authentication provider (e.g. Google).</p>
 
           <h3 className="text-sm font-medium text-text mt-4 mb-1">Profile data</h3>
-          <p>Name, date of birth, height, weight, gender identity (all optional).</p>
+          <p>Name, height, weight (all optional).</p>
 
           <h3 className="text-sm font-medium text-text mt-4 mb-1">Training data</h3>
           <p>
@@ -142,6 +142,7 @@ export default function PrivacyPage() {
             <li><strong className="text-text">Active accounts:</strong> Data retained while your account is active.</li>
             <li><strong className="text-text">After cancellation:</strong> Training data retained for 90 days to allow resubscription, then deleted.</li>
             <li><strong className="text-text">Account deletion:</strong> All data deleted within 30 days of request.</li>
+            <li><strong className="text-text">Inactive accounts:</strong> Accounts with no login for 24 months will receive a deletion notice. If no action is taken within 30 days, the account and all data will be permanently deleted.</li>
             <li><strong className="text-text">Payment records:</strong> Retained as required by financial regulations (up to 7 years).</li>
           </ul>
         </section>
@@ -155,7 +156,7 @@ export default function PrivacyPage() {
             <li><strong className="text-text">Erase</strong> your data (&quot;right to be forgotten&quot;)</li>
             <li><strong className="text-text">Restrict</strong> processing of your data</li>
             <li><strong className="text-text">Port</strong> your data in a machine-readable format</li>
-            <li><strong className="text-text">Withdraw consent</strong> for health data processing at any time</li>
+            <li><strong className="text-text">Withdraw consent</strong> for health data processing at any time via Profile &rarr; Privacy</li>
             <li><strong className="text-text">Object</strong> to processing based on legitimate interest</li>
             <li><strong className="text-text">Complain</strong> to the Information Commissioner&apos;s Office (ICO) at ico.org.uk</li>
           </ul>
@@ -171,9 +172,11 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-base font-medium text-text mb-2">10. Cookies</h2>
           <p>
-            We use a single functional cookie (<code className="text-text">kine_access</code>) to
-            manage your access session. It is httpOnly, signed, and expires after 30 days. We do
-            not use tracking cookies, analytics cookies, or advertising cookies.
+            We use two functional cookies: <code className="text-text">kine_access</code> (access
+            session, 30-day expiry) and <code className="text-text">kine_sub</code> (subscription
+            verification, 1-hour expiry). Both are httpOnly, signed, and not accessible to
+            client-side JavaScript. We do not use tracking cookies, analytics cookies, or
+            advertising cookies.
           </p>
         </section>
 

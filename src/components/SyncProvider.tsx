@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useKineStore } from "@/store/useKineStore";
-import { syncToSupabase, syncFromSupabase } from "@/lib/sync";
+import { syncToSupabase, syncFromSupabase, flushSync } from "@/lib/sync";
 import { reconcileState } from "@/lib/state-reconciliation";
 
 /**
@@ -24,7 +24,14 @@ export default function SyncProvider() {
       syncToSupabase();
     });
 
-    return () => unsub();
+    // Flush pending sync when user leaves the page
+    const handleUnload = () => flushSync();
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      unsub();
+      window.removeEventListener("beforeunload", handleUnload);
+    };
   }, []);
 
   return null;

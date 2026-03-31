@@ -2,25 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useKineStore } from "@/store/useKineStore";
+import { useKineStore, type SessionRecord } from "@/store/useKineStore";
+import { kgToDisplay, weightUnit, formatDateLong, detectLocale } from "@/lib/format";
 import BottomSheet from "@/components/BottomSheet";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAYS_SHORT = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-interface SessionRecord {
-  date?: string;
-  title?: string;
-  effort?: number;
-  soreness?: number;
-  weekNum?: number;
-  logs?: Record<string, unknown>;
-}
-
 export default function CalendarPage() {
   const router = useRouter();
-  const { progressDB } = useKineStore();
-  const sessions = progressDB.sessions as SessionRecord[];
+  const { progressDB, measurementSystem } = useKineStore();
+  const system = measurementSystem || "metric";
+  const unit = weightUnit(system);
+  const sessions = progressDB.sessions;
 
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
@@ -151,7 +145,7 @@ export default function CalendarPage() {
       {selectedDay && (
         <div className="mt-4 animate-fade-up">
           <p className="text-xs text-muted uppercase tracking-wider mb-2">
-            {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+            {formatDateLong(selectedDay)}
           </p>
           {daySessionList.length === 0 ? (
             <div className="rounded-xl border border-border bg-surface p-4 text-center">
@@ -213,7 +207,7 @@ export default function CalendarPage() {
                         <div
                           className="w-full rounded-t bg-accent/50 hover:bg-accent/80 transition-colors"
                           style={{ height: `${Math.max(h, 8)}%` }}
-                          title={`${entry.weight}kg × ${entry.reps}`}
+                          title={`${kgToDisplay(entry.weight, system)}${unit} × ${entry.reps}`}
                         />
                       </div>
                     );
@@ -226,7 +220,7 @@ export default function CalendarPage() {
                 {progressDB.lifts[selectedLift].slice(-8).reverse().map((entry, i) => (
                   <div key={i} className="flex items-center justify-between text-[11px]">
                     <span className="text-muted font-light">{entry.date}</span>
-                    <span className="text-text">{entry.weight}kg × {entry.reps}</span>
+                    <span className="text-text">{kgToDisplay(entry.weight, system)}{unit} × {entry.reps}</span>
                   </div>
                 ))}
               </div>

@@ -2,11 +2,13 @@
 
 import { useKineStore } from "@/store/useKineStore";
 import type { AnalysisResult } from "@/lib/session-analysis";
+import { weightUnit } from "@/lib/format";
 import Button from "@/components/Button";
 import { sharePR } from "@/lib/share-card";
 
 export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResult | null; prs?: { name: string; weight: number; reps: number }[]; onDone: () => void }) {
-  const { progressDB } = useKineStore();
+  const { progressDB, measurementSystem } = useKineStore();
+  const unit = weightUnit(measurementSystem || "metric");
   const verdictColors: Record<string, string> = {
     strong: "text-green-400",
     solid: "text-muted2",
@@ -42,7 +44,7 @@ export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysi
               <div>
                 <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-0.5">New PR</p>
                 <p className="text-sm font-medium text-text">{pr.name}</p>
-                <p className="text-xs text-muted2">{pr.weight}kg x {pr.reps} reps</p>
+                <p className="text-xs text-muted2">{pr.weight}{unit} x {pr.reps} reps</p>
               </div>
               <button
                 onClick={() => handleSharePR(pr)}

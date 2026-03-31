@@ -38,5 +38,6 @@ export function formatRelativeDate(dateStr: string): string {
 
 export function formatDateShort(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const locale = typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-GB";
+  return d.toLocaleDateString(locale, { day: "numeric", month: "short" });
 }

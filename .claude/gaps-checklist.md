@@ -1,6 +1,6 @@
 # Kine-Next Gap Checklist
-## Status: ~85% functional, ~65% visual parity
-## Updated: 2026-03-22
+## Status: ~90% functional, ~65% visual parity
+## Updated: 2026-03-29
 
 ---
 
@@ -19,13 +19,13 @@
 - [x] **Ramp sets for compounds** — DONE. empty bar → 50% → 75% working weight
 - [x] **Rest day messages on week view** — DONE. Recovery messages shown on rest day cards
 - [x] **Cooldown page depth** — DONE. Session-specific stretches + category labels
-- [ ] **Week check-in → AI prompt** — Feedback saves but doesn't feed into next week's generation
+- [x] **Week check-in → AI prompt** — DONE. scheduleFeeling saved as structured field, fed into AI week-builder prompt with volume guidance
 - [ ] **Time budget applied to session** — trimSessionToTime exists but not applied when entering live session
 - [ ] **Quick period log from week view** — Only in profile, not week view header
 - [ ] **Video sheet in session** — Thumbnails show but tap needs to open video player
 - [ ] **Skill path sheet in session** — Component exists but no trigger button in session
 - [ ] **Custom builder AI option** — Manual only, no AI-powered generation
-- [ ] **Stall detection surfaced** — Logic exists but not shown in UI
+- [x] **Stall detection surfaced** — DONE. Already implemented in session page (lines 1041-1059)
 
 ## VISUAL/UX GAPS (10)
 
@@ -60,3 +60,15 @@
 - Subscription management panel
 - Per-day duration editing
 - Demo mode auto-seed
+
+## COMPLETED — March 2026 Audit
+- Cloud sync: added missing upload/download fields (conditions, comfortFlags, sessionMode, restConfig, etc.)
+- Store: added setCyclePhase, setEduFlags, setSkillPreferences setters
+- Week check-in: structured scheduleFeeling field fed into AI prompt
+- AI prompts: fixed mislabelled soreness/motivation fields, added volume guidance
+- Progression: fixed getEquipType operator precedence bug (dumbbell → barbell misclassification)
+- AuthGuard: exponential backoff on subscription polling
+- weekHistory capped at 26 entries
+- Chat route: Upstash Redis rate limiting (10/60s), input validation (30k char max)
+- Sentry v10 error monitoring (client + server + edge)
+- Deleted protection.ts (blocked accessibility, no security benefit)

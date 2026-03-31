@@ -38,18 +38,26 @@ export function getExerciseStallWeeks(exerciseName: string): number {
   return stallWeeks;
 }
 
+const MATURITY_LEVELS = ["early", "developing", "established", "mature"] as const;
+
 /**
  * Get programme maturity level.
+ *
+ * Uses the *more conservative* of two signals — session count and calendar
+ * weeks — so both volume and time must justify the level. This prevents a
+ * power-user who logs 40 sessions in 2 weeks from being classified as
+ * "established", and equally prevents a low-frequency user from advancing
+ * on calendar time alone.
  */
 export function getProgrammeMaturity(): "early" | "developing" | "established" | "mature" {
   const store = useKineStore.getState();
   const totalSessions = store.progressDB.sessions.length;
   const weeks = store.progressDB.currentWeek;
 
-  if (totalSessions < 6 || weeks < 3) return "early";
-  if (totalSessions < 18 || weeks < 6) return "developing";
-  if (totalSessions < 40 || weeks < 12) return "established";
-  return "mature";
+  const sessionLevel = totalSessions < 6 ? 0 : totalSessions < 18 ? 1 : totalSessions < 40 ? 2 : 3;
+  const weekLevel = weeks < 3 ? 0 : weeks < 6 ? 1 : weeks < 12 ? 2 : 3;
+
+  return MATURITY_LEVELS[Math.min(sessionLevel, weekLevel)];
 }
 
 /**

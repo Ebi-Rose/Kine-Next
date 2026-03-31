@@ -12,16 +12,17 @@ import {
   EXP_DESCRIPTIONS,
   ALL_EQUIPMENT,
   EQUIP_LABELS,
+  EQUIP_PRESETS,
   DURATION_OPTIONS,
   DAY_LABELS,
   CYCLE_OPTIONS,
   INJURY_OPTIONS,
   CONDITION_OPTIONS,
-  PROGRAM_MAP,
 } from "@/data/constants";
 import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
+import { detectLocale } from "@/lib/format";
 
-type Step = "welcome" | "name" | "goal" | "experience" | "equipment" | "schedule" | "cycle" | "conditions" | "injuries" | "summary";
+type Step = "welcome" | "name" | "goal" | "experience" | "equipment" | "schedule" | "consent" | "cycle" | "conditions" | "injuries" | "summary";
 
 const STEP_ORDER: Step[] = [
   "welcome",
@@ -30,6 +31,7 @@ const STEP_ORDER: Step[] = [
   "experience",
   "equipment",
   "schedule",
+  "consent",
   "cycle",
   "conditions",
   "injuries",
@@ -92,10 +94,11 @@ export default function OnboardingPage() {
         {step === "equipment" && <EquipmentStep onNext={next} numberedStep={numberedStep} />}
         {step === "schedule" && (
           <ScheduleStep
-            onNext={() => goToStep("cycle")}
+            onNext={() => goToStep("consent")}
             numberedStep={numberedStep}
           />
         )}
+        {step === "consent" && <ConsentStep onNext={() => goToStep("cycle")} onSkip={() => goToStep("summary")} />}
         {step === "cycle" && <CycleStep onNext={() => goToStep("conditions")} />}
         {step === "conditions" && <ConditionsStep onNext={() => goToStep("injuries")} />}
         {step === "injuries" && <InjuriesStep onNext={() => goToStep("summary")} />}
@@ -250,6 +253,7 @@ function EquipmentStep({
   numberedStep: number;
 }) {
   const { equip, setEquip } = useKineStore();
+  const [showCustom, setShowCustom] = useState(false);
 
   // Initialize with all equipment if empty (first visit)
   useEffect(() => {
@@ -258,23 +262,23 @@ function EquipmentStep({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Inverted logic: excluded stores what user DOESN'T have
-  const [excluded, setExcluded] = useState<string[]>(() => {
-    if (equip.length === 0) return []; // all available
-    return ALL_EQUIPMENT.filter((e) => !equip.includes(e));
-  });
-
-  function toggleExclude(val: string) {
-    let newExcluded: string[];
-    if (excluded.includes(val)) {
-      newExcluded = excluded.filter((e) => e !== val);
-    } else {
-      newExcluded = [...excluded, val];
-    }
-    setExcluded(newExcluded);
-    // equip = everything NOT excluded
-    setEquip(ALL_EQUIPMENT.filter((e) => !newExcluded.includes(e)));
+  function selectPreset(presetEquip: string[]) {
+    setEquip(presetEquip);
+    setShowCustom(false);
   }
+
+  function toggleEquip(val: string) {
+    if (equip.includes(val)) {
+      setEquip(equip.filter((e) => e !== val));
+    } else {
+      setEquip([...equip, val]);
+    }
+  }
+
+  // Check if current equip matches a preset
+  const activePreset = EQUIP_PRESETS.find(
+    (p) => p.equip.length === equip.length && p.equip.every((e) => equip.includes(e))
+  );
 
   return (
     <div className="animate-fade-up">
@@ -283,19 +287,45 @@ function EquipmentStep({
         What equipment do you have?
       </h2>
       <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
-        Everything is selected. Tap to remove what you don&apos;t have access to.
+        Pick the option that fits, or customise below.
       </p>
-      <div className="mt-6 grid grid-cols-2 gap-3 stagger-fade-up">
-        {ALL_EQUIPMENT.map((val) => (
+
+      {/* Presets */}
+      <div className="mt-6 flex flex-col gap-3 stagger-fade-up">
+        {EQUIP_PRESETS.map((preset) => (
           <Tile
-            key={val}
-            selected={!excluded.includes(val)}
-            onClick={() => toggleExclude(val)}
+            key={preset.label}
+            selected={activePreset?.label === preset.label}
+            onClick={() => selectPreset(preset.equip)}
           >
-            {EQUIP_LABELS[val]}
+            <div className="font-medium text-text">{preset.label}</div>
+            <div className="mt-0.5 text-xs text-muted2 font-light">{preset.description}</div>
           </Tile>
         ))}
       </div>
+
+      {/* Custom toggle */}
+      <button
+        onClick={() => setShowCustom(!showCustom)}
+        className="mt-4 text-xs text-accent hover:underline"
+      >
+        {showCustom ? "Hide custom selection" : "Customise"}
+      </button>
+
+      {showCustom && (
+        <div className="mt-3 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          {ALL_EQUIPMENT.map((val) => (
+            <Tile
+              key={val}
+              selected={equip.includes(val)}
+              onClick={() => toggleEquip(val)}
+            >
+              {EQUIP_LABELS[val]}
+            </Tile>
+          ))}
+        </div>
+      )}
+
       <div className="mt-8">
         <Button onClick={onNext} disabled={equip.length === 0} className="w-full">
           Continue
@@ -347,7 +377,9 @@ function ScheduleStep({
           <button
             key={i}
             onClick={() => toggleDay(i)}
-            className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-medium transition-all ${
+            aria-label={`${label}${trainingDays.includes(i) ? " (selected)" : ""}`}
+            aria-pressed={trainingDays.includes(i)}
+            className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-medium transition-all ${
               trainingDays.includes(i)
                 ? "bg-accent text-bg"
                 : "bg-surface2 text-muted2 hover:text-text"
@@ -399,6 +431,88 @@ function ScheduleStep({
           Continue
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ── Step 5b: Consent ──
+
+function ConsentStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+  const { recordConsent } = useKineStore();
+  const [healthConsent, setHealthConsent] = useState(false);
+  const [termsConsent, setTermsConsent] = useState(false);
+
+  function handleContinue() {
+    recordConsent("health_data", healthConsent);
+    recordConsent("terms", termsConsent);
+    recordConsent("privacy", termsConsent);
+    onNext();
+  }
+
+  function handleSkip() {
+    recordConsent("health_data", false);
+    recordConsent("terms", false);
+    recordConsent("privacy", false);
+    onSkip();
+  }
+
+  return (
+    <div className="animate-fade-up flex min-h-[80vh] flex-col items-center justify-center">
+      <h2 className="font-display text-xl tracking-wide text-text text-center">
+        Before we continue
+      </h2>
+      <p className="mt-2 max-w-xs text-xs text-muted2 text-center leading-relaxed">
+        Kinē uses AI to build your programme. We need your consent to handle health-related data.
+      </p>
+
+      <div className="mt-8 w-full max-w-xs flex flex-col gap-4">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={healthConsent}
+            onChange={(e) => setHealthConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-accent"
+          />
+          <span className="text-xs text-muted2 leading-relaxed">
+            I consent to Kinē processing my health and fitness data (conditions, cycle, injuries) to personalise my training programme.
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={termsConsent}
+            onChange={(e) => setTermsConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-accent"
+          />
+          <span className="text-xs text-muted2 leading-relaxed">
+            I agree to the{" "}
+            <a href="/terms" target="_blank" className="text-accent underline underline-offset-2">Terms</a> and{" "}
+            <a href="/privacy" target="_blank" className="text-accent underline underline-offset-2">Privacy Policy</a>.
+          </span>
+        </label>
+
+        <p className="text-[10px] text-muted leading-relaxed">
+          Kinē provides fitness guidance, not medical advice.
+          Consult your doctor before starting any exercise programme.
+        </p>
+      </div>
+
+      <Button
+        className="mt-8 w-full max-w-xs"
+        size="lg"
+        onClick={handleContinue}
+        disabled={!healthConsent || !termsConsent}
+      >
+        Continue
+      </Button>
+
+      <button
+        onClick={handleSkip}
+        className="mt-3 text-xs text-muted2 hover:text-text transition-colors"
+      >
+        Skip for now
+      </button>
     </div>
   );
 }
@@ -613,28 +727,12 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
 
 function SummaryStep({ onFinish }: { onFinish: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, injuries, conditions, cycleType, dayDurations, setDayDurations, personalProfile, setPersonalProfile } = store;
-  const [showLifts, setShowLifts] = useState(false);
-  const [lifts, setLifts] = useState<Record<string, string>>({});
+  const { goal, exp, equip, trainingDays, duration, injuries, conditions, cycleType, dayDurations, setDayDurations } = store;
   const [startDate, setStartDate] = useState<"today" | "monday">("today");
 
-  const programName = PROGRAM_MAP[goal || "general"]?.[exp || "new"] || "Custom Program";
   const durationLabel = DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration;
 
-  // Lift assessment fields based on equipment
-  const liftFields = getLiftFields(equip, goal);
-
   function handleFinish() {
-    // Save lifts to profile
-    if (showLifts && Object.keys(lifts).length > 0) {
-      const currentLifts: Record<string, number> = {};
-      Object.entries(lifts).forEach(([name, val]) => {
-        const num = parseFloat(val);
-        if (num > 0) currentLifts[name] = num;
-      });
-      setPersonalProfile({ ...personalProfile, currentLifts });
-    }
-
     // Set start date
     const today = new Date();
     let startStr: string;
@@ -663,9 +761,9 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
 
   return (
     <div>
-      <p className="text-[10px] tracking-[0.3em] text-accent uppercase">Your program</p>
+      <p className="text-[10px] tracking-[0.3em] text-accent uppercase">Almost there</p>
       <h2 className="mt-2 font-display text-2xl tracking-wide text-text">
-        Here&apos;s what we&apos;ve built.
+        Summary of your programme
       </h2>
       <p className="mt-1 text-xs text-muted2">
         {goal === "strength" ? "Built around progressive strength development." :
@@ -676,9 +774,7 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
 
       {/* Program card */}
       <div className="mt-6 rounded-[var(--radius-default)] border border-border bg-surface p-5">
-        <h3 className="font-display text-xl tracking-wide text-accent">{programName}</h3>
-
-        <div className="mt-4 flex flex-col gap-2 text-xs">
+        <div className="flex flex-col gap-2 text-xs">
           <div className="flex items-center gap-2 text-muted2">
             <span>📅</span>
             <span>{trainingDays.length} days/week — {trainingDays.map((d) => DAY_LABELS[d]).join(", ")}</span>
@@ -738,38 +834,6 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
         </div>
       </div>
 
-      {/* Lift assessment */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <p className="text-xs tracking-wider text-muted uppercase">Current lifts · optional</p>
-          <button onClick={() => setShowLifts(!showLifts)} className="text-xs text-accent hover:underline">
-            {showLifts ? "skip for now" : "add lifts"}
-          </button>
-        </div>
-
-        {showLifts && (
-          <div className="mt-3 flex flex-col gap-2">
-            {liftFields.map((field) => (
-              <div key={field.name} className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
-                <span className="text-xs text-text">{field.name}</span>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder={field.placeholder}
-                    aria-label={`${field.name} weight in ${field.unit}`}
-                    value={lifts[field.name] || ""}
-                    onChange={(e) => setLifts({ ...lifts, [field.name]: e.target.value })}
-                    className="w-16 rounded border border-border bg-bg px-2 py-1 text-center text-xs text-text outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                  />
-                  <span className="text-[10px] text-muted">{field.unit}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Start date */}
       <div className="mt-6">
         <p className="mb-2 text-xs tracking-wider text-muted uppercase">When do you want to start?</p>
@@ -777,7 +841,7 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
           <Tile selected={startDate === "today"} onClick={() => setStartDate("today")}>
             <div className="text-center">
               <div className="text-sm font-medium">Today</div>
-              <div className="text-[10px] text-muted2">{new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</div>
+              <div className="text-[10px] text-muted2">{new Date().toLocaleDateString(detectLocale(), { weekday: "short", day: "numeric", month: "short" })}</div>
             </div>
           </Tile>
           <Tile selected={startDate === "monday"} onClick={() => setStartDate("monday")}>
@@ -798,49 +862,13 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
   );
 }
 
-function getLiftFields(equip: string[], goal: string | null): { name: string; placeholder: string; unit: string }[] {
-  if (equip.includes("barbell")) {
-    if (goal === "muscle") {
-      return [
-        { name: "Back Squat", placeholder: "kg", unit: "kg" },
-        { name: "Romanian Deadlift", placeholder: "kg", unit: "kg" },
-        { name: "Bench Press", placeholder: "kg", unit: "kg" },
-      ];
-    }
-    return [
-      { name: "Back Squat", placeholder: "1×5", unit: "kg" },
-      { name: "Deadlift", placeholder: "1×5", unit: "kg" },
-      { name: "Bench Press", placeholder: "1×5", unit: "kg" },
-      { name: "Overhead Press", placeholder: "1×5", unit: "kg" },
-    ];
-  }
-  if (equip.includes("dumbbells")) {
-    return [
-      { name: "Goblet Squat", placeholder: "kg", unit: "kg" },
-      { name: "DB Romanian Deadlift", placeholder: "kg", unit: "kg" },
-      { name: "DB Shoulder Press", placeholder: "kg", unit: "kg" },
-    ];
-  }
-  if (equip.includes("machines")) {
-    return [
-      { name: "Leg Press", placeholder: "kg", unit: "kg" },
-      { name: "Lat Pulldown", placeholder: "kg", unit: "kg" },
-      { name: "Chest Press", placeholder: "kg", unit: "kg" },
-    ];
-  }
-  return [
-    { name: "Pull-Ups", placeholder: "max", unit: "reps" },
-    { name: "Push-Ups", placeholder: "max", unit: "reps" },
-  ];
-}
-
 function getNextMonday(): string {
   const today = new Date();
   const dayOfWeek = today.getDay();
   const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
   const monday = new Date(today);
   monday.setDate(today.getDate() + daysUntilMonday);
-  return monday.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  return monday.toLocaleDateString(detectLocale(), { weekday: "short", day: "numeric", month: "short" });
 }
 
 // ── Shared: Step label ──

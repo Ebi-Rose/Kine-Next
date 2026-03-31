@@ -7,6 +7,7 @@ import type { WeekData } from "@/lib/week-builder";
 import { buildFallbackPrescription } from "@/lib/week-builder";
 import { EXERCISE_LIBRARY, findExercise } from "@/data/exercise-library";
 import { apiFetchStreaming } from "@/lib/api";
+import { sanitizeInput } from "@/lib/sanitize";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
 
@@ -213,11 +214,11 @@ export default function CustomBuilderPage() {
     setAiLoading(true);
     try {
       const store = useKineStore.getState();
-      const focusHint = muscleFilter !== "all" ? muscleFilter : title || "balanced full body";
+      const focusHint = muscleFilter !== "all" ? muscleFilter : sanitizeInput(title, 80) || "balanced full body";
 
       // Include this week's training context
       const weekContext = weekSessions.length > 0
-        ? `Already trained this week: ${weekSessions.map((s) => `${s.title} (${s.muscles.join("/")})`).join(", ")}. Avoid repeating the same muscle groups within 48h.`
+        ? `Already trained this week: ${weekSessions.map((s) => `${sanitizeInput(s.title, 80)} (${s.muscles.join("/")})`).join(", ")}. Avoid repeating the same muscle groups within 48h.`
         : "";
 
       const data = await apiFetchStreaming({

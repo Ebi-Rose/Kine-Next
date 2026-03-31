@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { findExercise } from "@/data/exercise-library";
 import { getMuscleTags, getBreathingCue, getConditionCue, isSquat, isHinge, isCompound, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, DEPTH_BEFORE_LOAD } from "@/data/education";
-// @ts-ignore
-import { EXERCISE_EDU_LIBRARY } from "@/data/exercise-edu";
 import { getSkillPath } from "@/data/skill-paths";
 import BottomSheet from "@/components/BottomSheet";
+
+type EduEntry = { why?: string; feel?: string; context?: string; cues?: string[] };
+type EduLibrary = Record<string, EduEntry>;
 
 interface Props {
   open: boolean;
@@ -20,10 +22,9 @@ interface Props {
 }
 
 /** Try exact match first, then partial/fuzzy match against the edu library keys */
-function findEduData(name: string, library: Record<string, unknown>): unknown {
+function findEduData(name: string, library: EduLibrary): EduEntry | undefined {
   if (library[name]) return library[name];
   const lower = name.toLowerCase();
-  // Try matching by removing common prefixes/suffixes
   for (const key of Object.keys(library)) {
     const keyLower = key.toLowerCase();
     if (lower.includes(keyLower) || keyLower.includes(lower)) {
@@ -33,16 +34,27 @@ function findEduData(name: string, library: Record<string, unknown>): unknown {
   return undefined;
 }
 
+/** Lazy-loaded edu library — only fetched when the sheet opens */
+let eduCache: EduLibrary | null = null;
+
 export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp, conditions = [] }: Props) {
+  const [eduLibrary, setEduLibrary] = useState<EduLibrary | null>(eduCache);
+
+  useEffect(() => {
+    if (!open || eduCache) return;
+    import("@/data/exercise-edu").then((m) => {
+      eduCache = m.EXERCISE_EDU_LIBRARY as EduLibrary;
+      setEduLibrary(eduCache);
+    });
+  }, [open]);
+
   const lib = findExercise(exerciseName);
   const muscleTags = getMuscleTags(exerciseName);
   const breathCue = getBreathingCue(exerciseName, conditions);
   const condCue = getConditionCue(exerciseName, conditions);
   const skillPath = getSkillPath(exerciseName, []);
 
-  // Fall back to EXERCISE_EDU_LIBRARY when AI fields aren't provided
-  const eduLibrary = EXERCISE_EDU_LIBRARY as Record<string, { why?: string; feel?: string; context?: string; cues?: string[] }>;
-  const eduData = findEduData(exerciseName, eduLibrary) as typeof eduLibrary[string] | undefined;
+  const eduData = eduLibrary ? findEduData(exerciseName, eduLibrary) : undefined;
   const why = whyProp || eduData?.why || null;
   const feel = feelProp || eduData?.feel || null;
   const context = contextProp || eduData?.context || null;

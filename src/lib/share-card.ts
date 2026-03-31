@@ -1,6 +1,9 @@
 // ── PR Share Card ──
 // Canvas-rendered share card → blob, shared via Web Share API or downloaded.
 
+import { useKineStore } from "@/store/useKineStore";
+import { weightUnit } from "./format";
+
 interface SharePR {
   name: string;
   weight: number;
@@ -63,8 +66,9 @@ export async function renderShareCard(pr: SharePR): Promise<Blob> {
   ctx.font = "64px Bebas Neue, sans-serif";
   ctx.fillStyle = "#ffffff";
   ctx.letterSpacing = "0px";
-  const weightText = pr.weight + "kg";
-  const delta = pr.prev ? "+" + (pr.weight - pr.prev) + "kg" : "";
+  const unit = weightUnit(useKineStore.getState().measurementSystem || "metric");
+  const weightText = pr.weight + unit;
+  const delta = pr.prev ? "+" + (pr.weight - pr.prev) + unit : "";
 
   if (delta) {
     const weightWidth = ctx.measureText(weightText).width;
@@ -104,6 +108,7 @@ export async function renderShareCard(pr: SharePR): Promise<Blob> {
 }
 
 export async function sharePR(pr: SharePR): Promise<void> {
+  const unit = weightUnit(useKineStore.getState().measurementSystem || "metric");
   try {
     const blob = await renderShareCard(pr);
     const file = new File([blob], "kine-pr.png", { type: "image/png" });
@@ -111,13 +116,13 @@ export async function sharePR(pr: SharePR): Promise<void> {
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         files: [file],
-        title: `New PR: ${pr.name} ${pr.weight}kg`,
-        text: `${pr.name} - ${pr.weight}kg. Trained with Kinē.`,
+        title: `New PR: ${pr.name} ${pr.weight}${unit}`,
+        text: `${pr.name} - ${pr.weight}${unit}. Trained with Kinē.`,
       });
     } else if (navigator.share) {
       await navigator.share({
-        title: `New PR: ${pr.name} ${pr.weight}kg`,
-        text: `${pr.name} - ${pr.weight}kg. Trained with Kinē.`,
+        title: `New PR: ${pr.name} ${pr.weight}${unit}`,
+        text: `${pr.name} - ${pr.weight}${unit}. Trained with Kinē.`,
         url: "https://kinefit.app",
       });
     } else {

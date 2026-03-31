@@ -6,7 +6,7 @@
 
 ## The problem
 
-Most strength training apps were built by men, for men. They assume you know what to do and just need a place to log it. They don't explain why. They don't adapt to your body. And they definitely don't account for the fact that your hormones change how you recover, how strong you feel, and when to push hard.
+Most strength training apps were built by men, for men. They assume you know what to do and just need a place to log it. They don't explain why. They don't adapt to your body. And they definitely don't account for the ways women's bodies work differently — from cycle phases to conditions like endometriosis and PCOS, to life stages like perimenopause.
 
 Women are left choosing between:
 1. **Generic logging apps** that track what you did but don't tell you what to do
@@ -25,11 +25,12 @@ Kine is an AI-powered strength training coach built from the ground up for women
 |---|---|---|---|---|---|
 | **Builds your program** | AI generates a full week, personalised to you | No — you build or copy workouts | No — manual or templates | Templates only | AI-generated but generic |
 | **Explains every decision** | Yes — plain language, not jargon | No | No | Minimal | No |
-| **Cycle-aware** | Yes — adapts intensity across hormonal phases | No | No | No | No |
+| **Body-intelligent** | Cycle, PCOS, endo, fibroids, pelvic floor, perimenopause | No | No | No | No |
 | **Women-first design** | Built for women's physiology | Gender-neutral | Gender-neutral | Gender-neutral | Gender-neutral |
 | **Post-session coaching** | AI analyses performance and adjusts | No | No | No | Basic |
-| **Education built in** | 200+ exercises with video, cues, muscle education | Exercise demos | Exercise demos | Exercise demos | Exercise demos |
+| **Education built in** | 170+ exercises with cues, muscle education, coaching | Exercise demos | Exercise demos | Exercise demos | Exercise demos |
 | **Injury management** | Programs around limitations with smart swaps | No | No | No | Basic |
+| **Transparent progression** | Shows reasoning, volume trends; user accepts or adjusts | Auto-increments or manual | Manual | Manual | Auto, no explanation |
 | **Observation, not judgement** | No scores, streaks, or grades | Streaks, PRs | PRs | Badges, levels | Scores |
 | **Offline support** | Full PWA — works without internet | Requires internet | Offline logging | Requires internet | Requires internet |
 
@@ -43,7 +44,7 @@ Kine is an AI-powered strength training coach built from the ground up for women
 **Where it falls short for our audience:**
 - No programming — users must build their own workouts or copy others
 - Social features (leaderboards, following) add pressure, not support
-- No cycle awareness or women-specific adaptations
+- No women-specific adaptations (cycle, conditions, life stage)
 - No coaching or explanation of exercise selection
 **Kine's advantage:** Kine tells you what to do and why. No guessing, no copying strangers' routines.
 
@@ -64,7 +65,7 @@ Kine is an AI-powered strength training coach built from the ground up for women
 - Plans are generic templates, not personalised
 - Gamification (badges, levels, streaks) can create guilt around missed sessions
 - Cluttered interface with ads on free tier
-- No cycle awareness or women-specific programming
+- No women-specific programming (cycle, conditions, injuries)
 **Kine's advantage:** Kine builds around your life — your schedule, your body, your limitations. No guilt mechanics.
 
 ### Fitbod
@@ -73,17 +74,17 @@ Kine is an AI-powered strength training coach built from the ground up for women
 **Where it falls short for our audience:**
 - Session-by-session generation — no weekly structure or progression plan
 - AI is a black box — doesn't explain choices
-- No cycle awareness
+- No women's health awareness (cycle, conditions, life stage)
 - Recovery model is generic, not women-specific
-**Kine's advantage:** Kine thinks in weeks, not sessions. It explains what it's doing and adapts to hormonal patterns that generic recovery models miss.
+**Kine's advantage:** Kine thinks in weeks, not sessions. It explains what it's doing and adapts to how your body actually works — cycle phases, health conditions, and life stage included.
 
 ---
 
 ## Positioning statement
 
-**For women who want to get stronger but don't want to become their own coach,** Kine is the AI-powered training app that builds, explains, and adapts your program week by week — accounting for your cycle, your schedule, and your body.
+**For women who want to get stronger but don't want to become their own coach,** Kine is the AI-powered training app that builds, explains, and adapts your program week by week — accounting for your body, your conditions, your cycle, and your life.
 
-Unlike logging apps that assume you already know what to do, Kine gives you a complete program with coaching built in.
+Unlike logging apps that assume you already know what to do, Kine gives you a complete program with coaching built in. Unlike generic AI apps, it understands what makes women's training different — from endometriosis to perimenopause to pelvic floor recovery.
 
 ---
 
@@ -91,7 +92,7 @@ Unlike logging apps that assume you already know what to do, Kine gives you a co
 
 1. **"Stop guessing."** — Kine builds your program. You just show up.
 2. **"Coaching that explains itself."** — Every exercise choice comes with a reason in plain language.
-3. **"Your body changes across the month. Your training should too."** — Cycle-aware programming that adapts quietly.
+3. **"Your body is doing more than you think. Your training should know that."** — Adapts to your cycle, your conditions, and your life stage — quietly, without labels.
 4. **"Programs around limitations, not through them."** — Injury-aware with intelligent swaps.
 5. **"No streaks. No scores. No guilt."** — Observation-based coaching that treats you like an adult.
 
@@ -103,7 +104,7 @@ Unlike logging apps that assume you already know what to do, Kine gives you a co
 - Want to strength train consistently but feel overwhelmed by programming
 - Have tried apps like Hevy or Strong but felt unsupported
 - Don't want to pay £200+/month for a personal trainer
-- Want their hormonal cycle acknowledged without it being made into a gimmick
+- Want their body acknowledged — cycle, conditions, life stage — without it being made into a gimmick
 
 **Secondary:**
 - Women returning to training postpartum

@@ -1,22 +1,13 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { signValue } from "../_lib/cookie-sign";
+import { createRatelimit } from "../_lib/rate-limit";
+import { verifyCsrf } from "../_lib/csrf";
+import { logAudit, getRequestIp } from "../_lib/audit";
+import { checkBodySize } from "../_lib/body-limit";
 
-// Rate limiting: 5 attempts per IP per 15 minutes
-const RATE_LIMIT = 5;
-const RATE_WINDOW = 15 * 60 * 1000;
-const ipAttempts = new Map<string, { start: number; count: number }>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = ipAttempts.get(ip);
-  if (!entry || now - entry.start > RATE_WINDOW) {
-    ipAttempts.set(ip, { start: now, count: 1 });
-    return false;
-  }
-  entry.count++;
-  return entry.count > RATE_LIMIT;
-}
+const MAX_ACCESS_BODY = 4_096; // 4 KB — only a code field
+const ratelimit = createRatelimit("access", 5, "900 s");
 
 // Codes and modes from env vars — nothing hardcoded
 // ACCESS_CODES: comma-separated "code:mode" pairs
@@ -33,21 +24,34 @@ function getCodeMap(): Record<string, string> {
 }
 
 export async function POST(request: NextRequest) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const tooLarge = checkBodySize(request, MAX_ACCESS_BODY);
+  if (tooLarge) return tooLarge;
 
-  if (isRateLimited(ip)) {
-    return Response.json(
-      { error: "Too many attempts. Please try again later." },
-      { status: 429 }
-    );
+  if (!verifyCsrf(request)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  if (ratelimit) {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const { success } = await ratelimit.limit(ip);
+    if (!success) {
+      logAudit({ event: "access_code_rate_limited", ip });
+      return Response.json(
+        { error: "Too many attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+  }
+
+  const ip = getRequestIp(request.headers);
 
   try {
     const { code } = await request.json();
     const trimmed = code?.trim().toLowerCase();
 
     if (!trimmed) {
+      logAudit({ event: "access_code_failure", ip });
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
 
@@ -55,8 +59,11 @@ export async function POST(request: NextRequest) {
     const mode = codeMap[trimmed];
 
     if (!mode) {
+      logAudit({ event: "access_code_failure", ip });
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
+
+    logAudit({ event: "access_code_success", ip, metadata: { mode } });
 
     const cookieStore = await cookies();
     cookieStore.set("kine_access", signValue(`granted:${mode}`), {
