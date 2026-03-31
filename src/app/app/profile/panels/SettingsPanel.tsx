@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import { signOut } from "@/lib/auth";
+import { appNow } from "@/lib/dev-time";
 import { syncNow } from "@/lib/sync";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
@@ -21,7 +22,7 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
   function handleExportData() {
     const store = useKineStore.getState();
     const exportData = {
-      exportedAt: new Date().toISOString(),
+      exportedAt: appNow().toISOString(),
       version: "1.0",
       profile: store.personalProfile,
       preferences: {
@@ -63,7 +64,7 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kine-data-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `kine-data-${appNow().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast("Data exported", "success");

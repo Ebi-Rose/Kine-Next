@@ -3,14 +3,16 @@
 // Loaded when ?demo=true or ?key=kine2026 is in the URL.
 // Represents an intermediate-level woman 8 weeks into a strength program.
 
+import { appNow } from "@/lib/dev-time";
+
 function weeksAgo(n) {
-  const d = new Date();
+  const d = appNow();
   d.setDate(d.getDate() - n * 7);
   return d.toISOString().slice(0, 10);
 }
 
 function daysAgo(n) {
-  const d = new Date();
+  const d = appNow();
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
 }

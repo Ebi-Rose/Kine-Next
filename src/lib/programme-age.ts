@@ -1,6 +1,7 @@
 // ── Programme Age & Detraining Detection ──
 
 import { useKineStore } from "@/store/useKineStore";
+import { appTimestamp } from "./dev-time";
 
 /**
  * Get days since last session for any exercise.
@@ -14,7 +15,7 @@ export function getDaysSinceLastSession(): number | null {
   if (!lastDate) return null;
 
   return Math.floor(
-    (Date.now() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)
+    (appTimestamp() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)
   );
 }
 

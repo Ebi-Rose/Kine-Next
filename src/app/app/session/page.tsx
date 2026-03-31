@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { appNow, appTodayISO } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult } from "@/lib/session-analysis";
@@ -41,7 +42,7 @@ export default function SessionPage() {
   const [expandedEx, setExpandedEx] = useState<number | null>(0);
   const [sessionStep, setSessionStep] = useState<SessionStep>("workout");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [sessionStartTime] = useState(() => new Date().toISOString());
+  const [sessionStartTime] = useState(() => appNow().toISOString());
   const [swapSheetIdx, setSwapSheetIdx] = useState<number | null>(null);
   const [eduSheetIdx, setEduSheetIdx] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -133,10 +134,10 @@ export default function SessionPage() {
         toast("Log at least one set before saving", "error");
         return prev;
       }
-      // Stamp each logged set with wall-clock time
+      // Stamp each logged set with wall-clock time (intentionally real time)
       const stamped = ex.actual.map((s) =>
         (s.reps || s.weight) && !s.timestamp
-          ? { ...s, timestamp: new Date().toISOString() }
+          ? { ...s, timestamp: new Date().toISOString() } // eslint-disable-line no-restricted-syntax
           : s
       );
       return { ...prev, [exIdx]: { ...ex, actual: stamped, saved: true } };
@@ -266,8 +267,8 @@ export default function SessionPage() {
     setFeedbackState({
       effort,
       soreness,
-      tsDay: new Date().toLocaleDateString(undefined, { weekday: "long" }),
-      tsTime: new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening",
+      tsDay: appNow().toLocaleDateString(undefined, { weekday: "long" }),
+      tsTime: appNow().getHours() < 12 ? "morning" : appNow().getHours() < 17 ? "afternoon" : "evening",
       sessionStartTime,
     });
 
@@ -284,7 +285,7 @@ export default function SessionPage() {
     }
     const sessionRecord = {
       dayIdx,
-      date: new Date().toISOString().split("T")[0],
+      date: appTodayISO(),
       weekNum: store.progressDB.currentWeek,
       title: day?.sessionTitle || "",
       logs,
@@ -308,7 +309,7 @@ export default function SessionPage() {
       if (bestSet.w > 0) {
         if (!updatedLifts[ex.name]) updatedLifts[ex.name] = [];
         updatedLifts[ex.name].push({
-          date: new Date().toISOString().split("T")[0],
+          date: appTodayISO(),
           weight: bestSet.w,
           reps: bestSet.r,
         });

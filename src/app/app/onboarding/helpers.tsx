@@ -2,6 +2,7 @@
 
 import { useKineStore } from "@/store/useKineStore";
 import { weightUnit, detectLocale } from "@/lib/format";
+import { appNow } from "@/lib/dev-time";
 
 export function StepLabel({ step }: { step: number }) {
   if (step <= 0) return null;
@@ -50,7 +51,7 @@ export function getLiftFields(equip: string[], goal: string | null): { name: str
 }
 
 export function getNextMonday(): string {
-  const today = new Date();
+  const today = appNow();
   const dayOfWeek = today.getDay();
   const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
   const monday = new Date(today);

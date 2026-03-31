@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { appNow, appTodayISO } from "@/lib/dev-time";
 import type { Goal, Experience, CycleType, Duration } from "@/store/useKineStore";
 import Button from "@/components/Button";
 import Tile from "@/components/Tile";
@@ -65,7 +66,7 @@ export default function OnboardingPage() {
   }
 
   function finishOnboarding() {
-    const today = new Date().toISOString().split("T")[0];
+    const today = appTodayISO();
     store.setProgressDB({
       ...store.progressDB,
       programStartDate: today,
@@ -749,7 +750,7 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
 
   function handleFinish() {
     // Set start date
-    const today = new Date();
+    const today = appNow();
     let startStr: string;
     if (startDate === "monday") {
       const dayOfWeek = today.getDay();
@@ -856,7 +857,7 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
           <Tile selected={startDate === "today"} onClick={() => setStartDate("today")}>
             <div className="text-center">
               <div className="text-sm font-medium">Today</div>
-              <div className="text-[10px] text-muted2">{new Date().toLocaleDateString(detectLocale(), { weekday: "short", day: "numeric", month: "short" })}</div>
+              <div className="text-[10px] text-muted2">{appNow().toLocaleDateString(detectLocale(), { weekday: "short", day: "numeric", month: "short" })}</div>
             </div>
           </Tile>
           <Tile selected={startDate === "monday"} onClick={() => setStartDate("monday")}>
@@ -878,7 +879,7 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
 }
 
 function getNextMonday(): string {
-  const today = new Date();
+  const today = appNow();
   const dayOfWeek = today.getDay();
   const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
   const monday = new Date(today);

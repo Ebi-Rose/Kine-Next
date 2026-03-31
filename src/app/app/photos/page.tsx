@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getAllPhotos, savePhoto, deletePhoto, fileToDataUrl } from "@/lib/photo-store";
+import { appTodayISO } from "@/lib/dev-time";
 import type { ProgressPhoto } from "@/lib/photo-store";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
@@ -39,7 +40,7 @@ export default function PhotosPage() {
       const dataUrl = await fileToDataUrl(file);
       const photo: ProgressPhoto = {
         id: `photo_${Date.now()}`,
-        date: new Date().toISOString().split("T")[0],
+        date: appTodayISO(),
         dataUrl,
         note: "",
       };

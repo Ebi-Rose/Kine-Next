@@ -2,6 +2,7 @@ import { useKineStore } from "@/store/useKineStore";
 import { findExercise } from "@/data/exercise-library";
 import { getPhase } from "./periodisation";
 import { kgToDisplay, formatWeight, weightUnit, getIncrementForEquip, calculatePlatesForSystem, type MeasurementSystem } from "./format";
+import { appNow } from "./dev-time";
 
 // ── Progression Suggestion System ──
 // Returns a structured suggestion the user can accept, adjust, or dismiss.
@@ -207,7 +208,7 @@ export function getDaysSinceLastSession(exerciseName: string): number | null {
   if (!last) return null;
 
   const lastDate = new Date(last.date);
-  const today = new Date();
+  const today = appNow();
   return Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
 }
 

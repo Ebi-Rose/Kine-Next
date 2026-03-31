@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { appNow } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 import { buildFallbackPrescription } from "@/lib/week-builder";
 import { EXERCISE_LIBRARY, findExercise } from "@/data/exercise-library";
@@ -38,7 +39,7 @@ const TEMPLATES: Template[] = [
 // ── Helpers ──
 
 function getThisWeekSessions(progressDB: { sessions: { date?: string; title?: string; logs?: Record<string, unknown> }[] }): { date: string; title: string; muscles: string[] }[] {
-  const now = new Date();
+  const now = appNow();
   const monday = new Date(now);
   monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
   monday.setHours(0, 0, 0, 0);
@@ -63,7 +64,7 @@ function getThisWeekSessions(progressDB: { sessions: { date?: string; title?: st
 
 function daysSince(dateStr: string): number {
   const d = new Date(dateStr);
-  const now = new Date();
+  const now = appNow();
   return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 

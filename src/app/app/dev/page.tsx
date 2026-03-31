@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { setDevDateOverride, getDevDateOverride, appNow, appTodayISO } from "@/lib/dev-time";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
 
@@ -10,6 +11,10 @@ export default function DevPanel() {
   const store = useKineStore();
   const router = useRouter();
   const [showState, setShowState] = useState(false);
+  const [dateOverride, setDateOverride] = useState<string>(
+    () => getDevDateOverride()?.toISOString().split("T")[0] || ""
+  );
+  const activeOverride = getDevDateOverride();
 
   // Block access in production
   if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
@@ -20,7 +25,33 @@ export default function DevPanel() {
     );
   }
 
+  function applyDateOverride(dateStr: string) {
+    if (!dateStr) {
+      setDevDateOverride(null);
+      setDateOverride("");
+      toast("Date override cleared — using real time", "success");
+      return;
+    }
+    const d = new Date(dateStr + "T12:00:00");
+    if (isNaN(d.getTime())) {
+      toast("Invalid date", "error");
+      return;
+    }
+    setDevDateOverride(d);
+    setDateOverride(dateStr);
+    toast(`App time set to ${dateStr}`, "success");
+  }
+
+  function jumpDays(n: number) {
+    const base = activeOverride || new Date();
+    const d = new Date(base);
+    d.setDate(d.getDate() + n);
+    const str = d.toISOString().split("T")[0];
+    applyDateOverride(str);
+  }
+
   function advanceWeek() {
+    jumpDays(7);
     store.setProgressDB({
       ...store.progressDB,
       currentWeek: store.progressDB.currentWeek + 1,
@@ -32,7 +63,7 @@ export default function DevPanel() {
   function simulateSession() {
     const fakeSession = {
       dayIdx: 0,
-      date: new Date().toISOString().split("T")[0],
+      date: appTodayISO(),
       weekNum: store.progressDB.currentWeek,
       title: "Simulated Session",
       logs: {},
@@ -55,8 +86,10 @@ export default function DevPanel() {
     exercises.forEach((name, i) => {
       if (!lifts[name]) lifts[name] = [];
       for (let w = 0; w < 8; w++) {
+        const d = appNow();
+        d.setDate(d.getDate() - (8 - w) * 7);
         lifts[name].push({
-          date: new Date(Date.now() - (8 - w) * 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          date: d.toISOString().split("T")[0],
           weight: baseWeights[i] + w * 2.5,
           reps: 8,
         });
@@ -109,9 +142,39 @@ export default function DevPanel() {
       <p className="mt-1 text-xs text-muted2">Development tools. Not visible in production.</p>
 
       <div className="mt-6 flex flex-col gap-3">
-        <Section title="Time Controls">
-          <Button variant="secondary" size="sm" className="w-full" onClick={advanceWeek}>
-            Advance to next week
+        <Section title="Time Override">
+          {activeOverride && (
+            <div className="mb-3 rounded-lg bg-accent/10 border border-accent/30 px-3 py-2">
+              <p className="text-[10px] text-accent font-medium tracking-wider uppercase">Override active</p>
+              <p className="text-xs text-text mt-0.5">
+                App sees: {appNow().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              </p>
+            </div>
+          )}
+          <div className="flex gap-2 mb-2">
+            <input
+              type="date"
+              value={dateOverride}
+              onChange={(e) => setDateOverride(e.target.value)}
+              className="flex-1 rounded-lg border border-border bg-bg px-2 py-1.5 text-xs text-text outline-none focus:border-accent"
+            />
+            <Button variant="secondary" size="sm" onClick={() => applyDateOverride(dateOverride)}>
+              Set
+            </Button>
+          </div>
+          <div className="flex gap-1.5 mb-2">
+            <button onClick={() => jumpDays(1)} className="flex-1 rounded-lg border border-border bg-surface2/50 px-2 py-1.5 text-[10px] text-muted2 hover:text-text hover:border-accent/30 transition-all">+1 day</button>
+            <button onClick={() => jumpDays(7)} className="flex-1 rounded-lg border border-border bg-surface2/50 px-2 py-1.5 text-[10px] text-muted2 hover:text-text hover:border-accent/30 transition-all">+1 week</button>
+            <button onClick={() => jumpDays(14)} className="flex-1 rounded-lg border border-border bg-surface2/50 px-2 py-1.5 text-[10px] text-muted2 hover:text-text hover:border-accent/30 transition-all">+2 weeks</button>
+            <button onClick={() => jumpDays(-7)} className="flex-1 rounded-lg border border-border bg-surface2/50 px-2 py-1.5 text-[10px] text-muted2 hover:text-text hover:border-accent/30 transition-all">-1 week</button>
+          </div>
+          {activeOverride && (
+            <Button variant="ghost" size="sm" className="w-full text-muted2" onClick={() => applyDateOverride("")}>
+              Clear override (use real time)
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" className="w-full mt-2" onClick={advanceWeek}>
+            Advance week + time (+7 days)
           </Button>
         </Section>
 
@@ -151,7 +214,7 @@ export default function DevPanel() {
             ))}
           </div>
           <Button variant="secondary" size="sm" className="w-full mt-2" onClick={() => {
-            store.setCycle({ periodLog: [{ date: new Date().toISOString().split("T")[0], type: "start" }], avgLength: 28 });
+            store.setCycle({ periodLog: [{ date: appTodayISO(), type: "start" }], avgLength: 28 });
             toast("Period logged today", "success");
           }}>
             Log period start (today)
@@ -166,7 +229,7 @@ export default function DevPanel() {
               store.setProgressDB({
                 ...store.progressDB,
                 sessions: [...store.progressDB.sessions, {
-                  dayIdx: i, date: new Date().toISOString().split("T")[0],
+                  dayIdx: i, date: appTodayISO(),
                   weekNum: store.progressDB.currentWeek, title: `Session ${i + 1}`,
                   logs: {}, effort: 2, soreness: 1, prs: [],
                 }],
@@ -182,7 +245,7 @@ export default function DevPanel() {
               store.setProgressDB({
                 ...store.progressDB,
                 sessions: [...store.progressDB.sessions, {
-                  dayIdx: i, date: new Date().toISOString().split("T")[0],
+                  dayIdx: i, date: appTodayISO(),
                   weekNum: store.progressDB.currentWeek, title: `Session ${i + 1}`,
                   logs: {}, effort: 4, soreness: 3 + i, prs: [],
                 }],
