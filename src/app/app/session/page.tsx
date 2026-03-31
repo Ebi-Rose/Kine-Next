@@ -7,7 +7,7 @@ import type { WeekData } from "@/lib/week-builder";
 import { analyseSession } from "@/lib/session-analysis";
 import type { AnalysisResult } from "@/lib/session-analysis";
 import { apiFetchStreaming } from "@/lib/api";
-import { findExercise } from "@/data/exercise-library";
+import { findExercise, EXERCISE_LIBRARY } from "@/data/exercise-library";
 import { buildWarmup } from "@/lib/warmup-engine";
 import { trimSessionToTime } from "@/lib/time-budget";
 import { toast } from "@/components/Toast";
@@ -51,6 +51,7 @@ export default function SessionPage() {
   const [restActive, setRestActive] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentRestDuration, setCurrentRestDuration] = useState(restConfig.compound);
+  const [showAddExercise, setShowAddExercise] = useState(false);
 
   const week = weekData as WeekData | null;
   const day = week?.days?.[dayIdx];
@@ -67,21 +68,30 @@ export default function SessionPage() {
   const effectiveExercises = trimResult?.exercises ?? (day?.exercises || []);
 
   // Initialize logs from exercises (using time-budget-trimmed list)
+  // Pre-fills weight from last session history when available
   useEffect(() => {
     if (!day || day.isRest || effectiveExercises.length === 0) return;
+    const lifts = progressDB.lifts;
+    const system = useKineStore.getState().measurementSystem || "metric";
     const initial: Record<number, ExerciseLog> = {};
     effectiveExercises.forEach((ex, i) => {
       const numSets = parseInt(ex.sets) || 3;
+      const history = lifts[ex.name];
+      const lastLift = history && history.length > 0 ? history[history.length - 1] : null;
+      // Convert stored kg to display unit
+      const prefillWeight = lastLift?.weight
+        ? String(system === "imperial" ? Math.round(lastLift.weight * 2.205 * 2) / 2 : lastLift.weight)
+        : "";
       initial[i] = {
         name: ex.name,
         planned: { sets: ex.sets, reps: ex.reps },
         actual: Array.from({ length: numSets }, () => {
-          // Pre-fill reps with lower end of planned range (e.g. "8-10" → "8")
           const repMatch = ex.reps?.match(/^(\d+)/);
-          return { reps: repMatch ? repMatch[1] : "", weight: "" };
+          return { reps: repMatch ? repMatch[1] : "", weight: prefillWeight };
         }),
         note: "",
         saved: false,
+        prefilled: !!prefillWeight,
       };
     });
     setLogs(initial);
@@ -168,6 +178,46 @@ export default function SessionPage() {
     });
   }, [logs]);
 
+  const addExerciseToSession = useCallback((exerciseName: string) => {
+    if (!week?.days?.[dayIdx]) return;
+    const lib = findExercise(exerciseName);
+    const newEx: import("@/lib/week-builder").Exercise = {
+      name: exerciseName,
+      sets: lib?.tags.includes("Compound") ? "3" : "3",
+      reps: lib?.tags.includes("Compound") ? "8" : "12",
+      rest: lib?.tags.includes("Compound") ? "120" : "90",
+    };
+    const store = useKineStore.getState();
+    const updatedWeek = { ...week! };
+    const updatedDays = [...updatedWeek.days];
+    const updatedDay = { ...updatedDays[dayIdx] };
+    updatedDay.exercises = [...updatedDay.exercises, newEx];
+    updatedDays[dayIdx] = updatedDay;
+    updatedWeek.days = updatedDays;
+    store.setWeekData(updatedWeek);
+
+    // Add log entry for the new exercise
+    const newIdx = effectiveExercises.length;
+    const numSets = parseInt(newEx.sets) || 3;
+    const repMatch = newEx.reps?.match(/^(\d+)/);
+    setLogs((prev) => ({
+      ...prev,
+      [newIdx]: {
+        name: exerciseName,
+        planned: { sets: newEx.sets, reps: newEx.reps },
+        actual: Array.from({ length: numSets }, () => ({
+          reps: repMatch ? repMatch[1] : "",
+          weight: "",
+        })),
+        note: "",
+        saved: false,
+      },
+    }));
+    setExpandedEx(newIdx);
+    setShowAddExercise(false);
+    toast(`Added ${exerciseName}`, "success");
+  }, [week, dayIdx, effectiveExercises.length]);
+
   // ── Complete Session ──
   function completeSession() {
     const incomplete: string[] = [];
@@ -216,7 +266,7 @@ export default function SessionPage() {
     setFeedbackState({
       effort,
       soreness,
-      tsDay: new Date().toLocaleDateString("en-GB", { weekday: "long" }),
+      tsDay: new Date().toLocaleDateString(undefined, { weekday: "long" }),
       tsTime: new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening",
       sessionStartTime,
     });
@@ -224,12 +274,14 @@ export default function SessionPage() {
     // Detect PRs
     const prs = detectPRs(logs);
     setSessionPRs(prs);
-    if (prs.length > 0) {
-      prs.forEach((pr) => toast(`PR: ${pr.name} — ${pr.weight}kg × ${pr.reps}`, "success"));
-    }
 
     // Save session
     const store = useKineStore.getState();
+
+    if (prs.length > 0) {
+      const unit = store.measurementSystem === "imperial" ? "lbs" : "kg";
+      prs.forEach((pr) => toast(`PR: ${pr.name} — ${pr.weight}${unit} × ${pr.reps}`, "success"));
+    }
     const sessionRecord = {
       dayIdx,
       date: new Date().toISOString().split("T")[0],
@@ -437,11 +489,67 @@ export default function SessionPage() {
             onVideoSheet={(name) => setVideoSheetEx(name)}
             onSkillPath={(name) => setSkillPathEx(name)}
             onEduSheet={(idx) => setEduSheetIdx(idx)}
+            onClearPrefill={(idx) => {
+              setLogs((prev) => {
+                const ex = { ...prev[idx] };
+                ex.actual = ex.actual.map((s) => ({ ...s, weight: "" }));
+                ex.prefilled = false;
+                return { ...prev, [idx]: ex };
+              });
+            }}
             eduMode={eduMode}
             conditions={conditions}
           />
         ))}
       </div>
+
+      {/* Add exercise */}
+      {!showAddExercise ? (
+        <button
+          onClick={() => setShowAddExercise(true)}
+          className="mt-3 w-full text-[11px] text-accent border border-accent/20 rounded-lg py-2 hover:bg-accent/5 transition-all"
+        >
+          + Add exercise
+        </button>
+      ) : (
+        <div className="mt-3 rounded-xl border border-border bg-surface p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] text-muted2 font-medium">Add to session</span>
+            <button onClick={() => setShowAddExercise(false)} className="text-[10px] text-muted hover:text-text">
+              close
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(() => {
+              const existingNames = new Set(effectiveExercises.map(e => e.name.toLowerCase()));
+              const sessionMuscles = new Set<string>();
+              effectiveExercises.forEach((ex) => {
+                const lib = findExercise(ex.name);
+                if (lib) sessionMuscles.add(lib.muscle);
+              });
+              const equip = useKineStore.getState().equip;
+              const suggestions = (EXERCISE_LIBRARY || [])
+                .filter((ex) => {
+                  if (existingNames.has(ex.name.toLowerCase())) return false;
+                  if (!ex.equip.some((e) => equip.includes(e))) return false;
+                  if (!sessionMuscles.has(ex.muscle)) return false;
+                  return true;
+                })
+                .slice(0, 6);
+              if (suggestions.length === 0) return <p className="text-[10px] text-muted2">No matching exercises available</p>;
+              return suggestions.map((s) => (
+                <button
+                  key={s.name}
+                  onClick={() => addExerciseToSession(s.name)}
+                  className="text-[11px] text-accent bg-accent/10 border border-accent/30 rounded-lg px-2.5 py-1.5 hover:bg-accent/20 active:scale-[0.97] transition-all"
+                >
+                  + {s.name} <span className="text-accent/60 font-light">({s.muscle})</span>
+                </button>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Complete button */}
       <div className="mt-8 pb-4">
