@@ -17,9 +17,10 @@ function generateNonce(): string {
 }
 
 function buildCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://res.cloudinary.com",
@@ -105,14 +106,22 @@ export async function middleware(request: NextRequest) {
 
   // ── CSP nonce header on all responses ──
   const nonce = generateNonce();
+  const csp = buildCsp(nonce);
+
+  // Set CSP + nonce on request headers so Next.js can extract the nonce
+  // and apply it to framework inline scripts during rendering
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
   const response = NextResponse.next({
     request: {
-      headers: new Headers(request.headers),
+      headers: requestHeaders,
     },
   });
 
   // ── Security headers ──
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  response.headers.set("Content-Security-Policy", csp);
   response.headers.set("x-nonce", nonce);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
