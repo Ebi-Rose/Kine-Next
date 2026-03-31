@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore, type SessionRecord } from "@/store/useKineStore";
 import { kgToDisplay, weightUnit, formatDateLong, detectLocale } from "@/lib/format";
+import { appNow, appTodayISO } from "@/lib/dev-time";
 import BottomSheet from "@/components/BottomSheet";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -16,8 +17,8 @@ export default function CalendarPage() {
   const unit = weightUnit(system);
   const sessions = progressDB.sessions;
 
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => appNow().getMonth());
+  const [viewYear, setViewYear] = useState(() => appNow().getFullYear());
   const [selectedLift, setSelectedLift] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
@@ -35,7 +36,7 @@ export default function CalendarPage() {
   const lastDay = new Date(viewYear, viewMonth + 1, 0);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const totalDays = lastDay.getDate();
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = appTodayISO();
 
   const cells: (number | null)[] = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);

@@ -1,10 +1,12 @@
 // ── Date Utilities ──
 
+import { appNow } from "./dev-time";
+
 export function todayISO(): string {
-  return new Date().toISOString().split("T")[0];
+  return appNow().toISOString().split("T")[0];
 }
 
-export function getMondayOfWeek(date: Date = new Date()): Date {
+export function getMondayOfWeek(date: Date = appNow()): Date {
   const d = new Date(date);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
@@ -23,7 +25,7 @@ export function getCurrentWeekNum(programStartDate: string | null): number {
 
 export function getDaysSinceDate(dateStr: string): number {
   const date = new Date(dateStr);
-  const today = new Date();
+  const today = appNow();
   return Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 }
 

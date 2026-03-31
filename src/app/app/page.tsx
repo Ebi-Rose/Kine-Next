@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { appNow, appTodayISO, appTimestamp } from "@/lib/dev-time";
 import { buildWeek } from "@/lib/week-builder";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS } from "@/data/constants";
@@ -185,7 +186,7 @@ function WeekView({
   const { cycleType, cycle, setCycle, progressDB, weekHistory, exp } = useKineStore();
   const [showRearrange, setShowRearrange] = useState(false);
   const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
-  const today = new Date().getDay();
+  const today = appNow().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
   const weekStart = getWeekDateRange();
   const trainingPhase = getCurrentPhaseInfo(progressDB.currentWeek, progressDB.phaseOffset);
@@ -282,7 +283,7 @@ function WeekView({
             </div>
             <button
               onClick={() => {
-                const today = new Date().toISOString().split("T")[0];
+                const today = appTodayISO();
                 const lastLog = cycle.periodLog[cycle.periodLog.length - 1];
                 const type = lastLog?.type === "start" ? "end" : "start";
                 setCycle({
@@ -310,7 +311,7 @@ function WeekView({
             <span className="text-xs text-muted2">No period logged yet</span>
             <button
               onClick={() => {
-                const today = new Date().toISOString().split("T")[0];
+                const today = appTodayISO();
                 setCycle({
                   ...cycle,
                   periodLog: [...cycle.periodLog, { date: today, type: "start" }],
@@ -346,7 +347,7 @@ function WeekView({
       {(() => {
         const lastSession = (progressDB.sessions as { date?: string }[]).slice(-1)[0];
         if (lastSession?.date) {
-          const daysSince = Math.floor((Date.now() - new Date(lastSession.date).getTime()) / (1000 * 60 * 60 * 24));
+          const daysSince = Math.floor((appTimestamp() - new Date(lastSession.date).getTime()) / (1000 * 60 * 60 * 24));
           if (daysSince >= 7) {
             return (
               <div className="mb-4 rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim p-4">
@@ -526,7 +527,7 @@ function DevTools({ onRebuild, loading }: { onRebuild: () => void; loading: bool
     for (let i = 0; i < planned; i++) {
       sessions.push({
         dayIdx: i,
-        date: new Date().toISOString().split("T")[0],
+        date: appTodayISO(),
         weekNum: store.progressDB.currentWeek,
         title: `Session ${i + 1}`,
         logs: {},
@@ -901,7 +902,7 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
 // ── Helpers ──
 
 function getWeekDateRange(): string {
-  const now = new Date();
+  const now = appNow();
   const day = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));

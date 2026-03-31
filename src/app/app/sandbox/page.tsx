@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import type { WeekData, WeekDay, Exercise } from "@/lib/week-builder";
@@ -111,7 +111,63 @@ function getWeekWarnings(days: SandboxDay[]): string[] {
   return warnings;
 }
 
+// ── Assessment Questions ──
+
+interface AssessmentQuestion {
+  id: string;
+  question: string;
+  options: { label: string; correct: boolean }[];
+  explanation: string;
+}
+
+const ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
+  {
+    id: "volume",
+    question: "What happens if you train the same muscle group on consecutive days without rest?",
+    options: [
+      { label: "Faster gains from more volume", correct: false },
+      { label: "The muscle doesn't recover fully, limiting growth", correct: true },
+      { label: "No effect — muscles adapt to anything", correct: false },
+    ],
+    explanation: "Muscles need 48–72 hours to repair and grow after training. Consecutive sessions on the same group can lead to overtraining.",
+  },
+  {
+    id: "balance",
+    question: "Why is it important to balance push and pull exercises?",
+    options: [
+      { label: "It looks better on paper", correct: false },
+      { label: "To prevent muscle imbalances and protect your joints", correct: true },
+      { label: "Pull exercises aren't actually necessary", correct: false },
+    ],
+    explanation: "Training push without pull creates imbalances that can lead to shoulder injuries. Balanced programming protects your joints long-term.",
+  },
+  {
+    id: "compound",
+    question: "Where should compound exercises go in your session?",
+    options: [
+      { label: "At the end, after isolation work", correct: false },
+      { label: "It doesn't matter what order", correct: false },
+      { label: "Early in the session when you're freshest", correct: true },
+    ],
+    explanation: "Compound lifts require the most energy and coordination. Doing them first ensures you can lift safely and effectively.",
+  },
+  {
+    id: "rest-days",
+    question: "What's the minimum number of rest days per week for most lifters?",
+    options: [
+      { label: "0 — rest is optional if you eat enough", correct: false },
+      { label: "At least 1, ideally 2", correct: true },
+      { label: "4 — you should only train 3 days", correct: false },
+    ],
+    explanation: "Most people benefit from at least 1–2 rest days per week. Recovery is when your body actually gets stronger.",
+  },
+];
+
+const PASS_THRESHOLD = 3; // Must get 3/4 correct
+
 // ── Types ──
+
+type SandboxPhase = "assessment" | "builder";
 
 interface SandboxDay {
   isRest: boolean;
@@ -124,6 +180,46 @@ interface SandboxDay {
 export default function SandboxPage() {
   const router = useRouter();
   const { equip, exp, goal, setWeekData, progressDB } = useKineStore();
+
+  const [phase, setPhase] = useState<SandboxPhase>("assessment");
+  const [days, setDays] = useState<SandboxDay[]>(
+    Array.from({ length: 7 }, () => ({ isRest: true, title: "", exercises: [] }))
+  );
+  const [editingDay, setEditingDay] = useState<number | null>(null);
+  const [exercisePickerDay, setExercisePickerDay] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [muscleFilter, setMuscleFilter] = useState("all");
+
+  // Undo history
+  const [history, setHistory] = useState<SandboxDay[][]>([]);
+  const MAX_HISTORY = 20;
+
+  const pushHistory = useCallback(() => {
+    setHistory((prev) => [
+      ...prev.slice(-(MAX_HISTORY - 1)),
+      days.map((d) => ({ ...d, exercises: [...d.exercises] })),
+    ]);
+  }, [days]);
+
+  function undo() {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const restored = prev[prev.length - 1];
+      setDays(restored);
+      toast("Undone", "success");
+      return prev.slice(0, -1);
+    });
+  }
+
+  function resetWeek() {
+    pushHistory();
+    setDays(Array.from({ length: 7 }, () => ({ isRest: true, title: "", exercises: [] })));
+    toast("Week reset", "success");
+  }
+
+  const canUndo = history.length > 0;
+
+  const warnings = useMemo(() => getWeekWarnings(days), [days]);
 
   // Gate: intermediate+ only
   if (exp === "new" || exp === "developing") {
@@ -141,17 +237,8 @@ export default function SandboxPage() {
     );
   }
 
-  const [days, setDays] = useState<SandboxDay[]>(
-    Array.from({ length: 7 }, () => ({ isRest: true, title: "", exercises: [] }))
-  );
-  const [editingDay, setEditingDay] = useState<number | null>(null);
-  const [exercisePickerDay, setExercisePickerDay] = useState<number | null>(null);
-  const [search, setSearch] = useState("");
-  const [muscleFilter, setMuscleFilter] = useState("all");
-
-  const warnings = useMemo(() => getWeekWarnings(days), [days]);
-
   function toggleDay(idx: number) {
+    pushHistory();
     setDays((prev) => {
       const updated = [...prev];
       if (updated[idx].isRest) {
@@ -165,6 +252,7 @@ export default function SandboxPage() {
   }
 
   function applyTemplate(dayIdx: number, template: SessionTemplate) {
+    pushHistory();
     const valid = template.exercises.filter((name) => {
       const lib = findExercise(name);
       return lib && lib.equip.some((e) => equip.includes(e));
@@ -179,6 +267,7 @@ export default function SandboxPage() {
   }
 
   function addExercise(dayIdx: number, name: string) {
+    pushHistory();
     setDays((prev) => {
       const updated = [...prev];
       if (!updated[dayIdx].exercises.includes(name)) {
@@ -189,6 +278,7 @@ export default function SandboxPage() {
   }
 
   function removeExercise(dayIdx: number, name: string) {
+    pushHistory();
     setDays((prev) => {
       const updated = [...prev];
       updated[dayIdx] = { ...updated[dayIdx], exercises: updated[dayIdx].exercises.filter((n) => n !== name) };
@@ -271,6 +361,10 @@ export default function SandboxPage() {
   const muscles = ["all", "legs", "hinge", "push", "pull", "core", "cardio"];
   const trainingCount = days.filter((d) => !d.isRest).length;
   const totalExercises = days.reduce((acc, d) => acc + d.exercises.length, 0);
+
+  if (phase === "assessment") {
+    return <SandboxAssessment onPass={() => setPhase("builder")} onBack={() => router.push("/app")} />;
+  }
 
   return (
     <div>
@@ -388,12 +482,27 @@ export default function SandboxPage() {
         ))}
       </div>
 
-      {/* Week summary */}
+      {/* Week summary + actions */}
       {trainingCount > 0 && (
         <div className="mt-4 rounded-lg bg-surface2/30 px-4 py-3">
           <div className="flex justify-between text-xs">
             <span className="text-muted2">{trainingCount} training day{trainingCount !== 1 ? "s" : ""} · {7 - trainingCount} rest</span>
             <span className="text-muted2">{totalExercises} exercises total</span>
+          </div>
+          <div className="mt-2 flex gap-3">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className={`text-[10px] transition-colors ${canUndo ? "text-accent hover:text-text" : "text-muted cursor-not-allowed"}`}
+            >
+              ↩ Undo
+            </button>
+            <button
+              onClick={resetWeek}
+              className="text-[10px] text-muted2 hover:text-red-400 transition-colors"
+            >
+              Reset week
+            </button>
           </div>
         </div>
       )}
@@ -499,6 +608,152 @@ export default function SandboxPage() {
           </div>
         </BottomSheet>
       )}
+    </div>
+  );
+}
+
+// ── Assessment Component ──
+
+function SandboxAssessment({ onPass, onBack }: { onPass: () => void; onBack: () => void }) {
+  const [currentQ, setCurrentQ] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const q = ASSESSMENT_QUESTIONS[currentQ];
+  const correctCount = Object.entries(answers).filter(
+    ([id, idx]) => ASSESSMENT_QUESTIONS.find((q) => q.id === id)?.options[idx]?.correct
+  ).length;
+
+  function selectAnswer(idx: number) {
+    if (showExplanation) return;
+    setSelectedIdx(idx);
+    setAnswers((prev) => ({ ...prev, [q.id]: idx }));
+    setShowExplanation(true);
+  }
+
+  function nextQuestion() {
+    setShowExplanation(false);
+    setSelectedIdx(null);
+    if (currentQ < ASSESSMENT_QUESTIONS.length - 1) {
+      setCurrentQ(currentQ + 1);
+    } else {
+      setDone(true);
+    }
+  }
+
+  function retry() {
+    setCurrentQ(0);
+    setAnswers({});
+    setSelectedIdx(null);
+    setShowExplanation(false);
+    setDone(false);
+  }
+
+  const passed = correctCount >= PASS_THRESHOLD;
+
+  if (done) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-12 text-center">
+        <button onClick={onBack} className="mb-6 text-xs text-muted2 hover:text-text transition-colors self-start">
+          ← Back
+        </button>
+        <div className={`inline-flex h-16 w-16 items-center justify-center rounded-full text-2xl ${passed ? "bg-green-900/30" : "bg-red-900/30"}`}>
+          {passed ? "✓" : "✗"}
+        </div>
+        <h2 className="mt-4 font-display text-xl tracking-wide text-text">
+          {passed ? "You're ready" : "Not quite yet"}
+        </h2>
+        <p className="mt-2 text-sm text-muted2">
+          {passed
+            ? `${correctCount}/${ASSESSMENT_QUESTIONS.length} correct. You understand the fundamentals — let's build.`
+            : `${correctCount}/${ASSESSMENT_QUESTIONS.length} correct. You need ${PASS_THRESHOLD} to unlock the builder. Review the explanations and try again.`}
+        </p>
+        <div className="mt-6 flex flex-col gap-3">
+          {passed ? (
+            <Button size="lg" className="w-full" onClick={onPass}>
+              Open the builder →
+            </Button>
+          ) : (
+            <Button size="lg" className="w-full" onClick={retry}>
+              Try again
+            </Button>
+          )}
+          <button onClick={onBack} className="text-xs text-muted2 hover:text-text transition-colors">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-md px-4 py-8">
+      <button onClick={onBack} className="text-xs text-muted2 hover:text-text transition-colors">
+        ← Back
+      </button>
+      <h1 className="mt-3 font-display text-xl tracking-wide text-accent">Quick Check</h1>
+      <p className="mt-1 text-xs text-muted2">
+        Before you design your own week, let&apos;s make sure the fundamentals are solid.
+      </p>
+
+      {/* Progress */}
+      <div className="mt-4 flex gap-1.5">
+        {ASSESSMENT_QUESTIONS.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-all ${
+              i < currentQ ? "bg-accent" : i === currentQ ? "bg-accent/50" : "bg-border"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Question */}
+      <div className="mt-6 animate-fade-up">
+        <p className="text-[10px] tracking-wider text-muted uppercase mb-2">
+          Question {currentQ + 1} of {ASSESSMENT_QUESTIONS.length}
+        </p>
+        <h2 className="text-sm font-medium text-text leading-relaxed">{q.question}</h2>
+
+        <div className="mt-4 flex flex-col gap-2">
+          {q.options.map((opt, i) => {
+            let style = "border-border bg-surface text-muted2 hover:border-border-active";
+            if (showExplanation) {
+              if (opt.correct) {
+                style = "border-green-500/50 bg-green-900/20 text-green-300";
+              } else if (i === selectedIdx && !opt.correct) {
+                style = "border-red-500/50 bg-red-900/20 text-red-300";
+              } else {
+                style = "border-border/50 bg-surface/50 text-muted";
+              }
+            } else if (i === selectedIdx) {
+              style = "border-accent bg-accent-dim text-text";
+            }
+
+            return (
+              <button
+                key={i}
+                onClick={() => selectAnswer(i)}
+                disabled={showExplanation}
+                className={`rounded-[var(--radius-default)] border px-4 py-3 text-left text-xs transition-all ${style}`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {showExplanation && (
+          <div className="mt-3 rounded-lg bg-surface2/50 px-3 py-2.5 animate-fade-up">
+            <p className="text-xs text-muted2 leading-relaxed">{q.explanation}</p>
+            <Button className="mt-3 w-full" onClick={nextQuestion}>
+              {currentQ < ASSESSMENT_QUESTIONS.length - 1 ? "Next question" : "See results"}
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

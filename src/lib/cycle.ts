@@ -2,6 +2,7 @@
 // Calculates current menstrual cycle phase from period log
 
 import type { PeriodLog } from "@/store/useKineStore";
+import { appNow } from "./dev-time";
 
 export type CyclePhase = "menstrual" | "follicular" | "ovulatory" | "luteal";
 
@@ -56,7 +57,7 @@ export function getCurrentPhase(
 
   const lastStart = starts[0];
   const cycleLength = avgLength || 28;
-  const today = new Date();
+  const today = appNow();
   const daysSinceStart = Math.floor(
     (today.getTime() - lastStart.getTime()) / (1000 * 60 * 60 * 24)
   );

@@ -1,8 +1,9 @@
 import type { LiftEntry, WeekFeedback } from "@/store/useKineStore";
+import { appNow } from "./dev-time";
 
 /** Generate a date string N days ago */
 function daysAgo(n: number): string {
-  const d = new Date();
+  const d = appNow();
   d.setDate(d.getDate() - n);
   return d.toISOString().split("T")[0];
 }

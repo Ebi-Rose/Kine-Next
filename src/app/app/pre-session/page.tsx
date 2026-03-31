@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { appTimestamp } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
@@ -137,7 +138,7 @@ export default function PreSessionPage() {
     const sessions = progressDB.sessions as Array<{ date?: string }>;
     const last = sessions[sessions.length - 1];
     if (!last?.date) return null;
-    return Math.floor((Date.now() - new Date(last.date).getTime()) / 86400000);
+    return Math.floor((appTimestamp() - new Date(last.date).getTime()) / 86400000);
   }, [progressDB.sessions]);
 
   // Context description
