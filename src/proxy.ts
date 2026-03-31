@@ -34,8 +34,20 @@ function buildCsp(nonce: string): string {
 
 // ── Cookie signature verification (Web Crypto) ──
 
+function getSecret(): string {
+  const secret = process.env.COOKIE_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      // In production this should never happen — cookie-sign.ts throws too
+      return "";
+    }
+    return "dev-only-insecure-key";
+  }
+  return secret;
+}
+
 async function verifySignature(signed: string): Promise<boolean> {
-  const secret = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secret = getSecret();
   if (!secret) return false;
 
   const lastDot = signed.lastIndexOf(".");
