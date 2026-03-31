@@ -186,6 +186,7 @@ function WeekView({
   const { cycleType, cycle, setCycle, progressDB, weekHistory, exp } = useKineStore();
   const [showRearrange, setShowRearrange] = useState(false);
   const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
+  const [viewTab, setViewTab] = useState<"today" | "week">("today");
   const today = appNow().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
   const weekStart = getWeekDateRange();
@@ -270,227 +271,247 @@ function WeekView({
         </div>
       </div>
 
-      {/* Cycle phase arc + period quick-log */}
-      {phase && (
-        <div className="mb-4 rounded-[14px] border border-border bg-surface p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-[7px] h-[7px] rounded-full shrink-0" style={{ background: PHASE_COLORS[phase.phase] }} />
-              <span className="text-xs font-medium" style={{ color: PHASE_COLORS[phase.phase] }}>
-                Day {phase.day}
-              </span>
-              <span className="text-[10px] text-muted2">{phase.label} phase</span>
-            </div>
-            <button
-              onClick={() => {
-                const today = appTodayISO();
-                const lastLog = cycle.periodLog[cycle.periodLog.length - 1];
-                const type = lastLog?.type === "start" ? "end" : "start";
-                setCycle({
-                  ...cycle,
-                  periodLog: [...cycle.periodLog, { date: today, type }],
-                });
-                toast(`Period ${type} logged`, "success");
-              }}
-              className="text-[10px] text-accent hover:underline"
-            >
-              Log period {cycle.periodLog[cycle.periodLog.length - 1]?.type === "start" ? "end" : "start"}
-            </button>
-          </div>
-
-          {/* Cycle arc bar */}
-          <CycleArc cycleDay={phase.day} cycleLength={cycle.avgLength || 28} logCount={cycle.periodLog.filter(p => p.type === "start").length} />
-
-          <p className="mt-3 text-[10px] text-muted2 font-light leading-relaxed">{phase.trainingNote}</p>
-        </div>
-      )}
-      {/* Period quick-log when no cycle phase (cycle type is regular but no log yet) */}
-      {cycleType === "regular" && !phase && (
-        <div className="mb-4 rounded-[var(--radius-default)] border border-border/50 bg-surface/50 p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted2">No period logged yet</span>
-            <button
-              onClick={() => {
-                const today = appTodayISO();
-                setCycle({
-                  ...cycle,
-                  periodLog: [...cycle.periodLog, { date: today, type: "start" }],
-                });
-                toast("Period start logged", "success");
-              }}
-              className="text-[10px] text-accent hover:underline"
-            >
-              Log period start
-            </button>
-          </div>
+      {/* Tab toggle */}
+      {!isViewingPast && (
+        <div className="mb-5 flex rounded-full border border-border bg-surface p-0.5">
+          <button
+            onClick={() => setViewTab("today")}
+            className={`flex-1 rounded-full py-1.5 text-[11px] font-medium transition-all ${
+              viewTab === "today" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
+            }`}
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setViewTab("week")}
+            className={`flex-1 rounded-full py-1.5 text-[11px] font-medium transition-all ${
+              viewTab === "week" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
+            }`}
+          >
+            Week
+          </button>
         </div>
       )}
 
-      {/* Adaptation card — surfaces why this week looks the way it does (training days only) */}
-      {!isViewingPast && !displayWeek.days[todayIdx]?.isRest && <AdaptationCard />}
-
-      {/* Rest day home — shows cycle insight, tomorrow preview, form tip */}
-      {!isViewingPast && displayWeek.days[todayIdx]?.isRest && (
-        <RestDayHome week={displayWeek} todayIdx={todayIdx} />
-      )}
-
-      {/* Coach note — training days only (rest day has its own lighter content) */}
-      {!displayWeek.days[todayIdx]?.isRest && displayWeek.weekCoachNote && (
-        <div className="mb-6 rounded-[var(--radius-default)] border border-border bg-surface p-4">
-          <p className="text-xs leading-relaxed text-muted2">
-            {displayWeek.weekCoachNote}
-          </p>
-        </div>
-      )}
-
-      {/* Gap reentry */}
-      {(() => {
-        const lastSession = (progressDB.sessions as { date?: string }[]).slice(-1)[0];
-        if (lastSession?.date) {
-          const daysSince = Math.floor((appTimestamp() - new Date(lastSession.date).getTime()) / (1000 * 60 * 60 * 24));
-          if (daysSince >= 7) {
-            return (
-              <div className="mb-4 rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim p-4">
-                <p className="text-sm font-medium text-text">Welcome back</p>
-                <p className="text-xs text-muted2 mt-1">
-                  It&apos;s been {daysSince} days. {progressDB.sessions.length} session{progressDB.sessions.length > 1 ? "s" : ""} completed so far.
-                  No guilt — just pick up where you left off.
-                </p>
+      {/* ── TODAY TAB ── */}
+      {(viewTab === "today" && !isViewingPast) && (
+        <div>
+          {/* Cycle phase arc + period quick-log */}
+          {phase && (
+            <div className="mb-4 rounded-[14px] border border-border bg-surface p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block w-[7px] h-[7px] rounded-full shrink-0" style={{ background: PHASE_COLORS[phase.phase] }} />
+                  <span className="text-xs font-medium" style={{ color: PHASE_COLORS[phase.phase] }}>
+                    Day {phase.day}
+                  </span>
+                  <span className="text-[10px] text-muted2">{phase.label} phase</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const today = appTodayISO();
+                    const lastLog = cycle.periodLog[cycle.periodLog.length - 1];
+                    const type = lastLog?.type === "start" ? "end" : "start";
+                    setCycle({
+                      ...cycle,
+                      periodLog: [...cycle.periodLog, { date: today, type }],
+                    });
+                    toast(`Period ${type} logged`, "success");
+                  }}
+                  className="text-[10px] text-accent hover:underline"
+                >
+                  Log period {cycle.periodLog[cycle.periodLog.length - 1]?.type === "start" ? "end" : "start"}
+                </button>
               </div>
-            );
-          }
-          if (daysSince >= 4) {
-            return (
-              <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-3">
-                <p className="text-xs text-muted2">
-                  {daysSince} days since your last session. Ready when you are.
-                </p>
+              <CycleArc cycleDay={phase.day} cycleLength={cycle.avgLength || 28} logCount={cycle.periodLog.filter(p => p.type === "start").length} />
+              <p className="mt-3 text-[10px] text-muted2 font-light leading-relaxed">{phase.trainingNote}</p>
+            </div>
+          )}
+          {cycleType === "regular" && !phase && (
+            <div className="mb-4 rounded-[var(--radius-default)] border border-border/50 bg-surface/50 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted2">No period logged yet</span>
+                <button
+                  onClick={() => {
+                    const today = appTodayISO();
+                    setCycle({
+                      ...cycle,
+                      periodLog: [...cycle.periodLog, { date: today, type: "start" }],
+                    });
+                    toast("Period start logged", "success");
+                  }}
+                  className="text-[10px] text-accent hover:underline"
+                >
+                  Log period start
+                </button>
               </div>
-            );
-          }
-        }
-        return null;
-      })()}
+            </div>
+          )}
 
-      {/* Past week banner */}
-      {isViewingPast && (
-        <div className="mb-4 rounded-lg border border-muted/20 bg-surface/50 px-4 py-3 text-center">
-          <p className="text-[10px] text-muted2">Viewing Week {displayWeekNum} · read-only</p>
+          {/* Gap reentry */}
+          {(() => {
+            const lastSession = (progressDB.sessions as { date?: string }[]).slice(-1)[0];
+            if (lastSession?.date) {
+              const daysSince = Math.floor((appTimestamp() - new Date(lastSession.date).getTime()) / (1000 * 60 * 60 * 24));
+              if (daysSince >= 7) {
+                return (
+                  <div className="mb-4 rounded-[var(--radius-default)] border border-accent/30 bg-accent-dim p-4">
+                    <p className="text-sm font-medium text-text">Welcome back</p>
+                    <p className="text-xs text-muted2 mt-1">
+                      It&apos;s been {daysSince} days. {progressDB.sessions.length} session{progressDB.sessions.length > 1 ? "s" : ""} completed so far.
+                      No guilt — just pick up where you left off.
+                    </p>
+                  </div>
+                );
+              }
+            }
+            return null;
+          })()}
+
+          {/* Rest day OR today's session */}
+          {displayWeek.days[todayIdx]?.isRest ? (
+            <RestDayHome week={displayWeek} todayIdx={todayIdx} />
+          ) : (
+            <>
+              <AdaptationCard />
+              {displayWeek.weekCoachNote && (
+                <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-4">
+                  <p className="text-xs leading-relaxed text-muted2">
+                    {displayWeek.weekCoachNote}
+                  </p>
+                </div>
+              )}
+              {/* Today's session card — always expanded */}
+              {(() => {
+                const todayDay = displayWeek.days[todayIdx];
+                const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                  .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === todayIdx);
+                return (
+                  <DayCard
+                    day={todayDay} dayIdx={todayIdx}
+                    isToday={true}
+                    isCompleted={isCompleted}
+                    isPast={false}
+                    expanded={true}
+                    readOnly={false}
+                  />
+                );
+              })()}
+            </>
+          )}
         </div>
       )}
 
-      {/* Session completion summary — current week only */}
-      {!isViewingPast && (() => {
-        const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-          .filter((s) => s.weekNum === progressDB.currentWeek);
-        const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-        if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
-          return (
-            <p className="mb-3 text-xs text-muted2">
-              {weekSessions.length}/{trainingDayCount} sessions done this week
-            </p>
-          );
-        }
-        if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
-          const WEEK_COMPLETE_MESSAGES = [
-            "Consistency beats intensity. You showed up.",
-            "Another week in the book. That's how progress works.",
-            "You did the work. Let recovery do the rest.",
-            "Week done. Strength isn't built in a day — it's built in weeks like this.",
-          ];
-          const msg = WEEK_COMPLETE_MESSAGES[(progressDB.currentWeek - 1) % WEEK_COMPLETE_MESSAGES.length];
-          return (
-            <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
-              <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {progressDB.currentWeek} complete</p>
-              <p className="font-display text-xl tracking-wide text-text">
-                {weekSessions.length} sessions done
-              </p>
-              <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
-                {msg}
-              </p>
+      {/* ── WEEK TAB (or past week view) ── */}
+      {(viewTab === "week" || isViewingPast) && (
+        <div>
+          {/* Past week banner */}
+          {isViewingPast && (
+            <div className="mb-4 rounded-lg border border-muted/20 bg-surface/50 px-4 py-3 text-center">
+              <p className="text-[10px] text-muted2">Viewing Week {displayWeekNum} · read-only</p>
             </div>
-          );
-        }
-        return null;
-      })()}
+          )}
 
-      {/* Programme-week streak and journey milestones */}
-      {!isViewingPast && <StreakMilestone />}
-
-      {/* Days */}
-      {(() => {
-        const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
-
-        // Find next active session (current week only)
-        const nextActiveIdx = isViewingPast ? -1 : displayWeek.days.findIndex((d, i) => {
-          if (d.isRest) return false;
-          const completed = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-            .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === i);
-          return !completed && i >= todayIdx;
-        });
-
-        return (
-          <div className="flex flex-col gap-2">
-            {displayWeek.days.map((day, i) => {
-              const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
-
+          {/* Session completion summary — current week only */}
+          {!isViewingPast && (() => {
+            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+              .filter((s) => s.weekNum === progressDB.currentWeek);
+            const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
+            if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
               return (
-                <DayCard
-                  key={i} day={day} dayIdx={i}
-                  isToday={!isViewingPast && i === todayIdx}
-                  isCompleted={isCompleted}
-                  isPast={isViewingPast || i < todayIdx}
-                  expanded={!isViewingPast && (i === nextActiveIdx || i === todayIdx)}
-                  readOnly={isViewingPast}
-                />
+                <p className="mb-3 text-xs text-muted2">
+                  {weekSessions.length}/{trainingDayCount} sessions done this week
+                </p>
               );
-            })}
+            }
+            if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+              const WEEK_COMPLETE_MESSAGES = [
+                "Consistency beats intensity. You showed up.",
+                "Another week in the book. That's how progress works.",
+                "You did the work. Let recovery do the rest.",
+                "Week done. Strength isn't built in a day — it's built in weeks like this.",
+              ];
+              const msg = WEEK_COMPLETE_MESSAGES[(progressDB.currentWeek - 1) % WEEK_COMPLETE_MESSAGES.length];
+              return (
+                <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
+                  <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {progressDB.currentWeek} complete</p>
+                  <p className="font-display text-xl tracking-wide text-text">
+                    {weekSessions.length} sessions done
+                  </p>
+                  <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
+                    {msg}
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Programme-week streak and journey milestones */}
+          {!isViewingPast && <StreakMilestone />}
+
+          {/* All 7 day cards */}
+          {(() => {
+            const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
+            return (
+              <div className="flex flex-col gap-2">
+                {displayWeek.days.map((day, i) => {
+                  const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                    .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
+                  return (
+                    <DayCard
+                      key={i} day={day} dayIdx={i}
+                      isToday={!isViewingPast && i === todayIdx}
+                      isCompleted={isCompleted}
+                      isPast={isViewingPast || i < todayIdx}
+                      expanded={false}
+                      readOnly={isViewingPast}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Next week preview */}
+          {!isViewingPast && (() => {
+            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+              .filter((s) => s.weekNum === progressDB.currentWeek);
+            const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
+            if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+              const nextWeekNum = (progressDB.currentWeek || 1) + 1;
+              const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
+              return (
+                <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4 text-center">
+                  <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Up next</p>
+                  <p className="font-display text-lg tracking-wide text-text">Week {nextWeekNum}</p>
+                  <p className="mt-1 text-[10px] text-muted2">{nextPhase.label} · {nextPhase.description}</p>
+                  <Button variant="secondary" size="sm" className="mt-3" onClick={onRebuild} disabled={loading}>
+                    Build Week {nextWeekNum} →
+                  </Button>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Actions */}
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+              Check-in
+            </Link>
+            <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)}>
+              Rearrange
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading}>
+              {loading ? "Rebuilding…" : "Regenerate"}
+            </Button>
+            <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+              Design Week
+            </Link>
           </div>
-        );
-      })()}
-
-      {/* Next week preview — show when all sessions complete */}
-      {(() => {
-        const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-          .filter((s) => s.weekNum === progressDB.currentWeek);
-        const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-        if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
-          const nextWeekNum = (progressDB.currentWeek || 1) + 1;
-          const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
-          return (
-            <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4 text-center">
-              <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Up next</p>
-              <p className="font-display text-lg tracking-wide text-text">
-                Week {nextWeekNum}
-              </p>
-              <p className="mt-1 text-[10px] text-muted2">
-                {nextPhase.label} · {nextPhase.description}
-              </p>
-              <Button variant="secondary" size="sm" className="mt-3" onClick={onRebuild} disabled={loading}>
-                Build Week {nextWeekNum} →
-              </Button>
-            </div>
-          );
-        }
-        return null;
-      })()}
-
-      {/* Actions */}
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-          Check-in
-        </Link>
-        <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)}>
-          Rearrange
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading}>
-          {loading ? "Rebuilding…" : "Regenerate"}
-        </Button>
-        <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-          Design Week
-        </Link>
-      </div>
+        </div>
+      )}
 
       <SessionRearrange open={showRearrange} onClose={() => setShowRearrange(false)} />
 
