@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyValue } from "./api/_lib/cookie-sign";
+import { verifyValue } from "@/app/api/_lib/cookie-sign";
 
 const PUBLIC_ROUTES = ["/", "/access"];
 const GATED_ROUTES = ["/login", "/pricing", "/app"];
