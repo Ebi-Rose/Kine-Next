@@ -8,6 +8,24 @@ interface GuideSection {
 }
 
 const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: GuideSection[] }> = {
+  "/app/onboarding": {
+    label: "Setting up",
+    intro: "We're learning about you so your programme fits from day one. Nothing here is permanent — you can change everything later in your profile.",
+    sections: [
+      {
+        title: "Why these questions?",
+        body: "Each answer shapes your exercises, volume, and how the programme adapts over time. More context means better coaching.",
+      },
+      {
+        title: "Equipment",
+        body: "Pick what you actually have access to. Your sessions will only include exercises you can do.",
+      },
+      {
+        title: "Health & cycle",
+        body: "Optional, but helps. Conditions and cycle data let the programme adapt to your body — never to limit you.",
+      },
+    ],
+  },
   "/app": {
     label: "Your week",
     intro: "Your week at a glance. Each card is a session — tap to start when you're ready.",

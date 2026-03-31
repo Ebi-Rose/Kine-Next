@@ -1,36 +1,139 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyValue } from "@/app/api/_lib/cookie-sign";
 
-const PUBLIC_ROUTES = ["/", "/access"];
-const GATED_ROUTES = ["/login", "/pricing", "/app"];
+/**
+ * Proxy (Next.js 16 convention, replaces middleware.ts):
+ *
+ * 1. Generates a per-request nonce and sets a nonce-based CSP header
+ * 2. Sets security headers (clickjacking, MIME sniffing, HSTS, referrer)
+ * 3. For /app/* routes: verifies access cookie + subscription cookie
+ */
 
-export default async function proxy(req: NextRequest) {
-  const path = req.nextUrl.pathname;
+// ── CSP nonce generation ──────────────────────────────────────
 
-  // Always allow public routes and API/static
-  if (PUBLIC_ROUTES.includes(path)) {
-    return NextResponse.next();
-  }
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
 
-  // Check if this is a gated route
-  const isGated = GATED_ROUTES.some(
-    (route) => path === route || path.startsWith(route + "/")
+function buildCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV === "development";
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.sentry.io",
+    "frame-src https://js.stripe.com https://checkout.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+// ── Cookie signature verification (Web Crypto) ──
+
+async function verifySignature(signed: string): Promise<boolean> {
+  const secret = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) return false;
+
+  const lastDot = signed.lastIndexOf(".");
+  if (lastDot === -1) return false;
+
+  const value = signed.slice(0, lastDot);
+  const sig = signed.slice(lastDot + 1);
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
   );
+  const expected = await crypto.subtle.sign("HMAC", key, encoder.encode(value));
+  const expectedHex = Array.from(new Uint8Array(expected))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
-  if (!isGated) {
-    return NextResponse.next();
+  if (sig.length !== expectedHex.length) return false;
+
+  // Constant-time comparison
+  let mismatch = 0;
+  for (let i = 0; i < sig.length; i++) {
+    mismatch |= sig.charCodeAt(i) ^ expectedHex.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+function extractMode(signed: string): string | null {
+  const lastDot = signed.lastIndexOf(".");
+  if (lastDot === -1) return null;
+  const value = signed.slice(0, lastDot); // "granted:mode"
+  return value.split(":")[1] || null;
+}
+
+// ── Main proxy ───────────────────────────────────────────
+
+export default async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isAppRoute = pathname.startsWith("/app");
+
+  // ── Access + subscription checks for /app/* ──
+  if (isAppRoute) {
+    const accessCookie = request.cookies.get("kine_access")?.value;
+
+    if (!accessCookie || !(await verifySignature(accessCookie))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/access";
+      return NextResponse.redirect(url);
+    }
+
+    const mode = extractMode(accessCookie);
+
+    // "real" mode: require signed subscription cookie
+    // Allow onboarding through — AuthGuard handles subscription with retry
+    if (mode === "real" && pathname !== "/app/onboarding") {
+      const subCookie = request.cookies.get("kine_sub")?.value;
+      if (!subCookie || !(await verifySignature(subCookie))) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/pricing";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
-  // Verify signed access cookie
-  const raw = req.cookies.get("kine_access")?.value;
-  const value = raw ? verifyValue(raw) : null;
-  if (!value?.startsWith("granted")) {
-    return NextResponse.redirect(new URL("/access", req.nextUrl));
-  }
+  // ── CSP nonce header on all responses ──
+  const nonce = generateNonce();
+  const csp = buildCsp(nonce);
 
-  return NextResponse.next();
+  // Set CSP + nonce on request headers so Next.js can extract the nonce
+  // and apply it to framework inline scripts during rendering
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // ── Security headers ──
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("x-nonce", nonce);
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+
+  return response;
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest\\.json|icons/).*)"],
+  matcher: [
+    // Match all routes except static files and API routes
+    "/((?!_next/static|_next/image|favicon.ico|icon-|hero-bg|.*\\.svg$|.*\\.png$|.*\\.jpg$|api/).*)",
+  ],
 };

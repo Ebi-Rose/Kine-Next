@@ -5,10 +5,13 @@ import { createHmac, timingSafeEqual } from "crypto";
  * Format: "value.signature"
  */
 function getSecret(): string {
-  const secret = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secret = process.env.COOKIE_SECRET;
   if (!secret) {
-    console.warn("[security] COOKIE_SECRET not set — cookie signing is ineffective");
-    return "";
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("[security] COOKIE_SECRET must be set in production");
+    }
+    console.warn("[security] COOKIE_SECRET not set — using insecure dev key");
+    return "dev-only-insecure-key";
   }
   return secret;
 }

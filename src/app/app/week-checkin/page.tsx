@@ -2,13 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useKineStore } from "@/store/useKineStore";
+import { useKineStore, type SessionRecord } from "@/store/useKineStore";
 import { getPhase, getBlockWeek, getBlockNumber } from "@/lib/periodisation";
 import { DAY_LABELS } from "@/data/constants";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
-
-type SessionRecord = { weekNum?: number; effort?: number; soreness?: number; title?: string; dayIdx?: number; prs?: unknown[] };
 
 function getSessionInsight(sessions: SessionRecord[], scheduleFeeling: string | null): string {
   if (sessions.length === 0) {

@@ -25,14 +25,28 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+const MAX_PHOTOS = 100;
+
 export async function savePhoto(photo: ProgressPhoto): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).put(photo);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
+  const existing = await getAllPhotos();
+  if (existing.length >= MAX_PHOTOS) {
+    throw new Error(`Photo limit reached (${MAX_PHOTOS}). Delete older photos to make room.`);
+  }
+
+  try {
+    const db = await openDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).put(photo);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      throw new Error("Storage full. Delete older photos to make room.");
+    }
+    throw e;
+  }
 }
 
 export async function getAllPhotos(): Promise<ProgressPhoto[]> {

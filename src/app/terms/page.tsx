@@ -44,7 +44,8 @@ export default function TermsPage() {
         <section>
           <h2 className="text-base font-medium text-text mb-2">4. Subscriptions &amp; Billing</h2>
           <p>
-            Kinē offers monthly (£29.99/month) and yearly (£300/year) subscription plans.
+            Kinē offers monthly and yearly subscription plans. Current pricing is shown on the{" "}
+            <a href="/pricing" className="text-accent hover:underline">pricing page</a>.
             All subscriptions are billed in advance and renew automatically unless cancelled.
             You may cancel at any time from your profile — access continues until the end of
             your current billing period.

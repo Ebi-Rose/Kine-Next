@@ -10,6 +10,8 @@ export type Duration = "short" | "medium" | "long" | "extended" | null;
 export type EduMode = "full" | "feel" | "silent";
 export type SessionMode = "timed" | "stopwatch" | "off";
 export type Units = "kg" | "lbs";
+export type MeasurementSystem = "metric" | "imperial";
+export type SupportedCurrency = "GBP" | "USD";
 
 export interface RestConfig {
   compound: number;
@@ -53,14 +55,16 @@ export interface WeekFeedback {
 
 export interface PersonalProfile {
   name: string;
-  dob: string;
-  gender: string;
   height: string;
   weight: string;
-  location: string;
-  notes: string;
   trainingAge: string;
   currentLifts: Record<string, number>;
+}
+
+export interface ConsentRecord {
+  type: "health_data" | "terms" | "privacy";
+  granted: boolean;
+  timestamp: string; // ISO 8601
 }
 
 export interface FeedbackState {
@@ -96,6 +100,7 @@ interface KineState {
   comfortFlags: string[];  // derived: 'impactSensitive' | 'proneSensitive'
   cycleType: CycleType;
   cyclePhase: string | null;
+  cycleLocalOnly: boolean;
   dayDurations: Record<number, number>;
   cycle: { periodLog: PeriodLog[]; avgLength: number | null };
   eduMode: EduMode;
@@ -104,6 +109,8 @@ interface KineState {
   eduFlags: Record<string, boolean>;
   skillPreferences: Record<string, string>;
   units: Units;
+  measurementSystem: MeasurementSystem;
+  currency: SupportedCurrency;
 
   // AI week
   weekData: WeekData | null;
@@ -129,6 +136,9 @@ interface KineState {
   feedbackState: FeedbackState;
   sessionTimeBudgets: Record<number, number>;
 
+  // Consents
+  consents: ConsentRecord[];
+
   // Sync metadata
   _lastModifiedAt: string; // ISO timestamp of last local change
 
@@ -144,11 +154,14 @@ interface KineState {
   setConditions: (conditions: string[]) => void;
   setCycleType: (cycleType: CycleType) => void;
   setCyclePhase: (phase: string | null) => void;
+  setCycleLocalOnly: (val: boolean) => void;
   setCycle: (cycle: { periodLog: PeriodLog[]; avgLength: number | null }) => void;
   setDayDurations: (durations: Record<number, number>) => void;
   setProgressDB: (db: KineState["progressDB"]) => void;
   setEduMode: (mode: EduMode) => void;
   setUnits: (units: Units) => void;
+  setMeasurementSystem: (system: MeasurementSystem) => void;
+  setCurrency: (currency: SupportedCurrency) => void;
   setWeekData: (data: WeekData | null) => void;
   setWeekHistory: (history: WeekData[]) => void;
   setCurrentDayIdx: (idx: number | null) => void;
@@ -160,6 +173,8 @@ interface KineState {
   setRestConfig: (config: RestConfig) => void;
   setEduFlags: (flags: Record<string, boolean>) => void;
   setSkillPreferences: (prefs: Record<string, string>) => void;
+  setConsents: (consents: ConsentRecord[]) => void;
+  recordConsent: (type: ConsentRecord["type"], granted: boolean) => void;
   resetOnboarding: () => void;
 }
 
@@ -176,6 +191,7 @@ const initialOnboarding = {
   comfortFlags: [] as string[],
   cycleType: null as CycleType,
   cyclePhase: null as string | null,
+  cycleLocalOnly: false,
   dayDurations: {} as Record<number, number>,
   cycle: { periodLog: [] as PeriodLog[], avgLength: null as number | null },
   eduMode: "full" as EduMode,
@@ -184,6 +200,8 @@ const initialOnboarding = {
   eduFlags: {} as Record<string, boolean>,
   skillPreferences: {} as Record<string, string>,
   units: "kg" as Units,
+  measurementSystem: "metric" as MeasurementSystem,
+  currency: "GBP" as SupportedCurrency,
 };
 
 export const useKineStore = create<KineState>()(
@@ -210,15 +228,14 @@ export const useKineStore = create<KineState>()(
       // Profile
       personalProfile: {
         name: "",
-        dob: "",
-        gender: "female",
         height: "",
         weight: "",
-        location: "",
-        notes: "",
         trainingAge: "",
         currentLifts: {},
       },
+
+      // Consents
+      consents: [] as ConsentRecord[],
 
       // Sync metadata
       _lastModifiedAt: new Date().toISOString(),
@@ -255,11 +272,18 @@ export const useKineStore = create<KineState>()(
       },
       setCycleType: (cycleType) => set({ cycleType, _lastModifiedAt: new Date().toISOString() }),
       setCyclePhase: (phase) => set({ cyclePhase: phase, _lastModifiedAt: new Date().toISOString() }),
+      setCycleLocalOnly: (val) => set({ cycleLocalOnly: val, _lastModifiedAt: new Date().toISOString() }),
       setCycle: (cycle) => set({ cycle, _lastModifiedAt: new Date().toISOString() }),
       setDayDurations: (durations) => set({ dayDurations: durations, _lastModifiedAt: new Date().toISOString() }),
       setProgressDB: (db) => set({ progressDB: db, _lastModifiedAt: new Date().toISOString() }),
       setEduMode: (mode) => set({ eduMode: mode, _lastModifiedAt: new Date().toISOString() }),
       setUnits: (units) => set({ units, _lastModifiedAt: new Date().toISOString() }),
+      setMeasurementSystem: (system) => set({
+        measurementSystem: system,
+        units: system === "imperial" ? "lbs" : "kg",
+        _lastModifiedAt: new Date().toISOString(),
+      }),
+      setCurrency: (currency) => set({ currency, _lastModifiedAt: new Date().toISOString() }),
       setWeekData: (data) => set((state) => {
         // Archive current week before replacing (if it has data)
         const history = [...state.weekHistory];
@@ -285,11 +309,20 @@ export const useKineStore = create<KineState>()(
       setRestConfig: (config) => set({ restConfig: config, _lastModifiedAt: new Date().toISOString() }),
       setEduFlags: (flags) => set({ eduFlags: flags, _lastModifiedAt: new Date().toISOString() }),
       setSkillPreferences: (prefs) => set({ skillPreferences: prefs, _lastModifiedAt: new Date().toISOString() }),
+      setConsents: (consents) => set({ consents, _lastModifiedAt: new Date().toISOString() }),
+      recordConsent: (type, granted) => set((state) => {
+        const now = new Date().toISOString();
+        const filtered = state.consents.filter((c) => c.type !== type);
+        return {
+          consents: [...filtered, { type, granted, timestamp: now }],
+          _lastModifiedAt: now,
+        };
+      }),
       resetOnboarding: () => set(initialOnboarding),
     }),
     {
       name: "kine_v2",
-      version: 1,
+      version: 3,
       storage: {
         getItem: async (name: string) => {
           const raw = localStorage.getItem(name);
@@ -309,7 +342,7 @@ export const useKineStore = create<KineState>()(
       migrate: (persisted, version) => {
         const state = persisted as Record<string, unknown>;
         // v0 → v1: add fields introduced after initial release
-        if (version === 0) {
+        if (version === 0 || version === 1) {
           state.conditions ??= [];
           state.comfortFlags ??= [];
           state.skillPreferences ??= {};
@@ -319,6 +352,22 @@ export const useKineStore = create<KineState>()(
           state.restConfig ??= { compound: 150, isolation: 75 };
           state.eduFlags ??= {};
           state.units ??= "kg";
+        }
+        // v1 → v2: add measurementSystem and currency
+        if (version < 2) {
+          state.measurementSystem ??= (state.units === "lbs" ? "imperial" : "metric");
+          state.currency ??= "GBP";
+          state.consents ??= [];
+        }
+        // v2 → v3: data minimization + cycleLocalOnly
+        if (version < 3) {
+          state.cycleLocalOnly ??= false;
+          // Strip unused profile fields
+          const profile = state.personalProfile as Record<string, unknown> | undefined;
+          if (profile) {
+            const { name, height, weight, trainingAge, currentLifts } = profile as PersonalProfile & Record<string, unknown>;
+            state.personalProfile = { name: name ?? "", height: height ?? "", weight: weight ?? "", trainingAge: trainingAge ?? "", currentLifts: currentLifts ?? {} };
+          }
         }
         return state as unknown as KineState;
       },

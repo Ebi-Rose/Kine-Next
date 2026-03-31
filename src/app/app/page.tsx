@@ -13,7 +13,11 @@ import BottomSheet from "@/components/BottomSheet";
 import SessionRearrange from "@/components/SessionRearrange";
 import { toast } from "@/components/Toast";
 import { findExercise } from "@/data/exercise-library";
+import { weightUnit, formatDateShortLocale, detectLocale } from "@/lib/format";
 import type { MuscleGroup } from "@/data/exercise-library";
+import AdaptationCard from "@/components/AdaptationCard";
+import RestDayHome from "@/components/RestDayHome";
+import StreakMilestone from "@/components/StreakMilestone";
 import Link from "next/link";
 
 const CATEGORY_COLORS: Record<MuscleGroup, string> = {
@@ -251,7 +255,7 @@ function WeekView({
           </Link>
         </div>
         <h1 className="mt-1 font-display text-2xl tracking-wide text-text">
-          {displayWeek.programName}
+          Your Week
         </h1>
         {displayWeek._isFallback && (
           <p className="mt-1 text-[10px] text-muted uppercase tracking-wider">
@@ -260,7 +264,7 @@ function WeekView({
         )}
         <div className="mt-1 flex items-center gap-2">
           <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10px] text-muted2">
-            Block {trainingPhase.blockNum} · {trainingPhase.label} · Week {trainingPhase.blockWeek}/3
+            {trainingPhase.label} · Week {trainingPhase.blockWeek}/3
           </span>
         </div>
       </div>
@@ -319,6 +323,14 @@ function WeekView({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Adaptation card — surfaces why this week looks the way it does */}
+      {!isViewingPast && <AdaptationCard />}
+
+      {/* Rest day home — shows cycle insight, tomorrow preview, form tip */}
+      {!isViewingPast && displayWeek.days[todayIdx]?.isRest && (
+        <RestDayHome week={displayWeek} todayIdx={todayIdx} />
       )}
 
       {/* Coach note */}
@@ -401,6 +413,9 @@ function WeekView({
         return null;
       })()}
 
+      {/* Programme-week streak and journey milestones */}
+      {!isViewingPast && <StreakMilestone />}
+
       {/* Days */}
       {(() => {
         const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
@@ -471,14 +486,18 @@ function WeekView({
         <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading}>
           {loading ? "Rebuilding…" : "Regenerate"}
         </Button>
-        {exp === "intermediate" && (
-          <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-            Design Week
-          </Link>
-        )}
+        <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+          Design Week
+        </Link>
       </div>
 
       <SessionRearrange open={showRearrange} onClose={() => setShowRearrange(false)} />
+
+      {/* Health disclaimer */}
+      <p className="mt-6 text-center text-[10px] text-muted leading-relaxed">
+        Kinē provides fitness guidance, not medical advice.
+        Consult your doctor before starting any exercise programme.
+      </p>
 
       {/* Dev tools — inline, remove before production launch */}
       <DevTools onRebuild={onRebuild} loading={loading} />
@@ -753,7 +772,8 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
   session: { logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string; weekNum?: number; dayIdx?: number };
   dayIdx: number;
 }) {
-  const { progressDB, setProgressDB } = useKineStore();
+  const { progressDB, setProgressDB, measurementSystem } = useKineStore();
+  const unit = weightUnit(measurementSystem || "metric");
   const [editing, setEditing] = useState(false);
   const [editLogs, setEditLogs] = useState<Record<string, { reps: string; weight: string }[]>>({});
 
@@ -833,7 +853,7 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
                       />
                       <span className="text-muted">x</span>
                       <input
-                        type="number" inputMode="decimal" placeholder="kg"
+                        type="number" inputMode="decimal" placeholder={unit}
                         value={(editLogs[key]?.[i]?.weight) || ""}
                         onChange={(e) => {
                           const updated = { ...editLogs };
@@ -843,7 +863,7 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
                         }}
                         className="w-14 rounded border border-border bg-surface px-2 py-1 text-center text-xs text-text outline-none focus:border-accent"
                       />
-                      <span className="text-[10px] text-muted">kg</span>
+                      <span className="text-[10px] text-muted">{unit}</span>
                     </div>
                   ))}
                 </div>
@@ -851,7 +871,7 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
                 <div className="flex flex-col gap-0.5">
                   {ex.actual.filter((s) => s.reps || s.weight).map((set, i) => (
                     <span key={i} className="text-xs text-muted2">
-                      Set {i + 1}: {set.reps} reps x {set.weight || "BW"} kg
+                      Set {i + 1}: {set.reps} reps x {set.weight || "BW"} {unit}
                     </span>
                   ))}
                 </div>
@@ -888,8 +908,9 @@ function getWeekDateRange(): string {
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
+  const locale = detectLocale();
   const fmt = (d: Date) =>
-    d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    d.toLocaleDateString(locale, { day: "numeric", month: "short" });
 
   return `${fmt(monday)}–${fmt(sunday)}`;
 }

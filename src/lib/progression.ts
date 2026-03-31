@@ -1,69 +1,181 @@
-// ── Progressive Overload — Weight suggestion system ──
-
 import { useKineStore } from "@/store/useKineStore";
+import { findExercise } from "@/data/exercise-library";
+import { getPhase } from "./periodisation";
+import { kgToDisplay, formatWeight, weightUnit, getIncrementForEquip, calculatePlatesForSystem, type MeasurementSystem } from "./format";
+
+// ── Progression Suggestion System ──
+// Returns a structured suggestion the user can accept, adjust, or dismiss.
+// Uses total volume trending, phase-aware rep ranges, and equipment-specific
+// increments. The user always has the final say.
+
+export type ProgressionConfidence = "ready" | "hold" | "deload";
+
+export interface ProgressionSuggestion {
+  currentWeight: number;
+  suggestedWeight: number;
+  increment: number;
+  confidence: ProgressionConfidence;
+  reason: string;
+  lastSession: { weight: number; reps: number; date: string };
+  volume: { current: number; previous: number | null };
+  unit: string;
+}
 
 /**
- * Suggest next weight for an exercise based on history and goal.
+ * Get a structured progression suggestion for an exercise.
  *
- * Strength goal: load progression is primary — add weight when target reps are hit.
- * Muscle/body comp goal: volume progression is primary — hold weight longer,
- *   prioritise completing more sets/reps before increasing load.
- * General/habit goal: hold weight until movement is comfortable, then small increases.
+ * Logic:
+ * 1. Read the current phase's rep range to set the progression threshold
+ *    (top of prescribed range, not a hardcoded number)
+ * 2. Track total volume (sets × reps × weight) trending across sessions
+ * 3. Require the user to hit the top of their rep range in 2 consecutive
+ *    sessions at the same weight before suggesting an increase
+ * 4. Detect detraining (>14 day gap) and suggest a conservative restart
+ * 5. Look up equipment type from exercise library, not name guessing
  *
- * Returns a string like "40kg" or "BW" or null if no history.
+ * Returns null if there's no history to base a suggestion on.
  */
-export function suggestNextWeight(exerciseName: string): string | null {
+export function getProgressionSuggestion(exerciseName: string): ProgressionSuggestion | null {
   const store = useKineStore.getState();
   const history = store.progressDB.lifts[exerciseName];
-  const goal = store.goal || "general";
+  const system = store.measurementSystem || "metric";
+  const unit = weightUnit(system);
 
   if (!history || history.length === 0) return null;
 
   const latest = history[history.length - 1];
   if (!latest.weight) return null;
 
-  const targetReps = parseInt(String(latest.reps)) || 8;
-  const equipType = getEquipType(exerciseName, store.equip);
+  // Get display-unit increment for this equipment type
+  const equipType = getEquipTypeFromLibrary(exerciseName);
+  const increment = getIncrementForEquip(equipType, system);
+  const topOfRange = getTopOfRange(store.progressDB.currentWeek, store.progressDB.phaseOffset);
+  const latestReps = latest.reps || 0;
 
-  let increment = 2.5; // default barbell
-  if (equipType === "dumbbell") increment = 2;
-  else if (equipType === "kettlebell") increment = 4;
-  else if (equipType === "machine") increment = 2.5;
+  // Display weights (stored in kg, convert for display)
+  const displayWeight = kgToDisplay(latest.weight, system);
 
-  if (goal === "strength") {
-    // Strength: load progression is primary
-    // If they hit the top of their rep range, increase weight
-    if (targetReps >= 6) {
-      return `${latest.weight + increment}kg`;
+  // Volume tracking (use raw kg for consistency)
+  const currentVolume = latest.weight * latestReps;
+  const previousVolume = history.length >= 2
+    ? history[history.length - 2].weight * (history[history.length - 2].reps || 0)
+    : null;
+
+  const base = {
+    currentWeight: displayWeight,
+    increment,
+    lastSession: { weight: displayWeight, reps: latestReps, date: latest.date },
+    volume: { current: currentVolume, previous: previousVolume },
+    unit,
+  };
+
+  // Detraining check — suggest conservative restart
+  const daysSince = getDaysSinceLastSession(exerciseName);
+  if (daysSince !== null && daysSince > 14) {
+    const deloadWeight = roundToIncrement(displayWeight * 0.85, increment);
+    return {
+      ...base,
+      suggestedWeight: deloadWeight,
+      confidence: "deload",
+      reason: `${daysSince} days since last session — start lighter to rebuild`,
+    };
+  }
+
+  // Check if user hit top of rep range in last 2 sessions at the same weight
+  if (history.length >= 2) {
+    const prev = history[history.length - 2];
+    const prevReps = prev.reps || 0;
+    const sameWeight = latest.weight === prev.weight;
+
+    if (sameWeight && latestReps >= topOfRange && prevReps >= topOfRange) {
+      return {
+        ...base,
+        suggestedWeight: displayWeight + increment,
+        confidence: "ready",
+        reason: `Hit ${topOfRange}+ reps twice at ${displayWeight}${unit} — ready to move up`,
+      };
     }
-    return `${latest.weight}kg`;
   }
 
-  if (goal === "muscle") {
-    // Muscle/body comp: volume progression is primary
-    // Hold weight longer — only increase after consistently hitting top of range
-    // across multiple sessions (the AI handles set progression across the block)
-    if (targetReps >= 12 && history.length >= 2) {
-      const prev = history[history.length - 2];
-      const prevReps = parseInt(String(prev.reps)) || 0;
-      // Only increase if they hit top-of-range in BOTH recent sessions
-      if (prevReps >= 12) {
-        return `${latest.weight + increment}kg`;
-      }
-    }
-    return `${latest.weight}kg`;
+  // Single session at top of range — acknowledge but hold
+  if (latestReps >= topOfRange) {
+    return {
+      ...base,
+      suggestedWeight: displayWeight,
+      confidence: "hold",
+      reason: `Hit ${latestReps} reps at ${displayWeight}${unit} — one more session to confirm`,
+    };
   }
 
-  // General/habit: conservative progression — comfort first
-  if (targetReps >= 15 && history.length >= 2) {
-    return `${latest.weight + increment}kg`;
-  }
-  return `${latest.weight}kg`;
+  // Building — not at top of range yet
+  return {
+    ...base,
+    suggestedWeight: displayWeight,
+    confidence: "hold",
+    reason: `Building at ${displayWeight}${unit} — target ${topOfRange} reps before increasing`,
+  };
 }
 
 /**
- * Get the last session data for an exercise.
+ * Backwards-compatible wrapper — returns a simple string for contexts
+ * that don't need the full suggestion object.
+ * @deprecated Use getProgressionSuggestion() for new code.
  */
+export function suggestNextWeight(exerciseName: string): string | null {
+  const suggestion = getProgressionSuggestion(exerciseName);
+  if (!suggestion) return null;
+  return `${suggestion.suggestedWeight}${suggestion.unit}`;
+}
+
+/** Round a weight down to the nearest valid increment. */
+function roundToIncrement(weight: number, increment: number): number {
+  return Math.floor(weight / increment) * increment;
+}
+
+/**
+ * Get the top of the current phase's rep range.
+ * Falls back to 10 if phase data is unavailable.
+ */
+function getTopOfRange(currentWeek: number, phaseOffset: number): number {
+  try {
+    const phase = getPhase(currentWeek, phaseOffset);
+    // repRange is "10-12", "6-8", "4-6", etc.
+    const top = parseInt(phase.repRange.split("-")[1]) || 10;
+    return top;
+  } catch {
+    return 10;
+  }
+}
+
+/**
+ * Get the weight increment for an exercise based on its equipment.
+ * Uses the user's measurement system for correct increments.
+ */
+export function getIncrement(exerciseName: string): number {
+  const system = useKineStore.getState().measurementSystem || "metric";
+  const equipType = getEquipTypeFromLibrary(exerciseName);
+  return getIncrementForEquip(equipType, system);
+}
+
+/**
+ * Determine equipment type from exercise library, with name-based fallback.
+ */
+function getEquipTypeFromLibrary(exerciseName: string): string {
+  const lib = findExercise(exerciseName);
+  if (lib && lib.equip.length > 0) {
+    const equip = lib.equip[0];
+    if (equip === "dumbbells") return "dumbbell";
+    if (equip === "barbell") return "barbell";
+    if (equip === "machines") return "machine";
+    if (equip === "bodyweight" || equip === "bands") return "bodyweight";
+    // Check for kettlebell in tags or name
+    if (exerciseName.toLowerCase().includes("kettlebell")) return "kettlebell";
+    return equip;
+  }
+  // Fallback to name-based detection
+  return getEquipType(exerciseName, []);
+}
+
 export function getLastSessionData(
   exerciseName: string
 ): { weight: number; reps: number; date: string } | null {
@@ -74,45 +186,22 @@ export function getLastSessionData(
   return history[history.length - 1];
 }
 
-/**
- * Calculate estimated 1RM using Brzycki formula.
- */
+/** Estimated 1RM via Brzycki formula. */
 export function calculateORM(weight: number, reps: number): number {
   if (reps <= 0 || weight <= 0) return 0;
   if (reps === 1) return weight;
   return Math.round(weight * (36 / (37 - reps)));
 }
 
-/**
- * Calculate plates needed for a barbell weight.
- * Assumes 20kg barbell.
- */
+/** Plates per side for a target weight. Uses the user's measurement system. */
 export function calculatePlates(
   targetWeight: number,
-  barWeight: number = 20
+  barWeight?: number,
 ): { plate: number; count: number }[] {
-  const available = [20, 15, 10, 5, 2.5, 1.25];
-  let remaining = (targetWeight - barWeight) / 2; // per side
-
-  if (remaining <= 0) return [];
-
-  const plates: { plate: number; count: number }[] = [];
-
-  for (const plate of available) {
-    if (remaining >= plate) {
-      const count = Math.floor(remaining / plate);
-      plates.push({ plate, count });
-      remaining -= plate * count;
-    }
-  }
-
-  return plates;
+  const system = useKineStore.getState().measurementSystem || "metric";
+  return calculatePlatesForSystem(targetWeight, system);
 }
 
-/**
- * Get days since last session for an exercise.
- * Returns null if never done.
- */
 export function getDaysSinceLastSession(exerciseName: string): number | null {
   const last = getLastSessionData(exerciseName);
   if (!last) return null;
@@ -122,9 +211,6 @@ export function getDaysSinceLastSession(exerciseName: string): number | null {
   return Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-/**
- * Check if an exercise is potentially detrained (>14 days gap).
- */
 export function isDetrained(exerciseName: string): boolean {
   const days = getDaysSinceLastSession(exerciseName);
   return days !== null && days > 14;
@@ -132,13 +218,11 @@ export function isDetrained(exerciseName: string): boolean {
 
 function getEquipType(exerciseName: string, userEquip: string[]): string {
   const name = exerciseName.toLowerCase();
-  if (name.includes("barbell") || name.includes("deadlift") || name.includes("squat") && userEquip.includes("barbell"))
-    return "barbell";
-  if (name.includes("dumbbell") || name.includes("goblet"))
-    return "dumbbell";
-  if (name.includes("kettlebell"))
-    return "kettlebell";
-  if (name.includes("machine") || name.includes("cable") || name.includes("lat pulldown"))
-    return "machine";
+  // Order matters: check specific equipment words before generic ones
+  if (name.includes("kettlebell") || name.includes("kb ")) return "kettlebell";
+  if (name.includes("dumbbell") || name.includes("goblet") || name.includes("db ")) return "dumbbell";
+  if (name.includes("machine") || name.includes("cable") || name.includes("lat pulldown") || name.includes("leg press") || name.includes("leg curl") || name.includes("leg extension")) return "machine";
+  if (name.includes("barbell") || (name.includes("deadlift") && !name.includes("single"))) return "barbell";
+  if (name.includes("squat") && userEquip.includes("barbell")) return "barbell";
   return "barbell";
 }

@@ -1,8 +1,8 @@
 import { supabase } from "./supabase";
 
-/** True only in local development (never in production builds) */
+/** True only when explicitly opted in during local development */
 export function isDevBypass(): boolean {
-  return process.env.NODE_ENV === "development";
+  return process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
 }
 
 export async function getSession() {
@@ -49,12 +49,18 @@ export async function signInWithOAuth(provider: "google" | "apple") {
 
 export async function signOut() {
   await supabase.auth.signOut();
+  // Clear server-side httpOnly cookies
+  try { await fetch("/api/logout", { method: "POST" }); } catch {}
   localStorage.removeItem("kine_v2");
+  if ("caches" in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+  }
   window.location.href = "/";
 }
 
 export async function resetPassword(email: string) {
-  const redirectTo = window.location.origin + "/login";
+  const redirectTo = window.location.origin + "/update-password";
   return supabase.auth.resetPasswordForEmail(email, { redirectTo });
 }
 

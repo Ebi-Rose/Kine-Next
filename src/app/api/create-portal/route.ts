@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getAuthenticatedUser } from "../_lib/auth";
+import { createRatelimit } from "../_lib/rate-limit";
+import { verifyCsrf } from "../_lib/csrf";
+
+const ratelimit = createRatelimit("portal", 5, "60 s");
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -9,9 +13,20 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Stripe not configured" }, { status: 500 });
   }
 
+  if (!verifyCsrf(request)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const user = await getAuthenticatedUser(request);
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (ratelimit) {
+    const { success } = await ratelimit.limit(user.id);
+    if (!success) {
+      return Response.json({ error: "Too many requests" }, { status: 429 });
+    }
   }
 
   const supabase = createClient(

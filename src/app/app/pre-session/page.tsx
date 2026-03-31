@@ -638,6 +638,13 @@ export default function PreSessionPage() {
             {skipped.size} SKIPPED · {exercises.length - skipped.size} REMAINING
           </div>
         )}
+
+        {/* Add exercise */}
+        <AddExerciseRow
+          sessionMuscles={analysis.muscleGroups}
+          existingNames={exercises.map(e => e.name)}
+          onAdd={addExercise}
+        />
       </CollapsibleSection>
 
       {/* ── Section 3: Settings ── */}
@@ -907,6 +914,96 @@ export default function PreSessionPage() {
           onSwap={handleSwap}
         />
       )}
+    </div>
+  );
+}
+
+// ── Add Exercise Row ──
+
+function AddExerciseRow({
+  sessionMuscles,
+  existingNames,
+  onAdd,
+}: {
+  sessionMuscles: string[];
+  existingNames: string[];
+  onAdd: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const equip = useKineStore((s) => s.equip);
+  const lifts = useKineStore((s) => s.progressDB.lifts);
+  const existing = new Set(existingNames.map((n) => n.toLowerCase()));
+
+  const suggestions = useMemo(() => {
+    return (EXERCISE_LIBRARY || [])
+      .filter((ex) => {
+        if (existing.has(ex.name.toLowerCase())) return false;
+        if (!ex.equip.some((e) => equip.includes(e))) return false;
+        if (!sessionMuscles.includes(ex.muscle)) return false;
+        return true;
+      })
+      .slice(0, 6);
+  }, [equip, sessionMuscles, existing]);
+
+  // Check if exercise fits session (same muscle group = good fit)
+  function getFitLabel(ex: typeof EXERCISE_LIBRARY[number]): string | null {
+    if (sessionMuscles.includes(ex.muscle)) return null; // good fit, no warning
+    return `Different focus (${ex.muscle})`;
+  }
+
+  // Get last performed info
+  function getLastPerformed(name: string): string | null {
+    const history = (lifts as Record<string, { date: string; weight: number; reps: number }[]>)[name];
+    if (!history || history.length === 0) return null;
+    const last = history[history.length - 1];
+    return `Last: ${last.weight}×${last.reps}`;
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-3 w-full text-[11px] text-accent border border-accent/20 rounded-lg py-2 hover:bg-accent/5 transition-all"
+      >
+        + Add exercise
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] text-muted2 font-medium">Add to session</span>
+        <button onClick={() => setOpen(false)} className="text-[10px] text-muted hover:text-text">
+          close
+        </button>
+      </div>
+      <p className="text-[10px] text-muted font-light mb-2">
+        Showing exercises that match this session&apos;s focus and your equipment.
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {suggestions.map((s) => {
+          const fitWarning = getFitLabel(s);
+          const lastInfo = getLastPerformed(s.name);
+          return (
+            <button
+              key={s.name}
+              onClick={() => { onAdd(s.name); setOpen(false); }}
+              className="flex items-center justify-between text-left text-[11px] text-accent bg-accent/10 border border-accent/30 rounded-lg px-3 py-2 hover:bg-accent/20 active:scale-[0.97] transition-all"
+            >
+              <div>
+                <span>+ {s.name}</span>
+                <span className="text-accent/50 font-light ml-1">({s.muscle} · {s.tags.includes("Compound") ? "compound" : "isolation"})</span>
+                {lastInfo && <span className="block text-[9px] text-muted2 mt-0.5">{lastInfo}</span>}
+              </div>
+              {fitWarning && <span className="text-[9px] text-muted shrink-0 ml-2">{fitWarning}</span>}
+            </button>
+          );
+        })}
+        {suggestions.length === 0 && (
+          <p className="text-[10px] text-muted2">No matching exercises available</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,8 @@
 import { apiFetchStreaming, apiErrorMessage } from "./api";
 import { useKineStore } from "@/store/useKineStore";
 import { DURATION_OPTIONS } from "@/data/constants";
+import { weightUnit } from "./format";
+import { sanitizeInput } from "./sanitize";
 
 export interface ExerciseFeedback {
   name: string;
@@ -22,6 +24,8 @@ export interface AnalysisResult {
 }
 
 const ANALYSIS_SYSTEM = `You are Kinē — a strength coach reviewing a completed session. Be direct, warm, specific. No jargon. No motivational poster language.
+
+You are a coach, not a doctor. Never diagnose, prescribe, or claim exercises will treat or cure any condition. If something sounds like it needs medical attention, say "consider checking with your physio/doctor" — never give the medical opinion yourself.
 
 For each exercise, give a verdict:
 - "strong": exceeded expectations, impressive work
@@ -114,7 +118,7 @@ export async function analyseSession(
       };
       const sets = e.actual
         .filter((s) => s.reps || s.weight)
-        .map((s) => `${s.reps} reps × ${s.weight || "BW"} kg`)
+        .map((s) => `${s.reps} reps × ${s.weight || "BW"} ${weightUnit(store.measurementSystem || "metric")}`)
         .join(", ");
       return `${e.name}: planned ${e.planned.sets}×${e.planned.reps}, actual [${sets}]${e.note ? ` — note: ${e.note}` : ""}`;
     })
@@ -158,7 +162,27 @@ Return JSON analysis with overallAssessment, exerciseFeedback (per exercise), ch
     if (j < 0 || k < 0) return null;
 
     const raw = JSON.parse(clean.slice(j, k + 1));
-    return validateAnalysisResult(raw);
+    const validated = validateAnalysisResult(raw);
+
+    // Sanitize AI free-text fields to prevent injection
+    validated.overallAssessment = sanitizeInput(validated.overallAssessment, 2000);
+    validated.exerciseFeedback = validated.exerciseFeedback.map((ef) => ({
+      ...ef,
+      name: sanitizeInput(ef.name, 200),
+      note: sanitizeInput(ef.note, 1000),
+    }));
+    validated.changes = validated.changes.map((c) => ({
+      ...c,
+      icon: sanitizeInput(c.icon, 10),
+      title: sanitizeInput(c.title, 200),
+      detail: sanitizeInput(c.detail, 1000),
+    }));
+    if (validated.nextSession) {
+      validated.nextSession.title = sanitizeInput(validated.nextSession.title, 200);
+      validated.nextSession.coachNote = sanitizeInput(validated.nextSession.coachNote, 1000);
+    }
+
+    return validated;
   } catch (err) {
     console.error("Session analysis failed:", apiErrorMessage(err));
     return null;

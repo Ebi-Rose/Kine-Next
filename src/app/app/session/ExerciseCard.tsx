@@ -5,12 +5,14 @@ import { findExercise } from "@/data/exercise-library";
 import { getBreathingCue, getMuscleTags, getConditionCue, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
 import { getSkillPath, hasSkillPath } from "@/data/skill-paths";
 import { getVideoThumb, hasVideo, getVideoUrl } from "@/data/exercise-videos";
-import { suggestNextWeight } from "@/lib/progression";
+import { getProgressionSuggestion, getIncrement } from "@/lib/progression";
 import { getExerciseStallWeeks } from "@/lib/programme-age";
+import { useKineStore } from "@/store/useKineStore";
+import { weightUnit, weightUnitPerSide } from "@/lib/format";
 import Button from "@/components/Button";
 
 export default function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, eduMode = "full", conditions = [],
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [],
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string };
@@ -28,9 +30,14 @@ export default function ExerciseCard({
   onVideoSheet?: (name: string) => void;
   onSkillPath?: (name: string) => void;
   onEduSheet?: (exIdx: number) => void;
+  onClearPrefill?: (exIdx: number) => void;
   eduMode?: string;
   conditions?: string[];
 }) {
+  const system = useKineStore((s) => s.measurementSystem) || "metric";
+  const unit = weightUnit(system);
+  const unitPerSide = weightUnitPerSide(system);
+
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
   const exInfo = findExercise(exercise.name);
@@ -141,7 +148,7 @@ export default function ExerciseCard({
         const logType = exInfo?.logType || "weighted";
         const breathCue = getBreathingCue(exercise.name, conditions);
         const condCue = getConditionCue(exercise.name, conditions);
-        const weightSuggestion = suggestNextWeight(exercise.name);
+        const progression = getProgressionSuggestion(exercise.name);
         const skillPath = hasSkillPath(exercise.name) ? getSkillPath(exercise.name, []) : null;
 
         return (
@@ -153,9 +160,91 @@ export default function ExerciseCard({
               <p className="mb-3 text-[10px] text-accent italic">{breathCue}</p>
             )}
 
-            {/* Weight suggestion */}
-            {weightSuggestion && logType.startsWith("weighted") && (
-              <p className="mb-2 text-[10px] text-muted2">Last time: {weightSuggestion}</p>
+            {/* Progression suggestion — user always has final say */}
+            {progression && logType.startsWith("weighted") && (
+              <div className={`mb-3 rounded-lg border px-3 py-2 ${
+                progression.confidence === "ready" ? "border-accent/30 bg-accent-dim/20"
+                : progression.confidence === "deload" ? "border-amber-500/30 bg-amber-500/5"
+                : "border-border/50 bg-surface2/30"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-muted2">
+                    Last: {progression.lastSession.weight}{progression.unit} × {progression.lastSession.reps} reps
+                  </p>
+                  {progression.volume.previous !== null && (
+                    <p className="text-[9px] text-muted">
+                      Vol: {progression.volume.current}
+                      {progression.volume.current > progression.volume.previous ? " ↑" : progression.volume.current < progression.volume.previous ? " ↓" : ""}
+                    </p>
+                  )}
+                </div>
+                <p className="text-[10px] text-text mt-1">{progression.reason}</p>
+                {progression.confidence === "ready" && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      onClick={() => {
+                        log.actual.forEach((_, setIdx) => {
+                          onUpdateSet(index, setIdx, "weight", String(progression.suggestedWeight));
+                        });
+                      }}
+                      className="rounded bg-accent/15 px-2 py-0.5 text-[10px] text-accent hover:bg-accent/25 transition-colors"
+                    >
+                      Use {progression.suggestedWeight}{progression.unit}
+                    </button>
+                    <button
+                      onClick={() => {
+                        log.actual.forEach((_, setIdx) => {
+                          onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
+                        });
+                      }}
+                      className="text-[10px] text-muted hover:text-text transition-colors"
+                    >
+                      Stay at {progression.currentWeight}{progression.unit}
+                    </button>
+                  </div>
+                )}
+                {progression.confidence === "deload" && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      onClick={() => {
+                        log.actual.forEach((_, setIdx) => {
+                          onUpdateSet(index, setIdx, "weight", String(progression.suggestedWeight));
+                        });
+                      }}
+                      className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-400 hover:bg-amber-500/25 transition-colors"
+                    >
+                      Start at {progression.suggestedWeight}{progression.unit}
+                    </button>
+                    <button
+                      onClick={() => {
+                        log.actual.forEach((_, setIdx) => {
+                          onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
+                        });
+                      }}
+                      className="text-[10px] text-muted hover:text-text transition-colors"
+                    >
+                      Resume at {progression.currentWeight}{progression.unit}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pre-fill indicator — body trust: explain, don't dictate */}
+            {log.prefilled && (
+              <div className="mb-3 rounded-lg border border-accent/20 bg-accent-dim/15 px-3 py-2 flex items-center justify-between" role="status" aria-live="polite">
+                <p className="text-[10px] text-muted2 font-light">
+                  Pre-filled from your last session
+                </p>
+                {onClearPrefill && (
+                  <button
+                    onClick={() => onClearPrefill(index)}
+                    className="text-[10px] text-accent hover:text-text transition-colors ml-2 shrink-0"
+                  >
+                    Start fresh
+                  </button>
+                )}
+              </div>
             )}
 
             <p className="mb-3 text-[10px] tracking-wider text-muted uppercase">Log your sets</p>
@@ -165,35 +254,39 @@ export default function ExerciseCard({
                   <span className="w-12 text-xs text-muted">Set {setIdx + 1}</span>
 
                   {/* Weighted: reps × weight */}
-                  {(logType === "weighted" || logType === "weighted_unilateral") && (
+                  {(logType === "weighted" || logType === "weighted_unilateral") && (() => {
+                    const inc = getIncrement(exercise.name);
+                    return (
                     <>
                       <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
+                        aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
                         onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
                         className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
                       <span className="text-muted">×</span>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => {
+                        <button aria-label={`Decrease weight for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseFloat(set.weight) || 0;
-                          const inc = logType.includes("unilateral") ? 2 : 2.5;
                           if (cur >= inc) onUpdateSet(index, setIdx, "weight", String(cur - inc));
                         }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
-                        <input type="number" inputMode="decimal" placeholder="kg" value={set.weight}
+                        <input type="number" inputMode="decimal" placeholder={unit} value={set.weight}
+                          aria-label={`Set ${setIdx + 1} weight for ${exercise.name}`}
                           onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
                           className="w-14 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
-                        <button onClick={() => {
+                        <button aria-label={`Increase weight for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseFloat(set.weight) || 0;
-                          const inc = logType.includes("unilateral") ? 2 : 2.5;
                           onUpdateSet(index, setIdx, "weight", String(cur + inc));
                         }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
                       </div>
-                      <span className="text-[10px] text-muted">{logType === "weighted_unilateral" ? "kg/side" : "kg"}</span>
+                      <span className="text-[10px] text-muted">{logType === "weighted_unilateral" ? unitPerSide : unit}</span>
                     </>
-                  )}
+                    );
+                  })()}
 
                   {/* Bodyweight: reps only */}
                   {(logType === "bodyweight" || logType === "bodyweight_unilateral") && (
                     <>
                       <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
+                        aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
                         onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
                         className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
                       <span className="text-xs text-muted">{logType === "bodyweight_unilateral" ? "reps/side" : "reps"}</span>
@@ -204,6 +297,7 @@ export default function ExerciseCard({
                   {logType === "timed" && (
                     <>
                       <input type="number" inputMode="numeric" placeholder="sec" value={set.reps}
+                        aria-label={`Set ${setIdx + 1} seconds for ${exercise.name}`}
                         onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
                         className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
                       <span className="text-xs text-muted">sec</span>
@@ -214,10 +308,12 @@ export default function ExerciseCard({
                   {logType === "cardio" && setIdx === 0 && (
                     <>
                       <input type="number" inputMode="numeric" placeholder="min" value={set.reps}
+                        aria-label={`Minutes for ${exercise.name}`}
                         onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
                         className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
                       <span className="text-xs text-muted">min</span>
                       <input type="number" inputMode="numeric" placeholder="m" value={set.weight}
+                        aria-label={`Distance in metres for ${exercise.name}`}
                         onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
                         className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
                       <span className="text-xs text-muted">m</span>
@@ -326,7 +422,7 @@ export default function ExerciseCard({
         <div className="border-t border-border px-4 pb-4 pt-3">
           <div className="flex flex-col gap-1 text-xs text-muted2">
             {log.actual.filter((s) => s.reps || s.weight).map((s, i) => (
-              <span key={i}>Set {i + 1}: {s.reps} reps × {s.weight || "BW"} kg</span>
+              <span key={i}>Set {i + 1}: {s.reps} reps × {s.weight || "BW"} {unit}</span>
             ))}
           </div>
           {log.note && <p className="mt-2 text-xs text-muted italic">{log.note}</p>}

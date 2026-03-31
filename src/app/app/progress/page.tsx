@@ -1,25 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useKineStore } from "@/store/useKineStore";
+import { useKineStore, type SessionRecord } from "@/store/useKineStore";
 import { calculateORM } from "@/lib/progression";
 import { formatRelativeDate } from "@/lib/date-utils";
+import { kgToDisplay, weightUnit } from "@/lib/format";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import Link from "next/link";
-
-interface SessionRecord {
-  title?: string;
-  date?: string;
-  weekNum?: number;
-  effort?: number;
-  soreness?: number;
-  prs?: { name: string; weight: number; reps: number }[];
-  logs?: Record<string, unknown>;
-}
+import StrengthTrend from "@/components/StrengthTrend";
 
 export default function ProgressPage() {
-  const { progressDB } = useKineStore();
+  const { progressDB, measurementSystem } = useKineStore();
+  const system = measurementSystem || "metric";
+  const unit = weightUnit(system);
   const { sessions, currentWeek, lifts, programStartDate } = progressDB;
   const [selectedLift, setSelectedLift] = useState<string | null>(null);
   const [showORM, setShowORM] = useState(false);
@@ -68,6 +62,9 @@ export default function ProgressPage() {
           </p>
         </div>
       )}
+
+      {/* Strength trend — capability tracking with phase overlay */}
+      <StrengthTrend />
 
       {/* Tools */}
       <div className="mt-6 grid grid-cols-3 gap-2">
@@ -135,9 +132,9 @@ export default function ProgressPage() {
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-text">{name}</span>
                       <div className="flex gap-3 mt-0.5">
-                        <span className="text-[10px] text-muted2">{latest.weight}kg × {latest.reps}</span>
+                        <span className="text-[10px] text-muted2">{kgToDisplay(latest.weight, system)}{unit} × {latest.reps}</span>
                         {best.weight > latest.weight && (
-                          <span className="text-[10px] text-muted">Best: {best.weight}kg</span>
+                          <span className="text-[10px] text-muted">Best: {kgToDisplay(best.weight, system)}{unit}</span>
                         )}
                       </div>
                     </div>
@@ -162,8 +159,8 @@ export default function ProgressPage() {
                   {selectedLift === name && (
                     <div className="mt-3 border-t border-border pt-3">
                       <div className="flex gap-4 text-xs text-muted2 mb-3">
-                        <span>Best: {best.weight}kg × {best.reps}</span>
-                        <span>Est 1RM: {orm}kg</span>
+                        <span>Best: {kgToDisplay(best.weight, system)}{unit} × {best.reps}</span>
+                        <span>Est 1RM: {kgToDisplay(orm, system)}{unit}</span>
                         <span>{entries.length} entries</span>
                       </div>
 
@@ -188,7 +185,7 @@ export default function ProgressPage() {
                         {entries.slice(-8).reverse().map((entry, i) => (
                           <div key={i} className="flex items-center justify-between text-xs">
                             <span className="text-muted">{entry.date}</span>
-                            <span className="text-text">{entry.weight}kg × {entry.reps}</span>
+                            <span className="text-text">{kgToDisplay(entry.weight, system)}{unit} × {entry.reps}</span>
                           </div>
                         ))}
                       </div>
@@ -240,7 +237,7 @@ export default function ProgressPage() {
       <BottomSheet open={showORM} onClose={() => setShowORM(false)} title="1RM Calculator">
         <p className="text-xs text-muted2 mb-4">Enter a weight and reps to estimate your one-rep max (Brzycki formula).</p>
         <div className="flex gap-3 mb-4">
-          <input type="number" placeholder="Weight (kg)" aria-label="Weight in kg" value={ormWeight} onChange={(e) => setOrmWeight(e.target.value)}
+          <input type="number" placeholder={`Weight (${unit})`} aria-label={`Weight in ${unit}`} value={ormWeight} onChange={(e) => setOrmWeight(e.target.value)}
             className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
           <input type="number" placeholder="Reps" aria-label="Number of reps" value={ormReps} onChange={(e) => setOrmReps(e.target.value)}
             className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
@@ -249,7 +246,7 @@ export default function ProgressPage() {
           <div className="rounded-lg border border-accent bg-accent-dim p-4 text-center">
             <p className="text-xs text-muted2">Estimated 1RM</p>
             <p className="font-display text-3xl text-accent">
-              {calculateORM(parseFloat(ormWeight), parseInt(ormReps))}kg
+              {calculateORM(parseFloat(ormWeight), parseInt(ormReps))}{unit}
             </p>
           </div>
         )}
@@ -269,7 +266,7 @@ export default function ProgressPage() {
                 <div key={i} className="mb-3 rounded-lg border border-border bg-bg p-3">
                   <p className="text-sm font-medium text-text">{e.name}</p>
                   {e.actual?.filter(s => s.reps || s.weight).map((s, j) => (
-                    <p key={j} className="text-xs text-muted2">Set {j + 1}: {s.reps} × {s.weight || "BW"}kg</p>
+                    <p key={j} className="text-xs text-muted2">Set {j + 1}: {s.reps} × {s.weight || "BW"}{unit}</p>
                   ))}
                   {e.note && <p className="mt-1 text-xs text-muted italic">{e.note}</p>}
                 </div>

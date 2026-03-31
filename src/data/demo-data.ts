@@ -50,12 +50,8 @@ export const demoState = {
 // ── Personal Profile ──
 export const demoProfile = {
   name: 'Demo User',
-  dob: '1994-06-15',
-  gender: 'female',
   height: '168',
   weight: '65',
-  location: '',
-  notes: '',
   trainingAge: '1 year',
   currentLifts: {
     'Barbell Back Squat': 70,

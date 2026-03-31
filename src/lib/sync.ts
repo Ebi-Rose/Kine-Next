@@ -1,31 +1,72 @@
 import { supabase } from "./supabase";
 import { getUser, isDevBypass } from "./auth";
 import { useKineStore } from "@/store/useKineStore";
+import type { WeekData } from "@/lib/week-builder";
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let syncPending = false;
+let syncQueuedWhileOffline = false;
 const SYNC_DEBOUNCE_MS = 2000;
 
 function shouldSkipSync(): boolean {
   return isDevBypass();
 }
 
+function isOffline(): boolean {
+  return typeof navigator !== "undefined" && !navigator.onLine;
+}
+
+// Listen for connectivity changes and flush queued syncs
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    if (syncQueuedWhileOffline) {
+      syncQueuedWhileOffline = false;
+      syncToSupabase();
+    }
+  });
+}
+
 /**
  * Debounced sync of Zustand state to Supabase training_data table.
+ * If offline, queues the sync for when connectivity returns.
  */
 export function syncToSupabase() {
   if (shouldSkipSync()) return;
+
+  if (isOffline()) {
+    syncQueuedWhileOffline = true;
+    return;
+  }
+
+  syncPending = true;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(doSync, SYNC_DEBOUNCE_MS);
 }
 
-async function doSync() {
+/**
+ * Flush any pending sync immediately (used on page unload).
+ */
+export function flushSync() {
+  if (syncPending && syncTimer) {
+    clearTimeout(syncTimer);
+    doSync();
+  }
+}
+
+async function doSync(retryCount = 0) {
   syncTimer = null;
+  syncPending = false;
   const user = await getUser();
   if (!user) return;
 
   const store = useKineStore.getState();
 
   try {
+    // Check health data consent — strip sensitive fields if not granted
+    const healthConsent = store.consents?.find((c: { type: string; granted: boolean }) => c.type === "health_data");
+    const healthGranted = healthConsent?.granted === true;
+    const cycleToCloud = healthGranted && !store.cycleLocalOnly;
+
     const payload = {
       state: {
         goal: store.goal,
@@ -34,16 +75,21 @@ async function doSync() {
         days: store.days,
         trainingDays: store.trainingDays,
         duration: store.duration,
-        injuries: store.injuries,
-        injuryNotes: store.injuryNotes,
-        cycleType: store.cycleType,
-        cyclePhase: store.cyclePhase,
+        injuries: healthGranted ? store.injuries : [],
+        injuryNotes: healthGranted ? store.injuryNotes : "",
+        conditions: healthGranted ? store.conditions : [],
+        comfortFlags: healthGranted ? store.comfortFlags : {},
+        cycleType: cycleToCloud ? store.cycleType : "none",
+        cyclePhase: cycleToCloud ? store.cyclePhase : null,
         dayDurations: store.dayDurations,
-        cycle: store.cycle,
+        cycle: cycleToCloud ? store.cycle : { periodLog: [], cycleLength: 28, periodLength: 5 },
         eduMode: store.eduMode,
+        sessionMode: store.sessionMode,
+        restConfig: store.restConfig,
         eduFlags: store.eduFlags,
         skillPreferences: store.skillPreferences,
         units: store.units,
+        measurementSystem: store.measurementSystem,
       },
       weekData: store.weekData,
       weekHistory: store.weekHistory,
@@ -53,6 +99,7 @@ async function doSync() {
       sessionTimeBudgets: store.sessionTimeBudgets,
       sessionLogs: store.sessionLogs,
       feedbackState: store.feedbackState,
+      consents: store.consents,
       _lastModifiedAt: store._lastModifiedAt,
     };
 
@@ -83,9 +130,15 @@ async function doSync() {
 
     if (error) {
       console.warn("Cloud sync failed:", error.message);
+      if (retryCount < 2) {
+        setTimeout(() => doSync(retryCount + 1), 2000 * (retryCount + 1));
+      }
     }
   } catch (e) {
     console.warn("Cloud sync error:", e);
+    if (retryCount < 2) {
+      setTimeout(() => doSync(retryCount + 1), 2000 * (retryCount + 1));
+    }
   }
 }
 
@@ -133,17 +186,39 @@ export async function syncFromSupabase(): Promise<boolean> {
       if (s.trainingDays !== undefined) store.setTrainingDays(s.trainingDays as number[]);
       if (s.duration !== undefined) store.setDuration(s.duration as typeof store.duration);
       if (s.injuries !== undefined) store.setInjuries(s.injuries as string[]);
+      if (s.injuryNotes !== undefined) store.setInjuryNotes(s.injuryNotes as string);
+      if (s.conditions !== undefined) store.setConditions(s.conditions as string[]);
       if (s.cycleType !== undefined) store.setCycleType(s.cycleType as typeof store.cycleType);
+      if (s.cyclePhase !== undefined) store.setCyclePhase(s.cyclePhase as string | null);
+      if (s.dayDurations !== undefined) store.setDayDurations(s.dayDurations as Record<number, number>);
+      if (s.cycle !== undefined) store.setCycle(s.cycle as typeof store.cycle);
       if (s.eduMode !== undefined) store.setEduMode(s.eduMode as typeof store.eduMode);
+      if (s.sessionMode !== undefined) store.setSessionMode(s.sessionMode as typeof store.sessionMode);
+      if (s.restConfig !== undefined) store.setRestConfig(s.restConfig as typeof store.restConfig);
+      if (s.eduFlags !== undefined) store.setEduFlags(s.eduFlags as Record<string, boolean>);
+      if (s.skillPreferences !== undefined) store.setSkillPreferences(s.skillPreferences as Record<string, string>);
       if (s.units !== undefined) store.setUnits(s.units as typeof store.units);
+      if (s.measurementSystem !== undefined) store.setMeasurementSystem(s.measurementSystem as typeof store.measurementSystem);
     }
 
-    if (cloud.weekData !== undefined) store.setWeekData(cloud.weekData);
-    if (cloud.weekHistory !== undefined) store.setWeekHistory(cloud.weekHistory as unknown[]);
-    if (cloud.personalProfile) store.setPersonalProfile(cloud.personalProfile as typeof store.personalProfile);
+    if (cloud.weekData !== undefined) store.setWeekData(cloud.weekData as WeekData | null);
+    if (cloud.weekHistory !== undefined) store.setWeekHistory(cloud.weekHistory as WeekData[]);
+    if (cloud.progressDB) store.setProgressDB(cloud.progressDB as typeof store.progressDB);
+    if (cloud.personalProfile) {
+      const p = cloud.personalProfile as Record<string, unknown>;
+      store.setPersonalProfile({
+        name: (p.name as string) ?? "",
+        height: (p.height as string) ?? "",
+        weight: (p.weight as string) ?? "",
+        trainingAge: (p.trainingAge as string) ?? "",
+        currentLifts: (p.currentLifts as Record<string, number>) ?? {},
+      });
+    }
+    if (cloud.currentDayIdx !== undefined) store.setCurrentDayIdx(cloud.currentDayIdx as number | null);
     if (cloud.sessionLogs) store.setSessionLogs(cloud.sessionLogs as typeof store.sessionLogs);
     if (cloud.feedbackState) store.setFeedbackState(cloud.feedbackState as typeof store.feedbackState);
     if (cloud.sessionTimeBudgets) store.setSessionTimeBudgets(cloud.sessionTimeBudgets as typeof store.sessionTimeBudgets);
+    if (cloud.consents) store.setConsents(cloud.consents as typeof store.consents);
 
     return true;
   } catch (e) {
@@ -153,7 +228,7 @@ export async function syncFromSupabase(): Promise<boolean> {
 }
 
 /**
- * Immediate (non-debounced) sync for critical saves.
+ * Immediate (non-debounced) sync for critical saves (e.g. consent changes).
  */
 export async function syncNow() {
   if (shouldSkipSync()) return;
@@ -161,12 +236,6 @@ export async function syncNow() {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
+  syncPending = false;
   await doSync();
-}
-
-/**
- * Returns true if there is a pending debounced sync that hasn't flushed yet.
- */
-export function hasPendingSync(): boolean {
-  return syncTimer !== null;
 }

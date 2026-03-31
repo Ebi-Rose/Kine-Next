@@ -1,8 +1,15 @@
 import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { logAudit, getRequestIp } from "../_lib/audit";
+import { checkBodySize } from "../_lib/body-limit";
+
+const MAX_WEBHOOK_BODY = 65_536; // 64 KB — Stripe events are typically <10 KB
 
 export async function POST(request: NextRequest) {
+  const tooLarge = checkBodySize(request, MAX_WEBHOOK_BODY);
+  if (tooLarge) return tooLarge;
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   const supabase = createClient(
     process.env.SUPABASE_URL!,
@@ -22,8 +29,24 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Webhook signature verification failed:", message);
+    logAudit({ event: "webhook_signature_failed", ip: getRequestIp(request.headers) });
     return Response.json({ error: "Invalid signature" }, { status: 400 });
   }
+
+  logAudit({ event: "webhook_received", ip: getRequestIp(request.headers), metadata: { type: event.type } });
+
+  // Idempotency: skip if we've already processed this event
+  const { data: existing } = await supabase
+    .from("audit_log")
+    .select("id")
+    .eq("metadata->>stripe_event_id", event.id)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return Response.json({ received: true, duplicate: true });
+  }
+
+  logAudit({ event: "webhook_processing", ip: getRequestIp(request.headers), metadata: { type: event.type, stripe_event_id: event.id } });
 
   try {
     switch (event.type) {
@@ -193,6 +216,26 @@ export async function POST(request: NextRequest) {
             .from("subscriptions")
             .update({
               status: "past_due",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", sub.user_id);
+        }
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("user_id, status")
+          .eq("stripe_customer_id", invoice.customer as string)
+          .single();
+
+        if (sub?.user_id && sub.status === "past_due") {
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "active",
               updated_at: new Date().toISOString(),
             })
             .eq("user_id", sub.user_id);

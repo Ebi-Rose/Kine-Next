@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useKineStore } from "@/store/useKineStore";
-import { syncToSupabase, syncFromSupabase, syncNow, hasPendingSync } from "@/lib/sync";
+import { syncToSupabase, syncFromSupabase, flushSync } from "@/lib/sync";
 import { reconcileState } from "@/lib/state-reconciliation";
 
 /**
@@ -25,27 +25,22 @@ export default function SyncProvider() {
       syncToSupabase();
     });
 
-    // Flush pending sync before page unload to prevent data loss
-    const handleBeforeUnload = () => {
-      if (!hasPendingSync()) return;
-      // Use syncNow() — fire the async request. The browser may not wait for it,
-      // but modern browsers give ~2 seconds for beforeunload handlers.
-      syncNow();
-    };
+    // Flush pending sync when user leaves the page
+    const handleUnload = () => flushSync();
 
     // visibilitychange is more reliable on mobile (beforeunload doesn't always fire)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden" && hasPendingSync()) {
-        syncNow();
+      if (document.visibilityState === "hidden") {
+        flushSync();
       }
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handleUnload);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       unsub();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleUnload);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);

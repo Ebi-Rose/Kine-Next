@@ -1,6 +1,5 @@
-import { calculateORM, calculatePlates } from "../progression";
-
-// These two functions are pure — no store dependency
+import { calculateORM } from "../progression";
+import { calculatePlatesForSystem } from "../format";
 
 describe("calculateORM", () => {
   it("returns 0 for invalid inputs", () => {
@@ -24,37 +23,44 @@ describe("calculateORM", () => {
   });
 });
 
-describe("calculatePlates", () => {
+describe("calculatePlatesForSystem (metric)", () => {
   it("returns empty for bar weight or less", () => {
-    expect(calculatePlates(20)).toEqual([]);
-    expect(calculatePlates(15)).toEqual([]);
+    expect(calculatePlatesForSystem(20, "metric")).toEqual([]);
+    expect(calculatePlatesForSystem(15, "metric")).toEqual([]);
   });
 
   it("calculates plates for 60kg (20kg bar)", () => {
     // (60 - 20) / 2 = 20kg per side → 1 × 20kg plate each side
-    const plates = calculatePlates(60);
+    const plates = calculatePlatesForSystem(60, "metric");
     expect(plates).toEqual([{ plate: 20, count: 1 }]);
   });
 
   it("calculates plates for 100kg", () => {
     // (100 - 20) / 2 = 40kg per side → 2 × 20kg
-    const plates = calculatePlates(100);
+    const plates = calculatePlatesForSystem(100, "metric");
     expect(plates).toEqual([{ plate: 20, count: 2 }]);
   });
 
   it("calculates mixed plates for 67.5kg", () => {
     // (67.5 - 20) / 2 = 23.75kg per side → 20 + 2.5 + 1.25
-    const plates = calculatePlates(67.5);
+    const plates = calculatePlatesForSystem(67.5, "metric");
     expect(plates).toEqual([
       { plate: 20, count: 1 },
       { plate: 2.5, count: 1 },
       { plate: 1.25, count: 1 },
     ]);
   });
+});
 
-  it("respects custom bar weight", () => {
-    // 25kg bar, 35kg total → (35 - 25) / 2 = 5kg per side
-    const plates = calculatePlates(35, 25);
-    expect(plates).toEqual([{ plate: 5, count: 1 }]);
+describe("calculatePlatesForSystem (imperial)", () => {
+  it("returns empty for bar weight or less", () => {
+    expect(calculatePlatesForSystem(45, "imperial")).toEqual([]);
+    expect(calculatePlatesForSystem(30, "imperial")).toEqual([]);
+  });
+
+  it("calculates plates for 135lbs (45lb bar)", () => {
+    // (135 - 45) / 2 = 45lbs per side → 1 × 45lb plate
+    const plates = calculatePlatesForSystem(135, "imperial");
+    expect(plates).toEqual([{ plate: 45, count: 1 }]);
   });
 });

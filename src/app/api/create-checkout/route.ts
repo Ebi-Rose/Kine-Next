@@ -1,10 +1,25 @@
 import { NextRequest } from "next/server";
 import { getAuthenticatedUser } from "../_lib/auth";
+import { createRatelimit } from "../_lib/rate-limit";
+import { verifyCsrf } from "../_lib/csrf";
+import { checkBodySize } from "../_lib/body-limit";
+
+const MAX_CHECKOUT_BODY = 4_096; // 4 KB — only a plan field
+const ratelimit = createRatelimit("checkout", 5, "60 s");
 
 const STRIPE_API = "https://api.stripe.com/v1";
-const PRICES: Record<string, string | undefined> = {
-  monthly: process.env.STRIPE_PRICE_MONTHLY,
-  yearly: process.env.STRIPE_PRICE_YEARLY,
+
+// Multi-currency price map: STRIPE_PRICE_{PLAN}_{CURRENCY}
+// Falls back to legacy env vars (no currency suffix) for GBP backwards compat.
+const PRICES: Record<string, Record<string, string | undefined>> = {
+  GBP: {
+    monthly: process.env.STRIPE_PRICE_MONTHLY_GBP || process.env.STRIPE_PRICE_MONTHLY,
+    yearly: process.env.STRIPE_PRICE_YEARLY_GBP || process.env.STRIPE_PRICE_YEARLY,
+  },
+  USD: {
+    monthly: process.env.STRIPE_PRICE_MONTHLY_USD,
+    yearly: process.env.STRIPE_PRICE_YEARLY_USD,
+  },
 };
 
 async function stripeRequest(endpoint: string, params: Record<string, string>) {
@@ -39,18 +54,33 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Stripe not configured" }, { status: 500 });
   }
 
+  const tooLarge = checkBodySize(request, MAX_CHECKOUT_BODY);
+  if (tooLarge) return tooLarge;
+
+  if (!verifyCsrf(request)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const user = await getAuthenticatedUser(request);
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (ratelimit) {
+    const { success } = await ratelimit.limit(user.id);
+    if (!success) {
+      return Response.json({ error: "Too many requests" }, { status: 429 });
+    }
+  }
+
   try {
-    const { plan } = await request.json();
+    const { plan, currency = "GBP" } = await request.json();
     const userId = user.id;
     const email = user.email;
 
-    if (!plan || !PRICES[plan]) {
-      return Response.json({ error: "Invalid plan" }, { status: 400 });
+    const currencyPrices = PRICES[currency] || PRICES.GBP;
+    if (!plan || !currencyPrices[plan]) {
+      return Response.json({ error: "Invalid plan or currency" }, { status: 400 });
     }
 
     let customerId: string | undefined;
@@ -71,7 +101,7 @@ export async function POST(request: NextRequest) {
     const sessionParams: Record<string, string> = {
       mode: "subscription",
       "payment_method_types[0]": "card",
-      "line_items[0][price]": PRICES[plan]!,
+      "line_items[0][price]": currencyPrices[plan]!,
       "line_items[0][quantity]": "1",
       success_url: `${siteUrl}/app/onboarding?checkout=success`,
       cancel_url: `${siteUrl}/pricing`,

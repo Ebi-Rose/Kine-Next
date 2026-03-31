@@ -1,51 +1,90 @@
 "use client";
 
 import { Component, type ReactNode } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 interface Props {
   children: ReactNode;
-  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
-  error: Error | null;
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  state: State = { hasError: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[ErrorBoundary]", error, info.componentStack);
+    Sentry.captureException(error, { contexts: { react: { componentStack: info.componentStack ?? undefined } } });
   }
 
-  render() {
-    if (this.state.hasError) {
-      if (this.props.fallback) return this.props.fallback;
+  handleReset = () => {
+    this.setState({ hasError: false });
+  };
 
-      return (
-        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 px-6 text-center">
-          <h2 className="font-display text-xl tracking-wide">Something went wrong</h2>
-          <p className="text-sm text-muted">
-            {this.state.error?.message || "An unexpected error occurred."}
-          </p>
+  handleHardReset = () => {
+    localStorage.removeItem("kine_v2");
+    window.location.href = "/";
+  };
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <div style={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem",
+        background: "#111111",
+        color: "#ffffff",
+        fontFamily: "var(--font-body), system-ui, sans-serif",
+        textAlign: "center",
+        gap: "1rem",
+      }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>Something went wrong</h1>
+        <p style={{ color: "#999", maxWidth: "28ch", lineHeight: 1.5 }}>
+          An unexpected error occurred. Try reloading — if it keeps happening, reset the app.
+        </p>
+        <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
           <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
+            onClick={this.handleReset}
+            style={{
+              padding: "0.75rem 1.5rem",
+              borderRadius: "0.5rem",
+              border: "1px solid #333",
+              background: "transparent",
+              color: "#fff",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+            }}
           >
             Try again
           </button>
+          <button
+            onClick={this.handleHardReset}
+            style={{
+              padding: "0.75rem 1.5rem",
+              borderRadius: "0.5rem",
+              border: "none",
+              background: "#C49098",
+              color: "#111",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              fontWeight: 500,
+            }}
+          >
+            Reset app
+          </button>
         </div>
-      );
-    }
-
-    return this.props.children;
+      </div>
+    );
   }
 }

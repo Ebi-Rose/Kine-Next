@@ -8,17 +8,25 @@ export default function AppError({
   reset: () => void;
 }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
-      <h2 className="font-display text-xl tracking-wide">Something went wrong</h2>
-      <p className="text-sm text-muted">
-        {error.message || "An unexpected error occurred."}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-bg text-text p-6">
+      <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
+      <p className="text-muted2 mb-6 text-center max-w-sm">
+        There was a problem loading this page. Your data is safe.
       </p>
-      <button
-        onClick={reset}
-        className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
-      >
-        Try again
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={reset}
+          className="px-5 py-2.5 rounded-xl bg-accent text-white font-medium"
+        >
+          Try again
+        </button>
+        <a
+          href="/app"
+          className="px-5 py-2.5 rounded-xl border border-border text-text font-medium"
+        >
+          Back to week
+        </a>
+      </div>
     </div>
   );
 }

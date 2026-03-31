@@ -46,7 +46,7 @@ export async function apiFetchStreaming(
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       const error = new Error(
-        err?.error?.message || `API error: ${res.status}`
+        (typeof err?.error === "string" ? err.error : err?.error?.message) || `API error: ${res.status}`
       ) as Error & { status: number };
       error.status = res.status;
       throw error;
@@ -100,7 +100,7 @@ export async function apiFetch(body: ApiRequest): Promise<ApiResponse> {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const error = new Error(
-      err?.error?.message || `API error: ${res.status}`
+      (typeof err?.error === "string" ? err.error : err?.error?.message) || `API error: ${res.status}`
     ) as Error & { status: number };
     error.status = res.status;
     throw error;

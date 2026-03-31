@@ -1,12 +1,11 @@
 import { NextRequest } from "next/server";
 import { getAuthenticatedUser } from "../_lib/auth";
+import { createRatelimit } from "../_lib/rate-limit";
+import { verifyCsrf } from "../_lib/csrf";
+import { logAudit, getRequestIp } from "../_lib/audit";
 
 export const maxDuration = 60;
 
-// Rate limiting per user (in-memory, per serverless instance).
-// For production-grade distributed limiting, replace with @upstash/ratelimit.
-const RATE_LIMIT = 10;
-const RATE_WINDOW = 60 * 1000;
 const MAX_BODY_SIZE = 50000;
 const ALLOWED_MODELS = [
   "claude-sonnet-4-20250514",
@@ -14,47 +13,59 @@ const ALLOWED_MODELS = [
 ];
 const MAX_TOKENS_CAP = 4096;
 
-const userRequests = new Map<string, { start: number; count: number }>();
-
-function isRateLimited(key: string): boolean {
-  const now = Date.now();
-  const entry = userRequests.get(key);
-  if (!entry || now - entry.start > RATE_WINDOW) {
-    userRequests.set(key, { start: now, count: 1 });
-    return false;
-  }
-  entry.count++;
-  return entry.count > RATE_LIMIT;
-}
+const ratelimit = createRatelimit("chat", 10, "60 s");
 
 export async function POST(request: NextRequest) {
+  const ip = getRequestIp(request.headers);
+
+  if (!verifyCsrf(request)) {
+    logAudit({ event: "csrf_rejected", ip, metadata: { route: "/api/chat" } });
+    return Response.json(
+      { error: "Forbidden" },
+      { status: 403 }
+    );
+  }
+
   const user = await getAuthenticatedUser(request);
   if (!user) {
+    logAudit({ event: "auth_failure", ip, metadata: { route: "/api/chat" } });
     return Response.json(
-      { error: { type: "auth_error", message: "Unauthorized" } },
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }
 
-  if (isRateLimited(user.id)) {
-    return Response.json(
-      { error: { type: "rate_limit", message: "Too many requests. Please wait a minute." } },
-      { status: 429 }
-    );
+  if (ratelimit) {
+    const { success } = await ratelimit.limit(user.id);
+    if (!success) {
+      logAudit({ event: "rate_limited", user_id: user.id, ip, metadata: { route: "/api/chat" } });
+      return Response.json(
+        { error: "Too many requests. Please wait a minute." },
+        { status: 429 }
+      );
+    }
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: { type: "config_error", message: "API key not configured" } },
+      { error: "API key not configured" },
       { status: 500 }
     );
   }
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json(
+      { error: "Invalid JSON" },
+      { status: 400 }
+    );
+  }
   if (!body || typeof body !== "object") {
     return Response.json(
-      { error: { type: "validation_error", message: "Invalid request body" } },
+      { error: "Invalid request body" },
       { status: 400 }
     );
   }
@@ -62,27 +73,37 @@ export async function POST(request: NextRequest) {
   const bodyStr = JSON.stringify(body);
   if (bodyStr.length > MAX_BODY_SIZE) {
     return Response.json(
-      { error: { type: "validation_error", message: "Request too large" } },
+      { error: "Request too large" },
       { status: 413 }
     );
   }
 
-  if (!ALLOWED_MODELS.includes(body.model)) {
+  if (!ALLOWED_MODELS.includes(body.model as string)) {
     return Response.json(
-      { error: { type: "validation_error", message: "Invalid model" } },
+      { error: "Invalid model" },
       { status: 400 }
     );
   }
 
-  if (body.max_tokens && body.max_tokens > MAX_TOKENS_CAP) {
+  if (body.max_tokens && (body.max_tokens as number) > MAX_TOKENS_CAP) {
     body.max_tokens = MAX_TOKENS_CAP;
   }
 
   if (!Array.isArray(body.messages) || body.messages.length === 0) {
     return Response.json(
-      { error: { type: "validation_error", message: "Messages required" } },
+      { error: "Messages required" },
       { status: 400 }
     );
+  }
+
+  // Validate individual message content length
+  for (const msg of body.messages as { content?: unknown }[]) {
+    if (typeof msg.content === "string" && msg.content.length > 30000) {
+      return Response.json(
+        { error: "Message too long" },
+        { status: 400 }
+      );
+    }
   }
 
   const wantsStream = body.stream === true;
@@ -104,7 +125,7 @@ export async function POST(request: NextRequest) {
       const errData = await response.text();
       console.error("Anthropic API error:", response.status, errData.slice(0, 500));
       return Response.json(
-        { error: { type: "api_error", message: "AI service error" } },
+        { error: "AI service error" },
         { status: response.status }
       );
     }

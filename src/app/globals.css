@@ -10,8 +10,8 @@
   --color-accent: #c49098;
   --color-accent-dim: rgba(196, 144, 152, 0.10);
   --color-text: #f0f0f0;
-  --color-muted: #5a5a5a;
-  --color-muted2: #888888;
+  --color-muted: #8a8a8a;
+  --color-muted2: #a0a0a0;
 
   /* Category accents */
   --color-cat-push: #c49098;
@@ -47,7 +47,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: url("/hero-bg.JPG") center/cover no-repeat;
+  background: url("/hero-bg-opt.jpg") center/cover no-repeat;
   opacity: 0.06;
   pointer-events: none;
 }

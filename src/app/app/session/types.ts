@@ -10,6 +10,8 @@ export interface ExerciseLog {
   actual: SetLog[];
   note: string;
   saved: boolean;
+  /** True if weight was auto-filled from last session history */
+  prefilled?: boolean;
 }
 
 export type SessionStep = "workout" | "feedback" | "analysing" | "results";

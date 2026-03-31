@@ -8,6 +8,8 @@ import ToastContainer from "@/components/Toast";
 import SyncProvider from "@/components/SyncProvider";
 import GuideButton from "@/components/GuideButton";
 import GuideDrawer from "@/components/GuideDrawer";
+import InactivityGuard from "@/components/InactivityGuard";
+import OfflineIndicator from "@/components/OfflineIndicator";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [guideOpen, setGuideOpen] = useState(false);
@@ -29,6 +31,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <ToastContainer />
         <SyncProvider />
+        <OfflineIndicator />
+        <InactivityGuard />
         <GuideButton onClick={() => setGuideOpen(true)} />
         <GuideDrawer open={guideOpen} onClose={() => setGuideOpen(false)} route={pathname} />
       </div>

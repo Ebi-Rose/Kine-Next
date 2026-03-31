@@ -115,6 +115,7 @@ export default function LoginPage() {
 function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState(false);
@@ -123,13 +124,25 @@ function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!ageConfirmed) {
+      setError("Please confirm you are at least 18 years old.");
+      return;
+    }
+
     setLoading(true);
 
     const { data, error: authError } = await signUp(email, password);
     setLoading(false);
 
     if (authError) {
-      setError(authError.message);
+      // Normalize to prevent account enumeration
+      const msg = authError.message?.toLowerCase() || "";
+      if (msg.includes("already registered") || msg.includes("already exists") || msg.includes("duplicate")) {
+        setError("Check your email for a confirmation link, or try logging in.");
+      } else {
+        setError(authError.message);
+      }
       return;
     }
 
@@ -217,13 +230,26 @@ function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
             value={password}
             onChange={setPassword}
             placeholder="Create password"
-            minLength={6}
+            minLength={8}
             autoComplete="new-password"
           />
-          <p className="text-[10px] text-muted -mt-1">Must be at least 6 characters</p>
+          <p className="text-[10px] text-muted -mt-1">Must be at least 8 characters</p>
+
+          <label className="flex items-start gap-2 mt-1">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-accent"
+            />
+            <span className="text-[11px] text-muted2 leading-snug">
+              I confirm I am at least 18 years old
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !ageConfirmed}
             className="rounded-[var(--radius-default)] bg-accent px-4 py-3 text-sm font-medium text-bg transition-all hover:brightness-110 disabled:opacity-50"
           >
             {loading ? "Creating..." : "CREATE ACCOUNT"}
@@ -268,7 +294,8 @@ function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
     setLoading(false);
 
     if (authError) {
-      setError(authError.message);
+      // Generic message to prevent account enumeration
+      setError("Invalid email or password.");
       return;
     }
 
@@ -372,14 +399,10 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
     setError("");
     setLoading(true);
 
-    const { error: resetError } = await resetPassword(email);
+    await resetPassword(email);
     setLoading(false);
-
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setSent(true);
-    }
+    // Always show success to prevent account enumeration
+    setSent(true);
   }
 
   if (sent) {
