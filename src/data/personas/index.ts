@@ -1,9 +1,11 @@
-export { loadSarah } from "./sarah";
-export { loadMia } from "./mia";
-export { loadPriya } from "./priya";
-export { loadAisha } from "./aisha";
-export { loadEmma } from "./emma";
-export { loadDiane } from "./diane";
+import { loadSarah } from "./sarah";
+import { loadMia } from "./mia";
+import { loadPriya } from "./priya";
+import { loadAisha } from "./aisha";
+import { loadEmma } from "./emma";
+import { loadDiane } from "./diane";
+
+export { loadSarah, loadMia, loadPriya, loadAisha, loadEmma, loadDiane };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Loader = (store: any) => void;
