@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase
     .from("waitlist")
-    .upsert(
+    .insert(
       { email: email.toLowerCase().trim() },
-      { onConflict: "email" }
+      { ignoreDuplicates: true }
     );
 
   if (error) {
