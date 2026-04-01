@@ -15,19 +15,28 @@ export function verifyCsrf(request: NextRequest): boolean {
   if (!origin && !referer) return false;
 
   const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const vercelUrl = process.env.VERCEL_URL; // auto-provided by Vercel
   const allowedHosts = new Set<string>();
 
   // Add known hosts
   if (siteUrl) {
     try { allowedHosts.add(new URL(siteUrl).host); } catch {}
   }
+  if (vercelUrl) {
+    // VERCEL_URL is a bare hostname (no protocol), e.g. "my-app-xxx.vercel.app"
+    allowedHosts.add(vercelUrl);
+  }
   allowedHosts.add("kinefit.app");
   allowedHosts.add("www.kinefit.app");
 
-  // In development, allow localhost
+  // In development, allow localhost on any port
   if (process.env.NODE_ENV === "development") {
-    allowedHosts.add("localhost:3000");
-    allowedHosts.add("localhost");
+    if (origin) {
+      try { const u = new URL(origin); if (u.hostname === "localhost") return true; } catch {}
+    }
+    if (referer) {
+      try { const u = new URL(referer); if (u.hostname === "localhost") return true; } catch {}
+    }
   }
 
   if (origin) {
