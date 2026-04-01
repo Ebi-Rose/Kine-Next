@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main id="main-content" className="mx-auto max-w-[var(--container-max)] px-6 pb-20 pt-3" style={{ paddingLeft: 'max(24px, env(safe-area-inset-left))', paddingRight: 'max(24px, env(safe-area-inset-right))' }}>
           {children}
         </main>
-        <BottomNav />
+        {pathname !== "/app/onboarding" && <BottomNav />}
         <ToastContainer />
         <SyncProvider />
         <OfflineIndicator />

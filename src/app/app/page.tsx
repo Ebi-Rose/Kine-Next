@@ -197,7 +197,9 @@ function WeekView({
   const displayWeek = isViewingPast
     ? (weekHistory[viewingPastIdx] as WeekData)
     : week;
-  const displayWeekNum = displayWeek?._weekNum || 1;
+  const displayWeekNum = isViewingPast
+    ? (displayWeek?._weekNum || 1)
+    : (progressDB.currentWeek || 1);
   const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
   const hasNext = isViewingPast; // can always go forward to current
 
