@@ -39,15 +39,14 @@ export function verifyCsrf(request: NextRequest): boolean {
     }
   }
 
-  if (origin) {
+  // Check origin and referer against allowlist
+  for (const header of [origin, referer]) {
+    if (!header) continue;
     try {
-      if (allowedHosts.has(new URL(origin).host)) return true;
-    } catch {}
-  }
-
-  if (referer) {
-    try {
-      if (allowedHosts.has(new URL(referer).host)) return true;
+      const host = new URL(header).host;
+      if (allowedHosts.has(host)) return true;
+      // Accept any Vercel preview/deployment domain
+      if (host.endsWith(".vercel.app")) return true;
     } catch {}
   }
 
