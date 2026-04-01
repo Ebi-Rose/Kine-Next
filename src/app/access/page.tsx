@@ -26,10 +26,21 @@ export default function AccessPage() {
         const { mode } = await res.json();
 
         if (mode === "demo") {
-          // Load seed data and go straight to app
-          const { loadDemoData } = await import("@/data/demo-data");
-          loadDemoData(useKineStore.getState());
-          router.push("/app");
+          // Check if this is a persona code (test-mia, test-emma, etc.)
+          const trimmedCode = code.trim().toLowerCase();
+          const personaKey = trimmedCode.replace("test-", "");
+          const { PERSONA_LOADERS } = await import("@/data/personas");
+          if (trimmedCode.startsWith("test-") && PERSONA_LOADERS[personaKey]) {
+            PERSONA_LOADERS[personaKey](useKineStore.getState());
+            router.push("/app");
+          } else if (trimmedCode.startsWith("test-")) {
+            // Unknown test- code: fresh onboarding (no demo data)
+            router.push("/app/onboarding");
+          } else {
+            const { loadDemoData } = await import("@/data/demo-data");
+            loadDemoData(useKineStore.getState());
+            router.push("/app");
+          }
         } else if (mode === "new") {
           // Skip auth/stripe, fresh user → onboarding
           router.push("/app/onboarding");

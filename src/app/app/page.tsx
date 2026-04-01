@@ -458,8 +458,9 @@ function WeekView({
             return (
               <div className="flex flex-col gap-2">
                 {displayWeek.days.map((day, i) => {
-                  const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                  const hasSession = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
                     .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
+                  const isCompleted = hasSession && (isViewingPast || i <= todayIdx);
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
