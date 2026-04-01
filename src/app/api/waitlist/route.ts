@@ -50,12 +50,13 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase
     .from("waitlist")
-    .insert(
-      { email: email.toLowerCase().trim() },
-      { ignoreDuplicates: true }
-    );
+    .insert({ email: email.toLowerCase().trim() });
 
   if (error) {
+    // 23505 = unique_violation — email already on waitlist, treat as success
+    if (error.code === "23505") {
+      return Response.json({ ok: true });
+    }
     console.error("Waitlist insert error:", error);
     return Response.json({ error: "Something went wrong" }, { status: 500 });
   }
