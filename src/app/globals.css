@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Kine design tokens */
-  --color-bg: #111111;
-  --color-surface: #191919;
-  --color-surface2: #212121;
-  --color-border: #252525;
+  /* Kine design tokens — Direction E (Warm Feminine) */
+  --color-bg: #13110f;
+  --color-surface: #1a1815;
+  --color-surface2: #23201b;
+  --color-border: #2a2722;
   --color-border-active: #c49098;
   --color-accent: #c49098;
   --color-accent-dim: rgba(196, 144, 152, 0.10);
-  --color-text: #f0f0f0;
-  --color-muted: #8a8a8a;
-  --color-muted2: #a0a0a0;
+  --color-text: #f0ebe6;
+  --color-muted: #8a847d;
+  --color-muted2: #a09a93;
 
   /* Category accents */
   --color-cat-push: #c49098;
@@ -22,11 +22,11 @@
   --color-cat-cardio: #a87bb0;
 
   /* Spacing & layout */
-  --radius-default: 10px;
+  --radius-default: 20px;
   --container-max: 480px;
 
   /* Fonts */
-  --font-display: "Bebas Neue", sans-serif;
+  --font-display: "Cormorant Garamond", serif;
   --font-body: "DM Sans", sans-serif;
 }
 

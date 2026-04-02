@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, DM_Sans } from "next/font/google";
+import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 import "./custom.css";
 
-const bebasNeue = Bebas_Neue({
-  weight: "400",
+const cormorant = Cormorant_Garamond({
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
   variable: "--font-display",
   subsets: ["latin"],
 });
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111111",
+  themeColor: "#13110f",
   viewportFit: "cover",
 };
 
@@ -42,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bebasNeue.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body>
         <ErrorBoundary>
           {children}

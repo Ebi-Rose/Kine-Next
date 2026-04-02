@@ -19,7 +19,7 @@ export default function Button({
 
   const variants = {
     primary:
-      "bg-accent text-bg rounded-xl hover:brightness-110 shadow-[0_1px_3px_rgba(196,144,152,0.15)]",
+      "bg-accent text-bg rounded-2xl hover:brightness-110 shadow-[0_2px_8px_rgba(196,144,152,0.15)]",
     secondary:
       "bg-surface text-text border border-border rounded-[var(--radius-default)] hover:border-border-active hover:bg-surface2",
     ghost:
