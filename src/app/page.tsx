@@ -454,7 +454,7 @@ export default function LandingPage() {
           .lp-ph-cycle { padding: 6px 8px; border-radius: 10px; }
           .lp-ph-nav { display: none; }
           .lp-phone-glow { width: 220px; height: 300px; }
-          .lp-footer { display: none; }
+          .lp-footer { flex-direction: column; align-items: center; gap: 8px; }
         }
         @media (max-width: 390px) {
           .lp-logo { font-size: 40px; }
