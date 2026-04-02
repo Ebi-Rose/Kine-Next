@@ -129,6 +129,19 @@
     margin: 12px 0 6px;
   }
   .section-label:first-child { margin-top: 0; }
+  .step-search {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #C49098;
+    font-size: 11px;
+    text-decoration: none;
+    vertical-align: middle;
+  }
+  .step-search:active { background: #333; }
   .ref-link {
     display: inline-block;
     margin-top: 10px;
@@ -203,19 +216,19 @@
 const exercises = [
   // ── WARM-UP: Block 1 ──
   { block: "Block 1: Bar Area (~60 min)", name: "WARM-UP: Bar Area", angles: "Don't film", steps: [
-    { icon: "🫀", text: "Light cardio — 3 min brisk walk, bike, or rowing. Just get warm" },
-    { icon: "🔄", text: "Hip circles — 10 each direction. Stiff hips restrict squatting" },
-    { icon: "🦵", text: "Leg swings — 10 forward/back + 10 lateral each leg. Loosens hips" },
-    { icon: "⬇️", text: "Bodyweight squats — 15 reps, go to full depth, pause at the bottom" },
-    { icon: "🐱", text: "Cat-cow — 10 slow reps. Loosens lower back before deadlifts" },
-    { icon: "🍑", text: "Glute bridges — 2×15, squeeze hard at top. Gets glutes and hamstrings on" },
-    { icon: "🏋️", text: "Good morning stretch — 10 reps, hinge at hip with no weight" },
-    { icon: "🦪", text: "Clamshells — 2×15 each side. Stops knees caving in during squats" },
-    { icon: "🔘", text: "Ankle circles — 10 each direction each ankle" },
-    { icon: "🔗", text: "Hip flexor stretch — 60s each side. Tight hip flexors stop full lockout" },
-    { icon: "💪", text: "Banded hip hinge — 2×10, drive hips back against band pull" },
-    { icon: "🏋️", text: "Ramp sets: empty bar squat × 8, then 50% × 5, then 75% × 3" },
-    { icon: "🫁", text: "Lat bracing drill — empty bar on back, brace sides hard, 5 slow breaths" },
+    { icon: "🫀", text: "Light cardio — 3 min brisk walk, bike, or rowing. Just get warm", search: "light cardio warm up" },
+    { icon: "🔄", text: "Hip circles — 10 each direction. Stiff hips restrict squatting", search: "hip circles warm up" },
+    { icon: "🦵", text: "Leg swings — 10 forward/back + 10 lateral each leg. Loosens hips", search: "leg swings warm up" },
+    { icon: "⬇️", text: "Bodyweight squats — 15 reps, go to full depth, pause at the bottom", search: "bodyweight squat form" },
+    { icon: "🐱", text: "Cat-cow — 10 slow reps. Loosens lower back before deadlifts", search: "cat cow stretch" },
+    { icon: "🍑", text: "Glute bridges — 2×15, squeeze hard at top. Gets glutes and hamstrings on", search: "glute bridge form" },
+    { icon: "🏋️", text: "Good morning stretch — 10 reps, hinge at hip with no weight", search: "good morning stretch exercise" },
+    { icon: "🦪", text: "Clamshells — 2×15 each side. Stops knees caving in during squats", search: "clamshell exercise form" },
+    { icon: "🔘", text: "Ankle circles — 10 each direction each ankle", search: "ankle circles warm up" },
+    { icon: "🔗", text: "Hip flexor stretch — 60s each side. Tight hip flexors stop full lockout", search: "hip flexor stretch" },
+    { icon: "💪", text: "Banded hip hinge — 2×10, drive hips back against band pull", search: "banded hip hinge" },
+    { icon: "🏋️", text: "Ramp sets: empty bar squat × 8, then 50% × 5, then 75% × 3", search: "barbell squat ramp up sets" },
+    { icon: "🫁", text: "Lat bracing drill — empty bar on back, brace sides hard, 5 slow breaths", search: "lat bracing drill squat" },
   ], tip: "These are the exact warm-ups Kine programmes for legs/hinge sessions. You need to look smooth on camera." },
 
   { name: "Barbell Back Squat", angles: "Side + 45-front", steps: [
@@ -298,15 +311,15 @@ const exercises = [
 
   // ── WARM-UP: Block 2 ──
   { block: "Block 2: Bench Area (~30 min)", name: "WARM-UP: Bench Area", angles: "Don't film", steps: [
-    { icon: "🍑", text: "Glute activation circuit — clamshell 15 + single-leg bridge 10 each side, no rest" },
-    { icon: "🔄", text: "Thoracic rotations — 8 each side, hands behind head, rotate upper back" },
-    { icon: "🔗", text: "Band pull-aparts — 2×15, wakes up back of shoulders before pressing" },
-    { icon: "🔄", text: "Arm circles — 10 forward, 10 backward" },
-    { icon: "🛡️", text: "Rotator cuff external rotation — light band, elbow at 90°, 2×15 each side" },
-    { icon: "➕", text: "Serratus push-up plus — 2×10, at top of push-up push floor away" },
-    { icon: "📐", text: "Wall slides — 10 reps, back against wall, slide arms overhead" },
-    { icon: "🔲", text: "Scapular retraction drill — pinch shoulder blades together, hold 5s, 8 times" },
-    { icon: "🏋️", text: "Ramp sets: empty bar bench × 8, then 50% × 5, then 75% × 3" },
+    { icon: "🍑", text: "Glute activation circuit — clamshell 15 + single-leg bridge 10 each side, no rest", search: "glute activation circuit" },
+    { icon: "🔄", text: "Thoracic rotations — 8 each side, hands behind head, rotate upper back", search: "thoracic rotation exercise" },
+    { icon: "🔗", text: "Band pull-aparts — 2×15, wakes up back of shoulders before pressing", search: "band pull apart form" },
+    { icon: "🔄", text: "Arm circles — 10 forward, 10 backward", search: "arm circles warm up" },
+    { icon: "🛡️", text: "Rotator cuff external rotation — light band, elbow at 90°, 2×15 each side", search: "rotator cuff external rotation band" },
+    { icon: "➕", text: "Serratus push-up plus — 2×10, at top of push-up push floor away", search: "serratus push up plus" },
+    { icon: "📐", text: "Wall slides — 10 reps, back against wall, slide arms overhead", search: "wall slides exercise" },
+    { icon: "🔲", text: "Scapular retraction drill — pinch shoulder blades together, hold 5s, 8 times", search: "scapular retraction drill" },
+    { icon: "🏋️", text: "Ramp sets: empty bar bench × 8, then 50% × 5, then 75% × 3", search: "bench press ramp up sets" },
   ], tip: "Glutes first (for hip thrusts), then push prep. These are from Kine's hinge + push warm-up programmes." },
 
   { name: "Hip Thrust", angles: "Side", steps: [
@@ -363,10 +376,10 @@ const exercises = [
 
   // ── WARM-UP: Block 3 ──
   { block: "Block 3: Dumbbells (~30 min)", name: "WARM-UP: Dumbbells", angles: "Don't film", steps: [
-    { icon: "🔄", text: "Arm circles — 10 forward, 10 backward. Keep shoulders warm" },
-    { icon: "🦵", text: "Hip flexor release — 60s kneeling stretch each side (BSS prep)" },
-    { icon: "⬇️", text: "Light goblet squat hold — 3×10s at the bottom" },
-    { icon: "🏋️", text: "Light single-leg RDL × 5 each — balance prep for unilateral work" },
+    { icon: "🔄", text: "Arm circles — 10 forward, 10 backward. Keep shoulders warm", search: "arm circles warm up" },
+    { icon: "🦵", text: "Hip flexor release — 60s kneeling stretch each side (BSS prep)", search: "kneeling hip flexor stretch" },
+    { icon: "⬇️", text: "Light goblet squat hold — 3×10s at the bottom", search: "goblet squat hold stretch" },
+    { icon: "🏋️", text: "Light single-leg RDL × 5 each — balance prep for unilateral work", search: "single leg RDL form" },
   ], tip: "You're already warm from Blocks 1-2. This is a quick refresh with BSS hip flexor prep from Kine's programme." },
 
   { name: "Goblet Squat", angles: "45-front", steps: [
@@ -445,12 +458,12 @@ const exercises = [
 
   // ── WARM-UP: Block 4 ──
   { block: "Block 4: Cable Station (~30 min)", name: "WARM-UP: Cables", angles: "Don't film", steps: [
-    { icon: "🔗", text: "Dead hangs — 2×20s, let whole body hang and decompress. Gets back switched on" },
-    { icon: "🔗", text: "Shoulder dislocates — 10 reps with band, full shoulder range before loading" },
-    { icon: "⬇️", text: "Scapular pull-ups — 2×8, pull shoulder blades down without bending arms" },
-    { icon: "💪", text: "Lat activation — straight-arm pulldown, 2×15 with light band. Feel back, not arms" },
-    { icon: "🔗", text: "Face pulls — band or cable, 2×20. Wakes up back of shoulder" },
-    { icon: "🙏", text: "Lat prayer stretch — forearms on bench, sit hips back, 2×20s" },
+    { icon: "🔗", text: "Dead hangs — 2×20s, let whole body hang and decompress. Gets back switched on", search: "dead hang form" },
+    { icon: "🔗", text: "Shoulder dislocates — 10 reps with band, full shoulder range before loading", search: "shoulder dislocates band" },
+    { icon: "⬇️", text: "Scapular pull-ups — 2×8, pull shoulder blades down without bending arms", search: "scapular pull up form" },
+    { icon: "💪", text: "Lat activation — straight-arm pulldown, 2×15 with light band. Feel back, not arms", search: "lat activation pulldown band" },
+    { icon: "🔗", text: "Face pulls — band or cable, 2×20. Wakes up back of shoulder", search: "face pull form" },
+    { icon: "🙏", text: "Lat prayer stretch — forearms on bench, sit hips back, 2×20s", search: "lat prayer stretch" },
   ], tip: "These are from Kine's pull session warm-up. Dead hangs and scapular work prep the lats and shoulders." },
 
   { name: "Lat Pulldown", angles: "Front + side", steps: [
@@ -532,9 +545,9 @@ const exercises = [
 
   // ── BLOCK 4.5: Pull Bar ──
   { block: "Block 4.5: Pull Bar (~15 min)", name: "WARM-UP: Pull Bar", angles: "Don't film", steps: [
-    { icon: "🔗", text: "Active hang hold — 2×15s, hang and actively pull shoulder blades down" },
-    { icon: "⬇️", text: "Scapular pull-ups — 5 reps, feel lats engage without bending arms" },
-    { icon: "💪", text: "Chin-over-bar hold — 3×5s, hold at top of pull-up" },
+    { icon: "🔗", text: "Active hang hold — 2×15s, hang and actively pull shoulder blades down", search: "active hang exercise" },
+    { icon: "⬇️", text: "Scapular pull-ups — 5 reps, feel lats engage without bending arms", search: "scapular pull up form" },
+    { icon: "💪", text: "Chin-over-bar hold — 3×5s, hold at top of pull-up", search: "chin over bar hold" },
   ], tip: "From Kine's pull warm-up. You already have a Pull-Up video — these are the skill path progression exercises." },
 
   { name: "Dead Hang", angles: "Front", steps: [
@@ -621,10 +634,10 @@ const exercises = [
 
   // ── WARM-UP: Block 5 ──
   { block: "Block 5: Bodyweight / Mat (~20 min)", name: "WARM-UP: Bodyweight", angles: "Don't film", steps: [
-    { icon: "🧠", text: "Dead bug — 8 reps each side, keep lower back flat. Gets deep core working" },
-    { icon: "🐦", text: "Bird dog — 8 reps each side, slow and controlled. Core front and back" },
-    { icon: "🧱", text: "Plank hold — 2×20s, brace whole body" },
-    { icon: "📏", text: "Side plank — 20s each side, works side of core" },
+    { icon: "🧠", text: "Dead bug — 8 reps each side, keep lower back flat. Gets deep core working", search: "dead bug exercise form" },
+    { icon: "🐦", text: "Bird dog — 8 reps each side, slow and controlled. Core front and back", search: "bird dog exercise form" },
+    { icon: "🧱", text: "Plank hold — 2×20s, brace whole body", search: "plank form" },
+    { icon: "📏", text: "Side plank — 20s each side, works side of core", search: "side plank form" },
   ], tip: "From Kine's core warm-up programme. You're 2+ hours in — this re-activates core for clean bodyweight demos." },
 
   { name: "Push-Up", angles: "Side", steps: [
@@ -868,7 +881,10 @@ exercises.forEach((ex, i) => {
   if (ex.steps) {
     bodyHTML += '<div class="section-label">Steps</div>';
     ex.steps.forEach(s => {
-      bodyHTML += `<div class="step"><span class="icon">${s.icon}</span><span>${s.text}</span></div>`;
+      const searchLink = s.search
+        ? ` <a class="step-search" href="https://www.tiktok.com/search?q=${encodeURIComponent(s.search)}" target="_blank">search</a>`
+        : '';
+      bodyHTML += `<div class="step"><span class="icon">${s.icon}</span><span>${s.text}${searchLink}</span></div>`;
     });
   }
   if (ex.mistake) {
