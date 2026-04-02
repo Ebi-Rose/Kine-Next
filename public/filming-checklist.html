@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filming Day Checklist</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #111;
+    color: #eee;
+    padding: 16px;
+    padding-bottom: 100px;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  h1 { font-size: 20px; color: #C49098; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
+  .progress-bar {
+    background: #222;
+    border-radius: 8px;
+    height: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .progress-fill {
+    background: #C49098;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+    border-radius: 8px;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .block {
+    margin-bottom: 24px;
+  }
+  .block-header {
+    font-size: 15px;
+    font-weight: 700;
+    color: #C49098;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+    margin-bottom: 8px;
+  }
+  .exercise {
+    background: #1a1a1a;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    border: 1px solid #282828;
+  }
+  .exercise.done {
+    opacity: 0.4;
+  }
+  .exercise-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    cursor: pointer;
+    gap: 10px;
+  }
+  .exercise-header .num {
+    font-size: 12px;
+    color: #666;
+    min-width: 22px;
+  }
+  .exercise-header .name {
+    font-size: 15px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .exercise-header .angles {
+    font-size: 11px;
+    color: #C49098;
+    background: #2a1f20;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .exercise-header .check {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #444;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .exercise.done .check {
+    background: #C49098;
+    border-color: #C49098;
+    color: #111;
+  }
+  .exercise-body {
+    display: none;
+    padding: 0 14px 14px;
+  }
+  .exercise.open .exercise-body {
+    display: block;
+  }
+  .step {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .step .icon {
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    margin: 12px 0 6px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  .ref-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #eee;
+    font-size: 12px;
+    text-decoration: none;
+  }
+  .ref-link:active { background: #333; }
+  .mistake {
+    background: #2a1a1a;
+    border-left: 3px solid #c44;
+    padding: 8px 10px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .tip {
+    background: #1a2a1a;
+    border-left: 3px solid #4a4;
+    padding: 8px 10px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .before-you-start {
+    background: #1a1a2a;
+    border: 1px solid #334;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .before-you-start h2 {
+    font-size: 14px;
+    color: #88aaff;
+    margin-bottom: 8px;
+  }
+  .before-you-start li { margin-bottom: 4px; margin-left: 16px; }
+</style>
+</head>
+<body>
+
+<h1>Filming Day</h1>
+<p class="subtitle">107 exercises + warm-ups — tap to expand, tap check to mark done</p>
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+<div class="progress-label" id="progressLabel">0 / 42 done</div>
+
+<div class="before-you-start">
+  <h2>Before You Start</h2>
+  <ul>
+    <li>Camera on tripod, phone landscape</li>
+    <li>Front-lit or 45-degree lighting — no backlighting</li>
+    <li>Warm up before filming</li>
+    <li>Use 60-70% of working weight (looks real, perfect form)</li>
+    <li>2-3 clean reps per clip, then optionally 1 "wrong" rep</li>
+    <li>Review each clip before moving on</li>
+    <li>15-20 seconds per exercise</li>
+  </ul>
+</div>
+
+<div id="exercises"></div>
+
+<script>
+const exercises = [
+  // ── WARM-UP: Block 1 ──
+  { block: "Block 1: Bar Area (~60 min)", name: "WARM-UP: Bar Area", angles: "Don't film", steps: [
+    { icon: "🫀", text: "Light cardio — 3 min brisk walk, bike, or rowing. Just get warm" },
+    { icon: "🔄", text: "Hip circles — 10 each direction. Stiff hips restrict squatting" },
+    { icon: "🦵", text: "Leg swings — 10 forward/back + 10 lateral each leg. Loosens hips" },
+    { icon: "⬇️", text: "Bodyweight squats — 15 reps, go to full depth, pause at the bottom" },
+    { icon: "🐱", text: "Cat-cow — 10 slow reps. Loosens lower back before deadlifts" },
+    { icon: "🍑", text: "Glute bridges — 2×15, squeeze hard at top. Gets glutes and hamstrings on" },
+    { icon: "🏋️", text: "Good morning stretch — 10 reps, hinge at hip with no weight" },
+    { icon: "🦪", text: "Clamshells — 2×15 each side. Stops knees caving in during squats" },
+    { icon: "🔘", text: "Ankle circles — 10 each direction each ankle" },
+    { icon: "🔗", text: "Hip flexor stretch — 60s each side. Tight hip flexors stop full lockout" },
+    { icon: "💪", text: "Banded hip hinge — 2×10, drive hips back against band pull" },
+    { icon: "🏋️", text: "Ramp sets: empty bar squat × 8, then 50% × 5, then 75% × 3" },
+    { icon: "🫁", text: "Lat bracing drill — empty bar on back, brace sides hard, 5 slow breaths" },
+  ], tip: "These are the exact warm-ups Kine programmes for legs/hinge sessions. You need to look smooth on camera." },
+
+  { name: "Barbell Back Squat", angles: "Side + 45-front", steps: [
+    { icon: "📐", text: "Set tripod at hip height, side-on to the rack" },
+    { icon: "🏋️", text: "Use a weight that looks challenging but allows perfect form" },
+    { icon: "1️⃣", text: "Film the full cycle: unrack → walkout → rep → rerack on first rep" },
+    { icon: "2️⃣", text: "Then crop tighter for remaining 2 reps" },
+    { icon: "👀", text: "Chest stays up. Knees track over toes. Hip crease breaks below knee. Bar path vertical. Controlled descent, powerful drive up" },
+    { icon: "🔄", text: "Move camera to 45-front and film 2 more reps" },
+  ], mistake: "Hips shooting up first while chest drops forward ('good morning squat'). Film 1 rep of this with lighter weight.", tip: "Make sure the plates don't obscure your lower back in the side angle" },
+
+  { name: "Front Squat", angles: "Side + 45-front", steps: [
+    { icon: "📐", text: "Keep tripod side-on from back squat setup" },
+    { icon: "🏋️", text: "Light weight is fine — this is about position, not load" },
+    { icon: "👀", text: "Elbows HIGH — parallel to floor or above. Torso nearly vertical. Deep squat with knees pushing forward and out" },
+    { icon: "🔄", text: "Side angle is critical to show elbow position relative to the floor" },
+  ], mistake: "Elbows dropping, bar rolling forward, torso collapsing. Film this briefly." },
+
+  { name: "Overhead Press", angles: "Side + front", steps: [
+    { icon: "📐", text: "Keep side tripod position" },
+    { icon: "1️⃣", text: "Bar starts at collarbone. Head moves back slightly to let bar pass" },
+    { icon: "2️⃣", text: "Head pushes forward once bar clears. Lockout directly over mid-foot" },
+    { icon: "👀", text: "No excessive lean-back" },
+    { icon: "🔄", text: "Move camera to front for 2 reps — shows lockout width and shoulder symmetry" },
+  ], mistake: "Excessive lower back arch to cheat the weight up. Show the spine hyperextending." },
+
+  { name: "Box Squat", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — make sure box height is visible in frame" },
+    { icon: "1️⃣", text: "Controlled sit to the box — no plopping" },
+    { icon: "2️⃣", text: "Brief pause on box with shins vertical" },
+    { icon: "3️⃣", text: "Explosive drive up. Hips break first on the descent" },
+  ], mistake: "Dropping/plopping onto the box with a rounded back. The 'sit and relax' collapse." },
+
+  { name: "Conventional Deadlift", angles: "Side + 45-front", steps: [
+    { icon: "📐", text: "Side angle is NON-NEGOTIABLE. Set tripod at hip height so lower back is visible" },
+    { icon: "⚠️", text: "Make sure the plates don't obscure the lower back" },
+    { icon: "👀", text: "Bar stays touching the legs entire pull. Back flat from start to finish. Hips and shoulders rise at same rate. Lockout: hips forward, shoulders back — not leaning back" },
+    { icon: "🔄", text: "Move camera to 45-front for 2 more reps" },
+  ], mistake: "Lower back rounding off the floor. This is the most dangerous fault — film briefly with light weight." },
+
+  { name: "Sumo Deadlift", angles: "Front + side", steps: [
+    { icon: "📐", text: "Front angle is PRIMARY for sumo — shows stance width, knee tracking, hip position" },
+    { icon: "👀", text: "Wide stance, toes out 45°+. Hips close to bar. Torso more upright than conventional. Knees push OUT over toes. Bar travels straight" },
+    { icon: "🔄", text: "Side angle as secondary" },
+  ], mistake: "Hips shooting up while chest stays low. Also: knees caving inward on the pull." },
+
+  { name: "Romanian Deadlift", angles: "Side only", steps: [
+    { icon: "📐", text: "Side angle only needed" },
+    { icon: "👀", text: "Slight knee bend that STAYS CONSTANT. Hips push straight back like closing a car door with your butt. Bar slides down the thighs" },
+    { icon: "✨", text: "Show the deep hamstring stretch at the bottom. Back stays flat throughout" },
+  ], mistake: "Rounding the back to reach the floor. The RDL is about hip hinge depth, NOT how low the bar goes." },
+
+  { name: "Barbell Row", angles: "Side + 45-front", steps: [
+    { icon: "📐", text: "Side angle first" },
+    { icon: "👀", text: "Torso at ~45 degrees (not upright). Bar pulls to lower chest/upper belly. Elbows drive back past the torso. Controlled lower" },
+    { icon: "⚠️", text: "The torso stays STILL while only the arms move" },
+    { icon: "🔄", text: "45-front angle shows the bar path" },
+  ], mistake: "Using momentum / jerking the torso upright to heave the weight. The back angle changes every rep." },
+
+  { name: "Good Morning", angles: "Side only", steps: [
+    { icon: "🏋️", text: "LIGHT WEIGHT ONLY" },
+    { icon: "📐", text: "Side angle shows hinge vs. squat distinction clearly" },
+    { icon: "👀", text: "Bar on upper back, slight knee bend. Hinge at hips pushing butt back. Torso goes roughly parallel. Hamstring stretch at bottom, then hip drive to stand" },
+  ], mistake: "Rounding the lower back at the bottom. Also: squatting it instead of hinging (too much knee bend)." },
+
+  { name: "Barbell Curl", angles: "Side only", steps: [
+    { icon: "📐", text: "Side angle shows elbow drift and body sway" },
+    { icon: "👀", text: "Elbows pinned at sides — don't move forward or back. Full range: arms fully extended at bottom, bar to shoulders at top. Controlled lower" },
+  ], mistake: "Swinging the hips / leaning back to heave the weight up. Elbows drifting forward." },
+
+  { name: "Pendlay Row", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — must see the bar touch the floor between reps" },
+    { icon: "👀", text: "Bar starts dead on the floor each rep. Torso nearly parallel to floor. Explosive pull to lower chest, controlled return to floor. Full stop between reps" },
+  ], mistake: "Not resetting on the floor (turning it into a sloppy barbell row). Also: torso rising too high during the pull." },
+
+  { name: "Walking Lunges", angles: "Side", steps: [
+    { icon: "📐", text: "Camera walks alongside OR film from stationary side for 3-4 steps" },
+    { icon: "👀", text: "Long stride. Front knee tracks over the foot. Torso upright. Rear knee drops straight down (nearly touches floor). Push off front foot to step through" },
+  ], mistake: "Short choppy steps with torso leaning forward. Also: front knee caving inward." },
+
+  // ── WARM-UP: Block 2 ──
+  { block: "Block 2: Bench Area (~30 min)", name: "WARM-UP: Bench Area", angles: "Don't film", steps: [
+    { icon: "🍑", text: "Glute activation circuit — clamshell 15 + single-leg bridge 10 each side, no rest" },
+    { icon: "🔄", text: "Thoracic rotations — 8 each side, hands behind head, rotate upper back" },
+    { icon: "🔗", text: "Band pull-aparts — 2×15, wakes up back of shoulders before pressing" },
+    { icon: "🔄", text: "Arm circles — 10 forward, 10 backward" },
+    { icon: "🛡️", text: "Rotator cuff external rotation — light band, elbow at 90°, 2×15 each side" },
+    { icon: "➕", text: "Serratus push-up plus — 2×10, at top of push-up push floor away" },
+    { icon: "📐", text: "Wall slides — 10 reps, back against wall, slide arms overhead" },
+    { icon: "🔲", text: "Scapular retraction drill — pinch shoulder blades together, hold 5s, 8 times" },
+    { icon: "🏋️", text: "Ramp sets: empty bar bench × 8, then 50% × 5, then 75% × 3" },
+  ], tip: "Glutes first (for hip thrusts), then push prep. These are from Kine's hinge + push warm-up programmes." },
+
+  { name: "Hip Thrust", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — this is one of the most popular exercises in the app, get it right" },
+    { icon: "1️⃣", text: "Upper back on bench, feet flat on floor" },
+    { icon: "2️⃣", text: "Drive hips up until torso is parallel to floor" },
+    { icon: "3️⃣", text: "Full lockout — squeeze glutes HARD at the top" },
+    { icon: "👀", text: "Chin tucked (look forward, not at the ceiling). Controlled lower" },
+  ], mistake: "Hyperextending the lower back at the top instead of posteriorly tilting the pelvis. Also: pushing through toes instead of heels." },
+
+  { name: "Glute Bridge", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle, LOW camera" },
+    { icon: "👀", text: "Lying on floor. Same drive as hip thrust but shorter range. Squeeze at top, posterior pelvic tilt. Feet close to the butt" },
+  ], mistake: "Same hyperextension fault as hip thrust. Also: feet too far from body (hamstrings take over)." },
+
+  { name: "Single-Leg Hip Thrust", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle. Consider a brief front angle too to show hip levelness" },
+    { icon: "👀", text: "Same as hip thrust but one leg extended. Drive through the planted foot. Hips stay LEVEL — don't let the off-side drop" },
+  ], mistake: "Hip dropping on the unsupported side. Also: same hyperextension fault." },
+
+  { name: "Barbell Bench Press", angles: "Side + 45-front", steps: [
+    { icon: "📐", text: "Side angle first — shows bar path + arch" },
+    { icon: "1️⃣", text: "Shoulder blades pinched and DOWN on the bench" },
+    { icon: "2️⃣", text: "Bar touches mid-chest. Elbows at ~45 degrees to the body (NOT 90)" },
+    { icon: "3️⃣", text: "Feet flat and driving into the floor" },
+    { icon: "👀", text: "Bar path is slight diagonal — lower chest to above shoulders" },
+    { icon: "🔄", text: "45-front shows elbow tuck. Optional: top-down or foot-end shot" },
+  ], mistake: "Elbows flared to 90 degrees (shoulder destroyer). Show the difference between 45° elbows (good) and 90° elbows (bad) clearly." },
+
+  { name: "Incline Barbell Press", angles: "Side + 45-front", steps: [
+    { icon: "📐", text: "Show the bench angle in frame so viewers can set theirs correctly" },
+    { icon: "👀", text: "Bench at 30-45 degrees. Bar touches upper chest / collarbone area. Same shoulder blade retraction as flat bench. Elbows ~45 degrees" },
+  ], mistake: "Bench set too steep (turning it into a shoulder press). Also: same elbow flare issue." },
+
+  { name: "Close-Grip Bench Press", angles: "Side", steps: [
+    { icon: "📐", text: "Show grip width — hands relative to the knurling need to be visible" },
+    { icon: "👀", text: "Hands shoulder-width apart (not closer). Elbows stay TIGHT to the body. Bar touches lower chest. Triceps do the work" },
+  ], mistake: "Grip too narrow (wrist strain) or elbows flaring out (turns it into regular bench)." },
+
+  { name: "Skull Crushers", angles: "Side only", steps: [
+    { icon: "📐", text: "Side angle is the only one that matters" },
+    { icon: "👀", text: "Upper arms stay vertical / slightly angled back. ONLY the forearms move — bending at the elbow. Bar lowers to forehead or just behind the head. Elbows don't flare" },
+  ], mistake: "Elbows flaring wide and upper arms swinging (turning it into a pullover). Also: dropping bar too fast toward face." },
+
+  { name: "Dumbbell Bench Press", angles: "45-front", steps: [
+    { icon: "📐", text: "45-front — you can see both dumbbells and elbow angle" },
+    { icon: "👀", text: "Dumbbells travel in a slight arc, not straight up. Shoulder blades retracted. Elbows ~45 degrees. Full stretch at bottom" },
+  ], mistake: "Elbows flared to 90 degrees. Also: half reps — not going deep enough." },
+
+  { name: "Incline Dumbbell Press", angles: "45-front", steps: [
+    { icon: "📐", text: "Same as flat DB press — ensure bench angle is visible" },
+    { icon: "👀", text: "Bench at 30-45 degrees. Dumbbells press up and slightly inward. Upper chest emphasis" },
+  ], mistake: "Bench too steep. Also: dumbbells drifting too far forward instead of over the chest." },
+
+  // ── WARM-UP: Block 3 ──
+  { block: "Block 3: Dumbbells (~30 min)", name: "WARM-UP: Dumbbells", angles: "Don't film", steps: [
+    { icon: "🔄", text: "Arm circles — 10 forward, 10 backward. Keep shoulders warm" },
+    { icon: "🦵", text: "Hip flexor release — 60s kneeling stretch each side (BSS prep)" },
+    { icon: "⬇️", text: "Light goblet squat hold — 3×10s at the bottom" },
+    { icon: "🏋️", text: "Light single-leg RDL × 5 each — balance prep for unilateral work" },
+  ], tip: "You're already warm from Blocks 1-2. This is a quick refresh with BSS hip flexor prep from Kine's programme." },
+
+  { name: "Goblet Squat", angles: "45-front", steps: [
+    { icon: "📐", text: "45-front is primary — shows the elbow-inside-knee position" },
+    { icon: "👀", text: "Dumbbell held vertically at chest. Elbows drop INSIDE the knees at the bottom. Deep squat — the weight helps pull you down. Chest stays tall" },
+  ], mistake: "Hinging forward instead of squatting down. Also: not going deep enough." },
+
+  { name: "Bulgarian Split Squat", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — shows shin angle and depth. Very popular exercise, nail the demo" },
+    { icon: "1️⃣", text: "Rear foot elevated on bench" },
+    { icon: "2️⃣", text: "Front shin stays vertical or slightly forward. Torso upright" },
+    { icon: "3️⃣", text: "Lower until rear knee nearly touches floor. Drive through front heel" },
+  ], mistake: "Front knee shooting way past toes with torso leaning forward — all load goes to the knee instead of glute/quad." },
+
+  { name: "Dumbbell Row", angles: "Side + behind", steps: [
+    { icon: "📐", text: "Side angle first, behind angle if possible to show torso rotation" },
+    { icon: "👀", text: "Knee and hand on bench. Torso parallel to floor and STAYS STILL. Dumbbell pulls to hip, elbow drives past the torso. Full stretch at bottom — feel the lat lengthen" },
+  ], mistake: "Rotating the torso to heave the weight up. The shoulder and hip opening up together — the 'corkscrew row'." },
+
+  { name: "Dumbbell Shoulder Press", angles: "Front + side", steps: [
+    { icon: "📐", text: "Front angle first — shows lockout path. Side shows lean-back" },
+    { icon: "👀", text: "Dumbbells start at shoulder height, palms forward. Press straight up to lockout. No excessive lean-back. Core braced, ribcage down" },
+  ], mistake: "Leaning way back and arching the spine — turns it into an incline press and loads the lower back." },
+
+  { name: "Lateral Raise", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — shows shoulder vs. trap activation clearly" },
+    { icon: "🏋️", text: "USE LIGHT WEIGHT — ego weight ruins this movement" },
+    { icon: "👀", text: "Slight fixed bend in elbows. Raise to shoulder height — no higher. Lead with the elbows, not the hands. Controlled lower" },
+  ], mistake: "Shrugging the traps. Shoulders hike up to the ears and traps take over. Also: momentum/swinging." },
+
+  { name: "Dumbbell Curl", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows body sway and elbow position" },
+    { icon: "👀", text: "Elbows pinned at sides. Full range — all the way down, all the way up. Controlled eccentric. Wrists stay neutral" },
+  ], mistake: "Swinging the body. Elbows drifting forward. Same faults as barbell curl." },
+
+  { name: "Hammer Curl", angles: "Side or 45-front", steps: [
+    { icon: "📐", text: "Angle should show the neutral grip clearly" },
+    { icon: "👀", text: "Neutral grip (palms facing each other) THROUGHOUT. Same strict form — elbows pinned, no swing" },
+  ], mistake: "Letting the wrist rotate (turning it into a regular curl). Also: swinging." },
+
+  { name: "Single-Leg Deadlift", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows hinge depth and the T-position" },
+    { icon: "👀", text: "Standing leg has slight knee bend. Hinge forward as back leg rises — body forms a T-shape. Hips stay SQUARE. Dumbbell slides down the standing leg" },
+  ], mistake: "Hips opening/rotating to the side. Also: rounding the back. Also: not hinging deep enough.", tip: "Might need a brief front angle too to show hip squareness" },
+
+  { name: "Reverse Lunges", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — shows step length and shin angle" },
+    { icon: "👀", text: "Step BACKWARD. Front shin stays more vertical than walking lunges. Drop the rear knee straight down. More glute emphasis than forward lunges" },
+  ], mistake: "Stepping too short and getting a cramped position. Also: leaning the torso forward." },
+
+  { name: "Arnold Press", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle is the only way to see the rotation clearly" },
+    { icon: "👀", text: "Start with palms facing you. Rotate palms outward AS you press up — twist and press happen simultaneously. Full lockout with palms forward" },
+    { icon: "⚠️", text: "Slow the reps down slightly so the rotation is visible on camera" },
+  ], mistake: "Rotating first, THEN pressing (two separate movements instead of one fluid motion). Also: not rotating fully." },
+
+  { name: "Step-Ups", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — camera at box height. Shows whether drive comes from top or bottom leg" },
+    { icon: "👀", text: "Foot flat on the box/bench. Drive through the TOP foot — don't push off the bottom foot. Stand fully at the top. Controlled step down" },
+  ], mistake: "Pushing off the back foot to cheat the lift (bottom leg does the work instead of top leg). This defeats the entire purpose." },
+
+  { name: "Tricep Kickback", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows upper arm position and full extension" },
+    { icon: "👀", text: "Torso parallel to floor. Upper arm pinned parallel to torso. Only the forearm moves — extend to full lockout. Squeeze at the top" },
+  ], mistake: "Upper arm dropping / swinging. Also: not reaching full extension." },
+
+  { name: "Reverse Fly (Dumbbell)", angles: "Behind", steps: [
+    { icon: "📐", text: "Behind angle — shows shoulder blade squeeze. Side angle secondary for hinge depth" },
+    { icon: "👀", text: "Hinged forward at hips. Arms raise out to sides with slight elbow bend. Squeeze rear delts and upper back. Controlled lower" },
+  ], mistake: "Using the traps / shrugging. Also: not hinging forward enough (too upright)." },
+
+  { name: "Shrugs", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle shows the trap contraction" },
+    { icon: "👀", text: "Straight up and down — elevate shoulders toward ears. Hold at top. Controlled lower. NO rolling the shoulders" },
+  ], mistake: "Rolling the shoulders in circles. Also: using too much weight with zero range." },
+
+  // ── WARM-UP: Block 4 ──
+  { block: "Block 4: Cable Station (~30 min)", name: "WARM-UP: Cables", angles: "Don't film", steps: [
+    { icon: "🔗", text: "Dead hangs — 2×20s, let whole body hang and decompress. Gets back switched on" },
+    { icon: "🔗", text: "Shoulder dislocates — 10 reps with band, full shoulder range before loading" },
+    { icon: "⬇️", text: "Scapular pull-ups — 2×8, pull shoulder blades down without bending arms" },
+    { icon: "💪", text: "Lat activation — straight-arm pulldown, 2×15 with light band. Feel back, not arms" },
+    { icon: "🔗", text: "Face pulls — band or cable, 2×20. Wakes up back of shoulder" },
+    { icon: "🙏", text: "Lat prayer stretch — forearms on bench, sit hips back, 2×20s" },
+  ], tip: "These are from Kine's pull session warm-up. Dead hangs and scapular work prep the lats and shoulders." },
+
+  { name: "Lat Pulldown", angles: "Front + side", steps: [
+    { icon: "📐", text: "Front angle first — shows bar path and grip width. Side shows lean angle" },
+    { icon: "👀", text: "Slight lean back (~15 degrees). Pull bar to upper chest, NOT behind the neck. Elbows drive DOWN and BACK. Full stretch at top — arms fully extended, shoulders elevated" },
+  ], mistake: "Leaning way back using momentum. Pulling to the belly (too much bicep, not enough lat). Behind-the-neck pulldowns (injury risk)." },
+
+  { name: "Seated Cable Row", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows torso position and whether they're swaying" },
+    { icon: "👀", text: "Chest stays tall, slight lean forward at the start. Pull handle to lower ribcage. Shoulder blades squeeze together. Controlled return — torso doesn't get pulled forward" },
+  ], mistake: "Rocking the torso back and forth like a rowing machine. The back should stay mostly still." },
+
+  { name: "Tricep Pushdown", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows elbow drift clearly" },
+    { icon: "👀", text: "Elbows pinned at sides. Only the forearms move. Full lockout at bottom, controlled return. Slight forward lean is OK" },
+  ], mistake: "Elbows drifting away from the body. Using shoulders/body weight to push down instead of isolating triceps." },
+
+  { name: "Face Pulls", angles: "Side + front", steps: [
+    { icon: "📐", text: "Side shows pull height. Front shows the external rotation finish" },
+    { icon: "1️⃣", text: "Pull rope to face level" },
+    { icon: "2️⃣", text: "Then externally rotate — hands end up beside the ears with elbows HIGH" },
+    { icon: "⚠️", text: "The external rotation at the end is the KEY part" },
+    { icon: "🏋️", text: "Light and controlled. This should NOT be heavy" },
+  ], mistake: "Pulling to the chest like a row (no external rotation). Also: too heavy, using body momentum." },
+
+  { name: "Cable Chest Fly", angles: "Front", steps: [
+    { icon: "📐", text: "Front shows the arc and elbow angle. Show the cable height in frame" },
+    { icon: "👀", text: "Arms in a hugging arc — slight bend at elbows, FIXED throughout. Squeeze at the front, controlled stretch on return" },
+    { icon: "⚠️", text: "Note cable height: set HIGH for lower chest, LOW for upper chest" },
+  ], mistake: "Pressing instead of flying — bending and extending elbows (turns it into a cable press). Elbow angle should stay CONSTANT." },
+
+  { name: "Overhead Tricep Extension", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows arm path and elbow position" },
+    { icon: "👀", text: "Facing away from cable, arms overhead. Elbows point forward/up and stay STILL. Only forearms extend. Deep stretch behind the head, full lockout in front" },
+  ], mistake: "Elbows flaring out wide. Swinging the upper arms instead of isolating at the elbow." },
+
+  { name: "Cable Curl", angles: "Side", steps: [
+    { icon: "📐", text: "Standard curl filming — side angle" },
+    { icon: "👀", text: "Same as dumbbell/barbell curl — elbows pinned, full range, controlled" },
+  ], mistake: "Same swing/elbow drift faults as all curls." },
+
+  { name: "Pallof Press", angles: "Front", steps: [
+    { icon: "📐", text: "Film from the FRONT, not from the cable side" },
+    { icon: "1️⃣", text: "Stand sideways to the cable" },
+    { icon: "2️⃣", text: "Press hands straight out from the chest" },
+    { icon: "3️⃣", text: "HOLD — resist the rotation. The cable is trying to twist you, you stay square" },
+    { icon: "4️⃣", text: "Return to chest" },
+  ], mistake: "Letting the cable rotate the torso. Also: not pressing far enough out (anti-rotation challenge increases with distance from body)." },
+
+  { name: "Straight-Arm Pulldown", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle is critical — shows the straight arm and the arc" },
+    { icon: "👀", text: "Arms stay straight (slight elbow bend). Hinge slightly at hips. Pull the bar in an arc from face height to thighs. Feel the lats squeeze at the bottom" },
+  ], mistake: "Bending the elbows and turning it into a pulldown. Arms should stay nearly locked." },
+
+  { name: "Cable Pull-Through", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows the hinge pattern — same key angle as RDL" },
+    { icon: "👀", text: "Face away from cable. Hinge at hips, pushing butt back. Cable pulls through between the legs. Stand up by driving hips forward. Full lockout — squeeze glutes" },
+  ], mistake: "Squatting it instead of hinging. Too much knee bend, not enough hip drive back." },
+
+  { name: "Cable Glute Kickback", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows leg path and whether the back is arching" },
+    { icon: "👀", text: "Ankle strap on. Slight forward lean, hold the machine for balance. Kick straight back — hip extension. Squeeze glute at top. Controlled return" },
+  ], mistake: "Arching the lower back to kick higher (lower back compensating for weak glutes). Also: swinging with momentum." },
+
+  { name: "Cable Lateral Raise", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — same as dumbbell version" },
+    { icon: "👀", text: "Cable behind the body or from low pulley. Same movement as dumbbell lateral raise but with constant tension. Controlled all the way down" },
+  ], mistake: "Same traps/shrugging issue as dumbbell version." },
+
+  { name: "Woodchop", angles: "45-front", steps: [
+    { icon: "📐", text: "45-front shows the rotation and diagonal path" },
+    { icon: "👀", text: "Rotation comes from HIPS AND CORE, not the arms. Feet pivot. Cable moves diagonally high to low (or low to high). Arms stay relatively straight" },
+  ], mistake: "Just pulling with the arms without any hip rotation. The arms do the work instead of the core." },
+
+  { name: "Cable Crunch", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows whether crunch is spinal flexion or hip flexion — the crucial distinction" },
+    { icon: "👀", text: "Kneeling, rope behind the head. Crunch DOWN by flexing the spine — ribs toward pelvis. Hips stay still" },
+  ], mistake: "Sitting back toward the heels (hip flexion instead of spinal flexion). The butt drops back and the abs do nothing." },
+
+  // ── BLOCK 4.5: Pull Bar ──
+  { block: "Block 4.5: Pull Bar (~15 min)", name: "WARM-UP: Pull Bar", angles: "Don't film", steps: [
+    { icon: "🔗", text: "Active hang hold — 2×15s, hang and actively pull shoulder blades down" },
+    { icon: "⬇️", text: "Scapular pull-ups — 5 reps, feel lats engage without bending arms" },
+    { icon: "💪", text: "Chin-over-bar hold — 3×5s, hold at top of pull-up" },
+  ], tip: "From Kine's pull warm-up. You already have a Pull-Up video — these are the skill path progression exercises." },
+
+  { name: "Dead Hang", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle" },
+    { icon: "👀", text: "Full dead hang, arms straight, shoulders relaxed. Grip the bar and just hang. Shoulders may be elevated (passive) or pulled down (active)" },
+  ], mistake: "Not fully extending the arms. Also: excessive swinging." },
+
+  { name: "Scapular Pull-Up", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — zoom in slightly so shoulder blade retraction is visible" },
+    { icon: "👀", text: "Dead hang. Without bending the arms, pull shoulder blades DOWN and together. Small movement — just the scapulae. Then release back to dead hang" },
+    { icon: "⚠️", text: "This is a subtle movement — make sure the camera is close enough to see it" },
+  ], mistake: "Bending the elbows (turning it into a partial pull-up). The arms should stay straight." },
+
+  { name: "Assisted Pull-Up", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle" },
+    { icon: "👀", text: "Knees or feet on the assistance pad. Full range — dead hang to chin over bar. Controlled lower" },
+  ], mistake: "Half reps — not going to full dead hang at the bottom." },
+
+  { name: "Chin-Up", angles: "Front + side", steps: [
+    { icon: "📐", text: "Front angle primary — shows the underhand grip" },
+    { icon: "👀", text: "Underhand (supinated) grip. Full dead hang to chin over bar. More bicep involvement than pull-ups — that's expected. Controlled lower" },
+  ], mistake: "Kipping/swinging. Also: not reaching full dead hang at the bottom." },
+
+  { name: "Dips", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Lower until upper arms parallel to floor (or slightly below). Elbows track back, not flare out. Press to full lockout. Slight forward lean for chest, upright for triceps" },
+  ], mistake: "Not going deep enough (half reps). Excessive forward lean with flared elbows (shoulder impingement risk)." },
+
+  // ── BLOCK 4.75: Machines ──
+  { block: "Block 4.75: Machines (~20 min) — Easy Wins", name: "Leg Press", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle at the machine — shows knee angle and back position" },
+    { icon: "👀", text: "Full range — knees come toward chest. Lower back stays pressed into the pad. Drive through heels. Full extension at top without locking knees" },
+  ], mistake: "Lower back lifting off the pad at the bottom (butt wink under load — disc risk). Also: half reps." },
+
+  { name: "Leg Extension", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle. Simple movement, short clip" },
+    { icon: "👀", text: "Full extension at top — squeeze the quads hard. Controlled lowering. Pad sits on lower shin, not the foot" },
+  ], mistake: "Using momentum / swinging the weight up. Also: not reaching full extension." },
+
+  { name: "Leg Curl", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle for lying curl, front or side for seated" },
+    { icon: "👀", text: "Full range — from straight legs to fully curled. Squeeze hamstrings at peak contraction. Controlled eccentric" },
+  ], mistake: "Lifting hips off the pad to cheat more range (lying curl). Also: slamming the weight stack." },
+
+  { name: "Hip Abduction Machine", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — shows full movement and upright torso" },
+    { icon: "👀", text: "Push knees OUT against the pads. Squeeze at the widest point. Controlled return — don't let the weight slam legs together" },
+  ], mistake: "Using momentum / bouncing. Also: leaning torso forward to cheat." },
+
+  { name: "Hip Adduction Machine", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle, same setup as abduction — quick swap" },
+    { icon: "👀", text: "Squeeze knees TOGETHER against the pads. Hold the squeeze briefly. Controlled return" },
+  ], mistake: "Same momentum/bouncing faults." },
+
+  { name: "Machine Chest Press", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — shows shoulder blade position" },
+    { icon: "👀", text: "Shoulder blades retracted against the pad. Press to full extension. Controlled return — feel the stretch in the chest" },
+  ], mistake: "Shoulders rounding forward off the pad. Also: partial reps on the return." },
+
+  { name: "Machine Row", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — shows whether chest stays on the pad" },
+    { icon: "👀", text: "Chest against the pad. Pull handles back, squeeze shoulder blades. Controlled return — feel the stretch" },
+  ], mistake: "Pulling chest OFF the pad to use body momentum. The pad should keep the torso honest." },
+
+  { name: "Calf Raises", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Full range — heels below the step at bottom, all the way up on tiptoes at top. Pause at the top. Controlled lower" },
+  ], mistake: "Bouncing / partial range. Most people do half-reps on calves." },
+
+  { name: "Hack Squat", angles: "Side", steps: [
+    { icon: "📐", text: "Side of the machine — shows depth and foot position" },
+    { icon: "👀", text: "Feet shoulder-width on the platform. Full depth — below parallel. Back stays flat against the pad. Drive through heels" },
+  ], mistake: "Cutting depth short (half reps). Also: heels coming up." },
+
+  { name: "Back Extension", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — shows range and whether you go past neutral" },
+    { icon: "👀", text: "Hinge at the hips, lower the torso. Raise back to straight — DON'T hyperextend past neutral. Squeeze glutes at the top" },
+  ], mistake: "Hyperextending (going past straight). Also: rounding on the way down." },
+
+  { name: "Glute Kickback Machine", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows leg path and back position" },
+    { icon: "👀", text: "Press through the heel/foot plate. Full hip extension at the back. Squeeze the glute. Controlled return" },
+  ], mistake: "Arching the lower back to extend further instead of using the glute." },
+
+  // ── WARM-UP: Block 5 ──
+  { block: "Block 5: Bodyweight / Mat (~20 min)", name: "WARM-UP: Bodyweight", angles: "Don't film", steps: [
+    { icon: "🧠", text: "Dead bug — 8 reps each side, keep lower back flat. Gets deep core working" },
+    { icon: "🐦", text: "Bird dog — 8 reps each side, slow and controlled. Core front and back" },
+    { icon: "🧱", text: "Plank hold — 2×20s, brace whole body" },
+    { icon: "📏", text: "Side plank — 20s each side, works side of core" },
+  ], tip: "From Kine's core warm-up programme. You're 2+ hours in — this re-activates core for clean bodyweight demos." },
+
+  { name: "Push-Up", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Body in a straight line from head to heels. Chest touches the floor (or close). Elbows at ~45 degrees. Full lockout at top" },
+  ], mistake: "Hips sagging (banana back). Also: half reps — not going low enough." },
+
+  { name: "Plank", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Straight line from head to heels. Glutes and abs braced. Elbows under shoulders" },
+  ], mistake: "Hips sagging (low back stress) or piking up (too easy)." },
+
+  { name: "Dead Bug", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "1️⃣", text: "On back, arms up, knees at 90 degrees" },
+    { icon: "2️⃣", text: "Extend opposite arm and leg while keeping lower back PRESSED into the floor" },
+    { icon: "3️⃣", text: "Return and switch" },
+  ], mistake: "Lower back arching off the floor as you extend. If the back arches, you've gone too far." },
+
+  { name: "Bird Dog", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "1️⃣", text: "On all fours" },
+    { icon: "2️⃣", text: "Extend opposite arm and leg simultaneously" },
+    { icon: "3️⃣", text: "Body stays level — no rotation. Return and switch" },
+  ], mistake: "Torso rotating / hip opening up on the extended side." },
+
+  { name: "Hollow Body Hold", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "On back, arms overhead, legs extended. Lift shoulders and feet off the floor. Lower back PRESSED into the ground. Body forms a banana shape" },
+  ], mistake: "Lower back arching off the floor (core isn't engaged)." },
+
+  { name: "Bodyweight Squat", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Full depth. Arms out front for balance. Chest up, weight in heels" },
+  ], mistake: "Heels lifting, forward lean, not hitting depth." },
+
+  { name: "Mountain Climbers", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Plank position. Drive knees toward chest alternately. Hips stay level — don't bounce up and down" },
+  ], mistake: "Hips piking up high with each knee drive." },
+
+  { name: "Hanging Leg Raise", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Dead hang, legs together. Raise legs to 90 degrees or higher. Controlled lower — NO swinging. The core does the work" },
+  ], mistake: "Swinging/kipping to get the legs up. Also: bending the knees excessively." },
+
+  { name: "Side Plank", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — body in straight line facing camera" },
+    { icon: "👀", text: "Body in straight line. Stacked or staggered feet. Top hip pushed up — don't let it sag" },
+  ], mistake: "Hip sagging toward the floor." },
+
+  { name: "Crunch", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Hands behind head (don't pull on neck). Curl shoulders up by flexing the spine. Short range — just lifting the shoulder blades" },
+  ], mistake: "Pulling the neck forward with the hands. Also: full sit-up with hip flexors." },
+
+  { name: "Russian Twist", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle" },
+    { icon: "👀", text: "Seated, lean back ~45 degrees, feet off the floor. Rotate side to side from the core. Weight touches the ground each side" },
+  ], mistake: "Just moving the arms/weight without actually rotating the torso." },
+
+  { name: "Lying Leg Raise", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Legs together, straight. Raise to 90 degrees or just past. Controlled lower — this is where the abs work hardest. Lower back stays on the floor" },
+  ], mistake: "Lower back arching off the floor on the lowering phase. Also: bending the knees." },
+
+  { name: "Bicycle Crunch", angles: "Side", steps: [
+    { icon: "📐", text: "Side or slightly overhead angle" },
+    { icon: "👀", text: "Opposite elbow toward opposite knee. Rotate through the CORE, not just the shoulders. Controlled rhythm" },
+  ], mistake: "Just moving the elbows without actually rotating the torso." },
+
+  { name: "Banded Clamshell", angles: "Front", steps: [
+    { icon: "📐", text: "From above or in front — shows hip rolling fault clearly" },
+    { icon: "👀", text: "Lying on side, knees bent 90 degrees, band around knees. Open top knee like a clamshell — feet stay together. Squeeze glute at top. Controlled close" },
+  ], mistake: "Rolling the hips backward to cheat the opening. The pelvis should stay stacked — only the knee opens." },
+
+  { name: "Lateral Band Walk", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle shows stance width and band tension" },
+    { icon: "👀", text: "Band around ankles or above knees. Athletic stance, slight squat. Step sideways with control — lead foot opens, trail foot follows. Tension stays on the band throughout" },
+  ], mistake: "Standing too tall (no tension on glutes). Also: dragging the trail foot and losing band tension." },
+
+  // ── OPTIONAL BLOCK: Bar Extras ──
+  { block: "Optional: Bar Extras (if time permits)", name: "Kettlebell Swing", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle is essential — shows hinge vs. squat and hip snap" },
+    { icon: "👀", text: "Hip HINGE, not a squat. Arms are just ropes — power comes from the hip snap. Bell reaches chest/eye height. Glutes and abs brace hard at top" },
+  ], mistake: "Squatting the swing (too much knee bend, not enough hinge). Also: using arms to lift instead of hips." },
+
+  { name: "Trap Bar Deadlift", angles: "Side + front", steps: [
+    { icon: "📐", text: "Side angle shows the more upright torso vs conventional" },
+    { icon: "👀", text: "Stand inside the trap bar. Neutral grip. More upright than conventional deadlift. Drive through the floor, stand up straight" },
+  ], mistake: "Same rounding fault as conventional. Also: locking out with shoulders behind hips (leaning back)." },
+
+  { name: "Dumbbell Romanian Deadlift", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — same as barbell RDL" },
+    { icon: "👀", text: "Same hip hinge as barbell RDL. Dumbbells slide down the thighs. Hamstring stretch at bottom. Back stays flat" },
+  ], mistake: "Same rounding/going-too-deep faults as barbell RDL." },
+
+  { name: "Dumbbell Sumo Deadlift", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — shows wide stance and knee tracking" },
+    { icon: "👀", text: "Wide stance, toes out. Hold one dumbbell hanging between legs. Squat down keeping chest tall. Drive up through heels" },
+  ], mistake: "Rounding the back. Also: knees caving inward." },
+
+  { name: "T-Bar Row", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — same approach as barbell row" },
+    { icon: "👀", text: "Feet straddling the bar. Torso at ~45 degrees. Pull to the chest. Elbows drive back. Torso stays still" },
+  ], mistake: "Same rocking/momentum fault as barbell row." },
+
+  // ── OPTIONAL BLOCK: More Machines ──
+  { block: "Optional: More Machines", name: "Machine Shoulder Press", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows back position and lockout" },
+    { icon: "👀", text: "Back flat against the pad. Press to full lockout. Controlled lower" },
+  ], mistake: "Arching the back to press heavier. Also: not reaching full lockout." },
+
+  { name: "Pec Deck", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle shows squeeze and stretch" },
+    { icon: "👀", text: "Elbows on pads (or handles in hands). Squeeze arms together in front. Controlled opening — feel the chest stretch" },
+  ], mistake: "Leaning torso forward to cheat. Also: not getting a full stretch on the opening." },
+
+  { name: "Rear Delt Fly Machine", angles: "Behind", steps: [
+    { icon: "📐", text: "From behind — shows shoulder blade squeeze and elbow path" },
+    { icon: "👀", text: "Chest against pad. Pull handles back by squeezing rear delts. Elbows stay at shoulder height. Controlled return" },
+  ], mistake: "Pulling with the traps (shrugging) instead of rear delts. Also: too heavy, using momentum." },
+
+  { name: "Seated Calf Raises", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Same full range as standing but seated. Knees at 90 degrees. Emphasizes the soleus more" },
+  ], mistake: "Same bouncing/partial range issue as standing calves." },
+
+  { name: "Pendulum Squat", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows the arc path and depth" },
+    { icon: "👀", text: "Similar to hack squat but pendulum arc. Deep range of motion — this machine allows extreme depth. Controlled throughout" },
+  ], mistake: "Not using the full range the machine allows. Also: bouncing at the bottom." },
+
+  { name: "Seated Leg Curl", angles: "Side", steps: [
+    { icon: "📐", text: "Front or side angle" },
+    { icon: "👀", text: "Full range — from straight legs to fully curled. Squeeze hamstrings at peak. Controlled eccentric" },
+  ], mistake: "Slamming the weight stack. Also: partial range." },
+
+  // ── OPTIONAL BLOCK: Cable Extras ──
+  { block: "Optional: Cable Extras", name: "Close-Grip Lat Pulldown", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — handle type should be visible" },
+    { icon: "👀", text: "V-bar or close-grip handle. Elbows pull tight to the body. More bicep involvement — that's expected. Full stretch at top" },
+  ], mistake: "Same momentum/lean-back issues as standard pulldown." },
+
+  { name: "Single-Arm Cable Row", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Same as seated cable row but one arm. Core resists rotation. Pull to the hip, squeeze the shoulder blade" },
+  ], mistake: "Rotating the torso to pull more weight (defeats the unilateral purpose)." },
+
+  // ── OPTIONAL BLOCK: Dumbbell Extras ──
+  { block: "Optional: Dumbbell Extras", name: "Chest-Supported Row", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows whether chest stays on the pad" },
+    { icon: "👀", text: "Chest flat against the incline bench. Pull dumbbells to the hips. Shoulder blades squeeze. The bench keeps you honest — no cheating" },
+  ], mistake: "Lifting the chest off the bench to pull more weight. The whole point is to eliminate momentum." },
+
+  { name: "Dumbbell Chest Fly", angles: "45-front", steps: [
+    { icon: "📐", text: "45-front shows the arc and elbow angle" },
+    { icon: "👀", text: "Arms in a wide arc, slight fixed bend in elbows. Lower until you feel the chest stretch. Squeeze together at the top" },
+  ], mistake: "Pressing instead of flying (bending elbows changes it to a press). Also: going too deep (shoulder strain)." },
+
+  { name: "Preacher Curl", angles: "Side", steps: [
+    { icon: "📐", text: "Side shows arm extension and pad contact" },
+    { icon: "👀", text: "Arms flat against the preacher pad. Full range — extend all the way down, curl all the way up. Controlled eccentric" },
+  ], mistake: "Not extending fully at the bottom (half reps). Also: lifting elbows off the pad to cheat." },
+
+  { name: "Curtsy Lunge", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — shows the cross-behind path" },
+    { icon: "👀", text: "Step one leg behind and across the other like a curtsy. Front knee tracks over toes. Drop the rear knee down. Great for glute medius" },
+  ], mistake: "Not crossing far enough behind. Also: letting the front knee cave inward." },
+
+  { name: "Sumo Squat", angles: "Front", steps: [
+    { icon: "📐", text: "Front angle — shows stance width and knee tracking" },
+    { icon: "👀", text: "Wide stance, toes turned out. Squat straight down — hips drop between feet. Knees track over toes. Upright torso" },
+  ], mistake: "Knees caving inward. Also: not going deep enough." },
+
+  // ── OPTIONAL BLOCK: Bodyweight Extras ──
+  { block: "Optional: Bodyweight Extras", name: "V-Up", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Simultaneously lift torso and legs, reaching hands toward feet. V-shape at the top. Controlled lower" },
+  ], mistake: "Using momentum to swing up. Also: not reaching full V position." },
+
+  { name: "Incline Push-Up", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Hands on elevated surface. Same straight body line as regular push-up. Easier variation — same standards apply" },
+  ], mistake: "Same hips-sagging fault as regular push-up." },
+
+  { name: "Diamond Push-Up", angles: "Side + front", steps: [
+    { icon: "📐", text: "Side angle + front/overhead for hand position" },
+    { icon: "👀", text: "Hands together forming a diamond under the chest. Elbows track close to the body. Tricep emphasis" },
+  ], mistake: "Elbows flaring wide (defeats the tricep emphasis)." },
+
+  { name: "Jump Squat", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle" },
+    { icon: "👀", text: "Quarter squat, explode up. Land softly with bent knees. Absorb the landing before the next rep" },
+  ], mistake: "Landing with straight legs (joint impact). Also: barely leaving the ground." },
+
+  { name: "Wall Sit", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows the 90-degree angles clearly" },
+    { icon: "👀", text: "Back flat against the wall. Thighs parallel to floor. Knees at 90 degrees directly over ankles. Hold still" },
+  ], mistake: "Thighs NOT parallel (sitting too high). Also: knees past the toes." },
+
+  { name: "Band Pull-Apart", angles: "Front", steps: [
+    { icon: "📐", text: "Front shows pull-apart path and arm height" },
+    { icon: "👀", text: "Band at arm's length in front. Pull apart by squeezing rear delts and upper back. Arms stay at shoulder height. Controlled return" },
+  ], mistake: "Dropping arms below shoulder height. Also: bending elbows to cheat range." },
+
+  { name: "Ab Wheel Rollout", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows hip and spine position — critical safety view" },
+    { icon: "👀", text: "Start on knees. Roll out, extending hips and shoulders. Keep core braced — don't let hips sag. Roll back by pulling with the abs" },
+  ], mistake: "Hips sagging / lower back collapsing. This is where people hurt themselves." },
+
+  { name: "Nordic Curl", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle shows body line and hip break" },
+    { icon: "👀", text: "Knees on pad, ankles anchored. Lower body forward SLOWLY — resisting gravity with hamstrings. Go as far as you can control, catch yourself, push back up" },
+  ], mistake: "Breaking at the hips (bending forward at waist instead of staying rigid from knee to shoulder)." },
+
+  { name: "Farmers Carry", angles: "Side", steps: [
+    { icon: "📐", text: "Side angle — walk alongside for a few steps" },
+    { icon: "👀", text: "Heavy dumbbells at sides. Stand tall — shoulders back and down. Walk with controlled steps. Core braced, no leaning" },
+  ], mistake: "Leaning to one side. Also: looking down instead of ahead." },
+];
+
+// ── Render ──
+const container = document.getElementById('exercises');
+let currentBlock = '';
+
+exercises.forEach((ex, i) => {
+  if (ex.block && ex.block !== currentBlock) {
+    currentBlock = ex.block;
+    const blockDiv = document.createElement('div');
+    blockDiv.className = 'block-header';
+    blockDiv.textContent = currentBlock;
+    container.appendChild(blockDiv);
+  }
+
+  const div = document.createElement('div');
+  div.className = 'exercise';
+  div.dataset.index = i;
+
+  let bodyHTML = '';
+  if (ex.steps) {
+    bodyHTML += '<div class="section-label">Steps</div>';
+    ex.steps.forEach(s => {
+      bodyHTML += `<div class="step"><span class="icon">${s.icon}</span><span>${s.text}</span></div>`;
+    });
+  }
+  if (ex.mistake) {
+    bodyHTML += `<div class="section-label">Common Mistake to Film</div>`;
+    bodyHTML += `<div class="mistake">${ex.mistake}</div>`;
+  }
+  if (ex.tip) {
+    bodyHTML += `<div class="tip">${ex.tip}</div>`;
+  }
+  const q = ex.name.startsWith('WARM-UP')
+    ? encodeURIComponent(ex.name.replace('WARM-UP: ', '') + ' workout warm up routine')
+    : encodeURIComponent(ex.name + ' form tutorial');
+  bodyHTML += `<a class="ref-link" href="https://www.tiktok.com/search?q=${q}" target="_blank">Search TikTok for reference</a>`;
+
+  div.innerHTML = `
+    <div class="exercise-header">
+      <span class="num">${i + 1}</span>
+      <span class="name">${ex.name}</span>
+      <span class="angles">${ex.angles}</span>
+      <span class="check"></span>
+    </div>
+    <div class="exercise-body">${bodyHTML}</div>
+  `;
+  container.appendChild(div);
+});
+
+// ── Interactions ──
+const total = exercises.length;
+const done = new Set(JSON.parse(localStorage.getItem('filmingDone') || '[]'));
+
+function updateProgress() {
+  const pct = (done.size / total * 100).toFixed(0);
+  document.getElementById('progress').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done.size} / ${total} done`;
+  localStorage.setItem('filmingDone', JSON.stringify([...done]));
+}
+
+function applyDone() {
+  document.querySelectorAll('.exercise').forEach(el => {
+    const idx = parseInt(el.dataset.index);
+    if (done.has(idx)) {
+      el.classList.add('done');
+      el.querySelector('.check').textContent = '✓';
+    } else {
+      el.classList.remove('done');
+      el.querySelector('.check').textContent = '';
+    }
+  });
+  updateProgress();
+}
+
+document.getElementById('exercises').addEventListener('click', (e) => {
+  const exercise = e.target.closest('.exercise');
+  if (!exercise) return;
+  const idx = parseInt(exercise.dataset.index);
+
+  // Check button
+  if (e.target.closest('.check')) {
+    if (done.has(idx)) done.delete(idx); else done.add(idx);
+    applyDone();
+    return;
+  }
+
+  // Toggle expand
+  exercise.classList.toggle('open');
+});
+
+applyDone();
+</script>
+
+</body>
+</html>

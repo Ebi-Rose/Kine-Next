@@ -526,6 +526,8 @@ export default function LandingPage() {
               {' · '}
               <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Privacy</a>
               {' · '}
+              <a href="/internal" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Internal</a>
+              {' · '}
               &copy; 2026 Kinē
             </div>
           </div>
