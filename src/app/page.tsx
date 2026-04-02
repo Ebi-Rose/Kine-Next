@@ -38,10 +38,10 @@ export default function LandingPage() {
           padding: 16px 20px;
           position: relative;
           overflow: hidden;
-          background: #0a0a0a;
+          background: #13110f;
           font-family: 'DM Sans', sans-serif;
           font-weight: 300;
-          color: #f0f0f0;
+          color: #f0ebe6;
         }
         .landing-page::before {
           content: '';
@@ -77,35 +77,36 @@ export default function LandingPage() {
           gap: 12px;
         }
         .lp-logo {
-          font-family: 'Bebas Neue', sans-serif;
+          font-family: 'Cormorant Garamond', serif;
           font-size: 48px;
           letter-spacing: 6px;
           line-height: 1;
           margin: 0;
-          font-weight: normal;
+          font-weight: 400;
         }
         .lp-logo .lp-k { color: #c49098; }
-        .lp-logo .lp-rest { color: #f0f0f0; }
+        .lp-logo .lp-rest { color: #f0ebe6; }
         .lp-headline {
-          font-size: 20px;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 22px;
           line-height: 1.5;
-          color: #bbb;
+          color: #c4bdb5;
           max-width: 380px;
         }
         .lp-headline strong {
-          color: #f0f0f0;
-          font-weight: 400;
+          color: #f0ebe6;
+          font-weight: 500;
         }
         .lp-subline {
           font-size: 17px;
           line-height: 1.6;
-          color: #999;
+          color: #8a847d;
           max-width: 380px;
         }
         .lp-body {
           font-size: 14px;
           line-height: 1.6;
-          color: #999;
+          color: #8a847d;
           max-width: 360px;
         }
         .lp-body em {
@@ -122,10 +123,10 @@ export default function LandingPage() {
           display: flex;
           width: 100%;
           max-width: 360px;
-          border-radius: 12px;
+          border-radius: 16px;
           overflow: hidden;
-          border: 1px solid #1a1a1a;
-          background: #0f0f0f;
+          border: 1px solid #2a2722;
+          background: #1a1815;
           transition: border-color 0.3s, box-shadow 0.3s;
         }
         .lp-waitlist-form:focus-within {
@@ -137,7 +138,7 @@ export default function LandingPage() {
           padding: 14px 16px;
           background: transparent;
           border: none;
-          color: #f0f0f0;
+          color: #f0ebe6;
           font-family: 'DM Sans', sans-serif;
           font-size: 14px;
           font-weight: 300;
@@ -153,7 +154,7 @@ export default function LandingPage() {
           padding: 14px 28px;
           background: #c49098;
           border: none;
-          color: #0a0a0a;
+          color: #13110f;
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           font-weight: 500;
@@ -177,7 +178,7 @@ export default function LandingPage() {
         }
         .lp-waitlist-note {
           font-size: 11px;
-          color: #888;
+          color: #8a847d;
           max-width: 300px;
         }
         .lp-access {
@@ -185,7 +186,7 @@ export default function LandingPage() {
         }
         .lp-access a {
           font-size: 12px;
-          color: #999;
+          color: #a09a93;
           text-decoration: none;
           transition: color 0.2s;
           letter-spacing: 0.3px;
@@ -208,8 +209,8 @@ export default function LandingPage() {
           width: 30px;
           height: 30px;
           border-radius: 50%;
-          border: 1px solid #1a1a1a;
-          color: #999;
+          border: 1px solid #2a2722;
+          color: #a09a93;
           transition: border-color 0.2s, color 0.2s;
           text-decoration: none;
         }
@@ -224,7 +225,7 @@ export default function LandingPage() {
         }
         .lp-footer-text {
           font-size: 10px;
-          color: #999;
+          color: #8a847d;
         }
 
         /* Phone */
@@ -235,15 +236,15 @@ export default function LandingPage() {
         .lp-phone {
           width: 210px;
           height: 420px;
-          background: #0e0e0e;
+          background: #13110f;
           border-radius: 32px;
-          border: 2px solid #1a1a1a;
+          border: 2px solid #2a2722;
           overflow: hidden;
           position: relative;
           box-shadow:
             0 0 0 1px rgba(255,255,255,0.02),
             0 24px 80px rgba(0,0,0,0.5),
-            0 0 40px rgba(196, 144, 152, 0.03);
+            0 0 40px rgba(196, 144, 152, 0.04);
         }
         .lp-phone::before {
           content: '';
@@ -253,18 +254,18 @@ export default function LandingPage() {
           transform: translateX(-50%);
           width: 100px;
           height: 24px;
-          background: #0a0a0a;
+          background: #13110f;
           border-radius: 0 0 16px 16px;
           z-index: 10;
         }
         .lp-phone-screen {
           width: 100%;
           height: 100%;
-          padding: 42px 16px 16px;
+          padding: 42px 14px 14px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          background: #0a0a0a;
+          gap: 8px;
+          background: #13110f;
         }
         .lp-phone-top {
           display: flex;
@@ -273,153 +274,121 @@ export default function LandingPage() {
           padding: 0 2px 8px;
         }
         .lp-ph-logo {
-          font-family: 'Bebas Neue', sans-serif;
+          font-family: 'Cormorant Garamond', serif;
           font-size: 14px;
           letter-spacing: 2px;
+          font-weight: 400;
         }
         .lp-ph-logo .lpk { color: #c49098; }
-        .lp-ph-logo .lpr { color: #ddd; }
-        .lp-ph-week {
-          font-size: 9px;
-          color: #444;
+        .lp-ph-logo .lpr { color: #f0ebe6; }
+        .lp-ph-phase {
+          font-size: 7px;
+          color: #8a847d;
           letter-spacing: 0.5px;
         }
-        .lp-ph-session {
-          background: #131313;
-          border: 1px solid #1a1a1a;
-          border-radius: 10px;
-          padding: 12px;
+        .lp-ph-hero {
+          width: 100%;
+          height: 70px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, rgba(196,144,152,0.15) 0%, rgba(196,144,152,0.05) 100%);
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 10px 12px;
+          position: relative;
+          overflow: hidden;
         }
-        .lp-ph-session-title {
-          font-size: 12px;
+        .lp-ph-hero::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: url('/hero-bg.JPG') center/cover no-repeat;
+          opacity: 0.15;
+        }
+        .lp-ph-hero-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 16px;
+          color: #f0ebe6;
           font-weight: 400;
-          color: #e0e0e0;
-          letter-spacing: 0.2px;
+          position: relative;
+          z-index: 1;
         }
-        .lp-ph-session-meta {
-          font-size: 9px;
-          color: #555;
-          margin-top: 4px;
+        .lp-ph-hero-meta {
+          font-size: 8px;
+          color: rgba(240,235,230,0.6);
+          position: relative;
+          z-index: 1;
         }
         .lp-ph-exercise {
-          background: #131313;
-          border: 1px solid #1a1a1a;
-          border-radius: 10px;
-          padding: 12px;
+          background: #1a1815;
+          border: 1px solid #2a2722;
+          border-radius: 14px;
+          padding: 10px 12px;
           display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-        .lp-ph-ex-name {
-          font-size: 11px;
-          font-weight: 400;
-          color: #ddd;
-        }
-        .lp-ph-ex-rx {
-          font-size: 10px;
-          color: #888;
-          font-weight: 300;
-          font-style: italic;
-        }
-        .lp-ph-ex-tags {
-          display: flex;
-          gap: 5px;
-          margin-top: 2px;
-        }
-        .lp-ph-tag {
-          padding: 2px 7px;
-          border-radius: 5px;
-          font-size: 8px;
-          letter-spacing: 0.2px;
-        }
-        .lp-ph-tag-accent {
-          background: rgba(196, 144, 152, 0.1);
-          color: #c49098;
-        }
-        .lp-ph-tag-muted {
-          background: #151515;
-          color: #555;
-        }
-        .lp-ph-cue {
-          border-left: 2px solid rgba(196, 144, 152, 0.25);
-          padding: 8px 10px;
-          font-size: 10px;
-          color: #777;
-          font-weight: 300;
-          font-style: italic;
-          line-height: 1.5;
-        }
-        .lp-ph-edu {
-          background: #111;
-          border: 1px solid #181818;
-          border-radius: 8px;
-          padding: 10px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .lp-ph-edu-label {
-          font-size: 7px;
-          text-transform: uppercase;
-          letter-spacing: 1.5px;
-          color: #444;
-        }
-        .lp-ph-edu-text {
-          font-size: 9px;
-          color: #666;
-          font-weight: 300;
-          line-height: 1.5;
-        }
-        .lp-ph-edu-text em {
-          color: #c49098;
-          font-style: normal;
-        }
-        .lp-ph-checkin-done {
-          display: flex;
-          flex-direction: column;
           align-items: center;
           gap: 8px;
-          padding: 32px 16px 20px;
-          text-align: center;
         }
-        .lp-ph-checkin-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background: rgba(196, 144, 152, 0.08);
+        .lp-ph-ex-thumb {
+          width: 32px;
+          height: 32px;
+          border-radius: 10px;
+          background: rgba(196,144,152,0.08);
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
         }
-        .lp-ph-checkin-title {
-          font-size: 14px;
-          font-weight: 400;
-          color: #e0e0e0;
-          letter-spacing: 0.2px;
+        .lp-ph-ex-thumb svg {
+          width: 10px;
+          height: 10px;
+          fill: #c49098;
+          opacity: 0.6;
         }
-        .lp-ph-checkin-subtitle {
+        .lp-ph-ex-info {
+          flex: 1;
+          min-width: 0;
+        }
+        .lp-ph-ex-name {
           font-size: 10px;
-          color: #555;
+          font-weight: 400;
+          color: #f0ebe6;
         }
-        .lp-ph-adjustment {
-          background: #131313;
-          border: 1px solid #1a1a1a;
-          border-radius: 10px;
-          padding: 14px;
-          border-left: 2px solid rgba(196, 144, 152, 0.3);
-        }
-        .lp-ph-adjustment-text {
-          font-size: 11px;
-          color: #888;
+        .lp-ph-ex-rx {
+          font-size: 8px;
+          color: #8a847d;
           font-weight: 300;
-          line-height: 1.6;
+        }
+        .lp-ph-cycle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          background: #1a1815;
+          border: 1px solid #2a2722;
+          border-radius: 14px;
+        }
+        .lp-ph-cycle-bar {
+          flex: 1;
+          height: 4px;
+          border-radius: 2px;
+          background: #23201b;
+          overflow: hidden;
+          display: flex;
+        }
+        .lp-ph-cycle-seg {
+          height: 100%;
+        }
+        .lp-ph-cycle-label {
+          font-size: 7px;
+          color: #8a847d;
+          white-space: nowrap;
         }
         .lp-ph-nav {
           margin-top: auto;
           display: flex;
           justify-content: space-around;
           padding-top: 8px;
-          border-top: 1px solid #141414;
+          border-top: 1px solid #2a2722;
         }
         .lp-ph-nav-item {
           display: flex;
@@ -427,7 +396,7 @@ export default function LandingPage() {
           align-items: center;
           gap: 2px;
           font-size: 7px;
-          color: #2a2a2a;
+          color: #3a3530;
           letter-spacing: 0.3px;
         }
         .lp-ph-nav-item.active { color: #c49098; }
@@ -470,22 +439,19 @@ export default function LandingPage() {
           .lp-subline { font-size: 12px; max-width: 360px; text-align: center; }
           .lp-body { font-size: 13px; max-width: 300px; text-align: center; }
           .lp-waitlist { align-items: center; }
-          .lp-waitlist-form { max-width: 320px; flex-direction: column; border-radius: 12px; }
+          .lp-waitlist-form { max-width: 320px; flex-direction: column; border-radius: 16px; }
           .lp-waitlist-form input { padding: 12px 14px; font-size: 13px; }
-          .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 12px 12px; }
+          .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 16px 16px; }
           .lp-waitlist-note { text-align: center; }
           .lp-phone { width: 140px; height: 260px; border-radius: 20px; }
           .lp-phone::before { width: 60px; height: 16px; }
           .lp-phone-screen { padding: 24px 10px 10px; gap: 6px; }
           .lp-ph-logo { font-size: 10px; }
-          .lp-ph-week { font-size: 7px; }
-          .lp-ph-checkin-done { padding: 16px 8px 10px; gap: 4px; }
-          .lp-ph-checkin-icon { width: 32px; height: 32px; }
-          .lp-ph-checkin-icon svg { width: 18px; height: 18px; }
-          .lp-ph-checkin-title { font-size: 10px; }
-          .lp-ph-checkin-subtitle { font-size: 7px; }
-          .lp-ph-adjustment { padding: 8px; }
-          .lp-ph-adjustment-text { font-size: 8px; }
+          .lp-ph-hero { height: 50px; border-radius: 10px; }
+          .lp-ph-hero-title { font-size: 12px; }
+          .lp-ph-exercise { padding: 8px 10px; border-radius: 10px; }
+          .lp-ph-ex-thumb { width: 24px; height: 24px; border-radius: 8px; }
+          .lp-ph-cycle { padding: 6px 8px; border-radius: 10px; }
           .lp-ph-nav { display: none; }
           .lp-phone-glow { width: 220px; height: 300px; }
           .lp-footer { display: none; }
@@ -497,7 +463,7 @@ export default function LandingPage() {
         }
       `}</style>
 
-      <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
 
       <div className="lp-layout">
         <div className="lp-content">
@@ -572,23 +538,42 @@ export default function LandingPage() {
             <div className="lp-phone-screen">
               <div className="lp-phone-top">
                 <div className="lp-ph-logo"><span className="lpk">K</span><span className="lpr">INĒ</span></div>
-                <div className="lp-ph-week">Week 2 of 4</div>
+                <div className="lp-ph-phase">Follicular · Week 2</div>
               </div>
 
-              <div className="lp-ph-checkin-done">
-                <div className="lp-ph-checkin-icon">
-                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#c49098" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </div>
-                <div className="lp-ph-checkin-title">Check-in received</div>
-                <div className="lp-ph-checkin-subtitle">Your next week has been updated.</div>
+              <div className="lp-ph-hero">
+                <div className="lp-ph-hero-title">Upper Push</div>
+                <div className="lp-ph-hero-meta">Tuesday · ~45 min · 5 exercises</div>
               </div>
 
-              <div className="lp-ph-adjustment">
-                <div className="lp-ph-adjustment-text">
-                  Soreness was high after Tuesday&apos;s session. Next week spaces your lower body days further apart.
+              <div className="lp-ph-exercise">
+                <div className="lp-ph-ex-thumb">
+                  <svg viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8"/></svg>
                 </div>
+                <div className="lp-ph-ex-info">
+                  <div className="lp-ph-ex-name">Dumbbell Bench Press</div>
+                  <div className="lp-ph-ex-rx">3 × 10 · Push</div>
+                </div>
+              </div>
+
+              <div className="lp-ph-exercise">
+                <div className="lp-ph-ex-thumb">
+                  <svg viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                </div>
+                <div className="lp-ph-ex-info">
+                  <div className="lp-ph-ex-name">Overhead Press</div>
+                  <div className="lp-ph-ex-rx">3 × 8 · Push</div>
+                </div>
+              </div>
+
+              <div className="lp-ph-cycle">
+                <div className="lp-ph-cycle-bar">
+                  <div className="lp-ph-cycle-seg" style={{ width: '25%', background: '#b05a5a' }}></div>
+                  <div className="lp-ph-cycle-seg" style={{ width: '35%', background: '#6a9a7a' }}></div>
+                  <div className="lp-ph-cycle-seg" style={{ width: '15%', background: '#c49098' }}></div>
+                  <div className="lp-ph-cycle-seg" style={{ width: '25%', background: '#8a7a5a' }}></div>
+                </div>
+                <div className="lp-ph-cycle-label">Day 10</div>
               </div>
 
               <div className="lp-ph-nav">
@@ -597,11 +582,11 @@ export default function LandingPage() {
                   Home
                 </div>
                 <div className="lp-ph-nav-item">
-                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  Log
+                  <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Progress
                 </div>
                 <div className="lp-ph-nav-item">
-                  <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
                   Profile
                 </div>
               </div>
