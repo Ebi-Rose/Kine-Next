@@ -860,6 +860,20 @@ const exercises = [
   ], mistake: "Leaning to one side. Also: looking down instead of ahead." },
 ];
 
+// ── TikTok app deep link ──
+function openTikTok(query, el) {
+  const webUrl = 'https://www.tiktok.com/search?q=' + query;
+  const appUrl = 'snssdk1233://search?keyword=' + query;
+  const start = Date.now();
+  const fallback = setTimeout(() => {
+    // If we're still here after 800ms the app didn't open — go to web
+    if (Date.now() - start < 1600) window.location.href = webUrl;
+  }, 800);
+  window.location.href = appUrl;
+  window.addEventListener('blur', () => clearTimeout(fallback), { once: true });
+  return false;
+}
+
 // ── Render ──
 const container = document.getElementById('exercises');
 let currentBlock = '';
@@ -882,7 +896,7 @@ exercises.forEach((ex, i) => {
     bodyHTML += '<div class="section-label">Steps</div>';
     ex.steps.forEach(s => {
       const searchLink = s.search
-        ? ` <a class="step-search" href="https://www.tiktok.com/search?q=${encodeURIComponent(s.search)}" target="_blank">search</a>`
+        ? ` <a class="step-search" href="https://www.tiktok.com/search?q=${encodeURIComponent(s.search)}" target="_blank" onclick="return openTikTok('${encodeURIComponent(s.search)}', this)">search</a>`
         : '';
       bodyHTML += `<div class="step"><span class="icon">${s.icon}</span><span>${s.text}${searchLink}</span></div>`;
     });
@@ -897,7 +911,7 @@ exercises.forEach((ex, i) => {
   const q = ex.name.startsWith('WARM-UP')
     ? encodeURIComponent(ex.name.replace('WARM-UP: ', '') + ' workout warm up routine')
     : encodeURIComponent(ex.name + ' form tutorial');
-  bodyHTML += `<a class="ref-link" href="https://www.tiktok.com/search?q=${q}" target="_blank">Search TikTok for reference</a>`;
+  bodyHTML += `<a class="ref-link" href="https://www.tiktok.com/search?q=${q}" target="_blank" onclick="return openTikTok('${q}', this)">Search TikTok for reference</a>`;
 
   div.innerHTML = `
     <div class="exercise-header">
