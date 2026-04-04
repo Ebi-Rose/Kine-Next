@@ -28,16 +28,91 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function check() {
-      const mode = await getAccessMode();
+      try {
+        const mode = await getAccessMode();
 
-      // ── Demo / New mode: skip auth and subscription checks ──
-      if (mode === "demo" || mode === "new") {
-        // Brief wait for store hydration
-        await new Promise((r) => setTimeout(r, 300));
+        // ── Demo / New mode: skip auth and subscription checks ──
+        if (mode === "demo" || mode === "new") {
+          // Brief wait for store hydration
+          await new Promise((r) => setTimeout(r, 300));
+          if (cancelled) return;
+
+          if (mode === "new") {
+            const { progressDB, goal } = useKineStore.getState();
+            if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
+              router.replace("/app/onboarding");
+              return;
+            }
+          }
+
+          setAllowed(true);
+          return;
+        }
+
+        // ── Real mode: full auth + subscription checks ──
+        const authed = await isAuthenticated();
         if (cancelled) return;
+        if (!authed) {
+          router.replace("/login");
+          return;
+        }
 
-        if (mode === "new") {
+        const isPostCheckout = typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("checkout") === "success";
+
+        let sub = await getSubscriptionStatus();
+        if (!sub.active && isPostCheckout) {
+          setLoadingMsg("Activating your subscription…");
+          // Stripe webhook may not have fired yet — exponential backoff
+          for (let attempt = 0; attempt < 8; attempt++) {
+            await new Promise((r) => setTimeout(r, 1500 * Math.pow(1.3, attempt)));
+            if (cancelled) return;
+            sub = await getSubscriptionStatus();
+            if (sub.active) break;
+          }
+        }
+
+        if (cancelled) return;
+        if (!sub.active) {
+          router.replace("/pricing");
+          return;
+        }
+
+        // Set server-side subscription cookie so middleware can gate routes
+        const session = await getSession();
+        if (session?.access_token) {
+          fetch("/api/verify-subscription", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch(() => {}); // best-effort — middleware falls back to /pricing
+        }
+
+        // Post-checkout: clear any stale demo/test data so onboarding starts fresh
+        if (isPostCheckout) {
+          const storeState = useKineStore.getState();
+          storeState.resetOnboarding();
+          storeState.setWeekData(null);
+          storeState.setProgressDB({
+            sessions: [],
+            lifts: { squat: [], bench: [], deadlift: [] },
+            currentWeek: 1,
+            weekFeedbackHistory: [],
+            programStartDate: null,
+            skippedSessions: [],
+            phaseOffset: 0,
+          });
+          window.history.replaceState({}, "", pathname);
+          // If already on onboarding, fall through to setAllowed(true)
+          if (pathname !== "/app/onboarding") {
+            router.replace("/app/onboarding");
+            return;
+          }
+        } else {
+          // Brief wait for store hydration from localStorage
+          await new Promise((r) => setTimeout(r, 300));
           const { progressDB, goal } = useKineStore.getState();
+
+          // Onboarding not complete unless both goal and programStartDate are set
           if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
             router.replace("/app/onboarding");
             return;
@@ -45,80 +120,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
 
         setAllowed(true);
-        return;
-      }
-
-      // ── Real mode: full auth + subscription checks ──
-      const authed = await isAuthenticated();
-      if (cancelled) return;
-      if (!authed) {
+      } catch (err) {
+        console.error("[AuthGuard] check failed:", err);
+        // Don't leave user stuck on spinner — redirect to login as fallback
         router.replace("/login");
-        return;
       }
-
-      const isPostCheckout = typeof window !== "undefined" &&
-        new URLSearchParams(window.location.search).get("checkout") === "success";
-
-      let sub = await getSubscriptionStatus();
-      if (!sub.active && isPostCheckout) {
-        setLoadingMsg("Activating your subscription…");
-        // Stripe webhook may not have fired yet — exponential backoff
-        for (let attempt = 0; attempt < 5; attempt++) {
-          await new Promise((r) => setTimeout(r, 1000 * Math.pow(1.5, attempt)));
-          if (cancelled) return;
-          sub = await getSubscriptionStatus();
-          if (sub.active) break;
-        }
-      }
-
-      if (cancelled) return;
-      if (!sub.active) {
-        router.replace("/pricing");
-        return;
-      }
-
-      // Set server-side subscription cookie so middleware can gate routes
-      const session = await getSession();
-      if (session?.access_token) {
-        fetch("/api/verify-subscription", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }).catch(() => {}); // best-effort — middleware falls back to /pricing
-      }
-
-      // Post-checkout: clear any stale demo/test data so onboarding starts fresh
-      if (isPostCheckout) {
-        const storeState = useKineStore.getState();
-        storeState.resetOnboarding();
-        storeState.setWeekData(null);
-        storeState.setProgressDB({
-          sessions: [],
-          lifts: { squat: [], bench: [], deadlift: [] },
-          currentWeek: 1,
-          weekFeedbackHistory: [],
-          programStartDate: null,
-          skippedSessions: [],
-          phaseOffset: 0,
-        });
-        window.history.replaceState({}, "", pathname);
-        // If already on onboarding, fall through to setAllowed(true)
-        if (pathname !== "/app/onboarding") {
-          router.replace("/app/onboarding");
-          return;
-        }
-      } else {
-        // Brief wait for store hydration from localStorage
-        await new Promise((r) => setTimeout(r, 300));
-        const { progressDB, goal } = useKineStore.getState();
-
-        // Onboarding not complete unless both goal and programStartDate are set
-        if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
-          router.replace("/app/onboarding");
-          return;
-        }
-      }
-
-      setAllowed(true);
     }
 
     check();
