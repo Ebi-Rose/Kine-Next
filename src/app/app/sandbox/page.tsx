@@ -222,7 +222,7 @@ export default function SandboxPage() {
   const warnings = useMemo(() => getWeekWarnings(days), [days]);
 
   // Gate: intermediate+ only
-  if (exp === "new" || exp === "developing") {
+  if (exp === "new") {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <h1 className="font-display text-xl text-text">Sandbox Mode</h1>
