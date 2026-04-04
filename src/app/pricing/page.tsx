@@ -8,6 +8,7 @@ export default function PricingPage() {
   const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [ready, setReady] = useState(false);
   const router = useRouter();
   const currency = useMemo(() => detectCurrency(), []) as SupportedCurrency;
 
@@ -19,8 +20,10 @@ export default function PricingPage() {
         const sub = await getSubscriptionStatus();
         if (sub.active) {
           window.location.href = "/app";
+          return;
         }
       } catch { /* not logged in — stay on pricing */ }
+      setReady(true);
     })();
   }, []);
   const prices = PRICE_TABLE[currency];
@@ -57,6 +60,10 @@ export default function PricingPage() {
       setError("Something went wrong. Try again.");
     }
     setLoading(false);
+  }
+
+  if (!ready) {
+    return <div className="flex min-h-screen items-center justify-center bg-bg" />;
   }
 
   return (
