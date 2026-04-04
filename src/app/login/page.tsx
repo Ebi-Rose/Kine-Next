@@ -7,12 +7,12 @@ import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated, getSub
 type View = "signup" | "login" | "forgot";
 
 /** Check auth + subscription and route accordingly */
-async function routeAuthenticatedUser(router: ReturnType<typeof useRouter>) {
+async function routeAuthenticatedUser(_router: ReturnType<typeof useRouter>) {
   const sub = await getSubscriptionStatus();
   if (sub.active) {
-    router.replace("/app");
+    window.location.href = "/app";
   } else {
-    router.replace("/pricing");
+    window.location.href = "/pricing";
   }
 }
 

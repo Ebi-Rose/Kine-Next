@@ -18,11 +18,11 @@ export default function PricingPage() {
         const { getSubscriptionStatus } = await import("@/lib/auth");
         const sub = await getSubscriptionStatus();
         if (sub.active) {
-          router.replace("/app");
+          window.location.href = "/app";
         }
       } catch { /* not logged in — stay on pricing */ }
     })();
-  }, [router]);
+  }, []);
   const prices = PRICE_TABLE[currency];
   const savings = yearlySavingsPercent(currency);
   const perMonth = yearlyPerMonth(currency);
