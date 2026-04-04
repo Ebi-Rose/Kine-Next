@@ -227,8 +227,8 @@ export default function SandboxPage() {
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <h1 className="font-display text-xl text-text">Sandbox Mode</h1>
         <p className="mt-3 text-sm text-muted2">
-          Design-your-own-week unlocks once you&apos;ve built more experience.
-          Keep training with your AI-generated programmes — you&apos;ll get here soon.
+          Design-your-own-week is available for intermediate and advanced lifters.
+          Keep building your foundation — it won&apos;t be long.
         </p>
         <Button className="mt-6" onClick={() => router.push("/app")}>
           Back to Dashboard
