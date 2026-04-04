@@ -6,8 +6,8 @@ const OFFLINE_URL = "/app";
 
 // Assets to pre-cache
 const PRECACHE_URLS = [
-  "/",
   "/app",
+  "/login",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",

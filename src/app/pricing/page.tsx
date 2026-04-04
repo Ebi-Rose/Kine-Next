@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { detectCurrency, formatCurrency, PRICE_TABLE, yearlySavingsPercent, yearlyPerMonth, type SupportedCurrency } from "@/lib/format";
+import PwaHead from "@/components/PwaHead";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 export default function PricingPage() {
   const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
@@ -82,6 +84,8 @@ export default function PricingPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 bg-bg font-body">
+      <PwaHead />
+      <ServiceWorkerRegistrar />
       <div className="w-full max-w-sm">
         <a href="/app" className="text-xs text-muted2 hover:text-text transition-colors">
           &larr; Back

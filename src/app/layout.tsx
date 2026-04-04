@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
-import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SplashDismiss from "@/components/SplashDismiss";
 import "./globals.css";
@@ -25,12 +24,6 @@ export const metadata: Metadata = {
     template: "%s — KINĒ",
   },
   description: "Intelligent training — so you don't have to figure it out alone.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Kinē",
-  },
 };
 
 export const viewport: Viewport = {
@@ -102,7 +95,6 @@ export default function RootLayout({
           {children}
         </ErrorBoundary>
         <SplashDismiss />
-        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

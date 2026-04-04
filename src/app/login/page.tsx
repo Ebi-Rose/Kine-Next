@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
+import PwaHead from "@/components/PwaHead";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 type View = "auth" | "forgot" | "confirm-email";
 
@@ -87,6 +89,16 @@ function PasswordInput({
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg" />}>
+      <PwaHead />
+      <ServiceWorkerRegistrar />
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("view") === "signup" ? "signup" : "login";
   const [view, setView] = useState<View>("auth");

@@ -11,6 +11,8 @@ import GuideDrawer from "@/components/GuideDrawer";
 import InactivityGuard from "@/components/InactivityGuard";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import DevOverlay from "@/components/DevOverlay";
+import PwaHead from "@/components/PwaHead";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [guideOpen, setGuideOpen] = useState(false);
@@ -37,6 +39,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <GuideButton onClick={() => setGuideOpen(true)} />
         <GuideDrawer open={guideOpen} onClose={() => setGuideOpen(false)} route={pathname} />
         <DevOverlay />
+        <PwaHead />
+        <ServiceWorkerRegistrar />
       </div>
     </AuthGuard>
   );
