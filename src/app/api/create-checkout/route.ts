@@ -88,6 +88,24 @@ export async function POST(request: NextRequest) {
       const existing = await stripeGet("/customers", { email, limit: "1" });
       if (existing.data.length > 0) {
         customerId = existing.data[0].id;
+
+        // Block checkout if user already has an active/trialing subscription
+        const activeSubs = await stripeGet("/subscriptions", {
+          customer: customerId,
+          status: "active",
+          limit: "1",
+        });
+        const trialingSubs = await stripeGet("/subscriptions", {
+          customer: customerId,
+          status: "trialing",
+          limit: "1",
+        });
+        if (activeSubs.data.length > 0 || trialingSubs.data.length > 0) {
+          return Response.json(
+            { error: "You already have an active subscription" },
+            { status: 409 },
+          );
+        }
       } else {
         const customer = await stripeRequest("/customers", {
           email,
