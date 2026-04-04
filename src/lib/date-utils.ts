@@ -43,3 +43,20 @@ export function formatDateShort(dateStr: string): string {
   const locale = typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-GB";
   return d.toLocaleDateString(locale, { day: "numeric", month: "short" });
 }
+
+/** Returns true if the programme start date is today or in the past */
+export function isProgrammeStarted(programStartDate: string | null): boolean {
+  if (!programStartDate) return true; // no date set = treat as started
+  const start = new Date(programStartDate);
+  start.setHours(0, 0, 0, 0);
+  const now = appNow();
+  now.setHours(0, 0, 0, 0);
+  return now >= start;
+}
+
+/** Returns true if a given day index (0=Mon..6=Sun) is in the past for the current calendar week */
+export function isDayInPast(dayIdx: number): boolean {
+  const now = appNow();
+  const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Mon..6=Sun
+  return dayIdx < todayIdx;
+}

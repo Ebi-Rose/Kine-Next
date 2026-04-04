@@ -8,6 +8,7 @@ export type Experience = "new" | "developing" | "intermediate" | null;
 export type CycleType = "regular" | "irregular" | "hormonal" | "perimenopause" | "na" | null;
 export type Duration = "short" | "medium" | "long" | "extended" | null;
 export type EduMode = "full" | "feel" | "silent";
+export type TrackingMode = "lifts" | "photos" | "measurements" | "bodyweight" | "feeling";
 export type SessionMode = "timed" | "stopwatch" | "off";
 export type Units = "kg" | "lbs";
 export type MeasurementSystem = "metric" | "imperial";
@@ -108,6 +109,7 @@ interface KineState {
   restConfig: RestConfig;
   eduFlags: Record<string, boolean>;
   skillPreferences: Record<string, string>;
+  trackingModes: TrackingMode[];
   units: Units;
   measurementSystem: MeasurementSystem;
   currency: SupportedCurrency;
@@ -125,6 +127,7 @@ interface KineState {
     programStartDate: string | null;
     skippedSessions: SkippedSession[];
     phaseOffset: number;
+    pendingProfileChange?: boolean;
   };
 
   // Profile
@@ -173,6 +176,7 @@ interface KineState {
   setRestConfig: (config: RestConfig) => void;
   setEduFlags: (flags: Record<string, boolean>) => void;
   setSkillPreferences: (prefs: Record<string, string>) => void;
+  setTrackingModes: (modes: TrackingMode[]) => void;
   setConsents: (consents: ConsentRecord[]) => void;
   recordConsent: (type: ConsentRecord["type"], granted: boolean) => void;
   resetOnboarding: () => void;
@@ -199,6 +203,7 @@ const initialOnboarding = {
   restConfig: { compound: 150, isolation: 75 } as RestConfig,
   eduFlags: {} as Record<string, boolean>,
   skillPreferences: {} as Record<string, string>,
+  trackingModes: ["lifts", "feeling"] as TrackingMode[],
   units: "kg" as Units,
   measurementSystem: "metric" as MeasurementSystem,
   currency: "GBP" as SupportedCurrency,
@@ -309,6 +314,7 @@ export const useKineStore = create<KineState>()(
       setRestConfig: (config) => set({ restConfig: config, _lastModifiedAt: new Date().toISOString() }),
       setEduFlags: (flags) => set({ eduFlags: flags, _lastModifiedAt: new Date().toISOString() }),
       setSkillPreferences: (prefs) => set({ skillPreferences: prefs, _lastModifiedAt: new Date().toISOString() }),
+      setTrackingModes: (modes) => set({ trackingModes: modes, _lastModifiedAt: new Date().toISOString() }),
       setConsents: (consents) => set({ consents, _lastModifiedAt: new Date().toISOString() }),
       recordConsent: (type, granted) => set((state) => {
         const now = new Date().toISOString();

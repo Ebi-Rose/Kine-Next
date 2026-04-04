@@ -13,7 +13,7 @@ const COACHING_MODES: { value: EduMode; label: string; description: string }[] =
 ];
 
 const SESSION_MODES: { value: SessionMode; label: string; description: string }[] = [
-  { value: "off", label: "Free", description: "All exercises visible, log in any order" },
+  { value: "off", label: "Self-paced", description: "See your full session at once. Move through exercises at your own pace." },
   { value: "timed", label: "Timed", description: "Rest timer between sets with auto-advance" },
   { value: "stopwatch", label: "Stopwatch", description: "Track total session time" },
 ];

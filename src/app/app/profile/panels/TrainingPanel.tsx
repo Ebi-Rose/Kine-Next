@@ -16,13 +16,28 @@ import { BackButton, EditableRow } from "./_helpers";
 
 export default function TrainingPanel({ onBack }: { onBack: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setWeekData } = store;
+  const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setWeekData, progressDB, setProgressDB } = store;
   const [editing, setEditing] = useState<string | null>(null);
+  const [showApplyChoice, setShowApplyChoice] = useState(false);
 
-  function saveAndClearWeek() {
-    setWeekData(null);
+  function onSettingChanged() {
     setEditing(null);
+    setShowApplyChoice(true);
+  }
+
+  function applyFromThisWeek() {
+    setWeekData(null);
+    setShowApplyChoice(false);
     toast("Settings updated — rebuild your week to apply", "success");
+  }
+
+  function applyFromNextWeek() {
+    setProgressDB({
+      ...progressDB,
+      pendingProfileChange: true,
+    });
+    setShowApplyChoice(false);
+    toast("Settings saved — changes apply from next week", "success");
   }
 
   return (
@@ -33,7 +48,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
       <EditableRow label="Goal" value={GOAL_OPTIONS.find((g) => g.value === goal)?.label || "—"} isEditing={editing === "goal"} onEdit={() => setEditing("goal")}>
         <div className="flex flex-col gap-2">
           {GOAL_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => { setGoal(opt.value as typeof goal); saveAndClearWeek(); }}
+            <button key={opt.value} onClick={() => { setGoal(opt.value as typeof goal); onSettingChanged(); }}
               className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${goal === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
               {opt.label}
             </button>
@@ -44,7 +59,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
       <EditableRow label="Experience" value={EXP_OPTIONS.find((e) => e.value === exp)?.label || "—"} isEditing={editing === "exp"} onEdit={() => setEditing("exp")}>
         <div className="flex flex-col gap-2">
           {EXP_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => { setExp(opt.value as typeof exp); saveAndClearWeek(); }}
+            <button key={opt.value} onClick={() => { setExp(opt.value as typeof exp); onSettingChanged(); }}
               className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${exp === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
               {opt.label}
             </button>
@@ -64,7 +79,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
-        <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save equipment</Button>
+        <Button size="sm" className="mt-3 w-full" onClick={onSettingChanged}>Save equipment</Button>
       </EditableRow>
 
       <EditableRow label="Training days" value={trainingDays.map((d) => DAY_LABELS[d]).join(", ") || "—"} isEditing={editing === "days"} onEdit={() => setEditing("days")}>
@@ -84,13 +99,13 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
-        <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save days</Button>
+        <Button size="sm" className="mt-3 w-full" onClick={onSettingChanged}>Save days</Button>
       </EditableRow>
 
       <EditableRow label="Session length" value={DURATION_OPTIONS.find((d) => d.value === duration)?.label || "—"} isEditing={editing === "duration"} onEdit={() => setEditing("duration")}>
         <div className="grid grid-cols-2 gap-2">
           {DURATION_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => { setDuration(opt.value as typeof duration); saveAndClearWeek(); }}
+            <button key={opt.value} onClick={() => { setDuration(opt.value as typeof duration); onSettingChanged(); }}
               className={`rounded-lg border px-3 py-2 text-xs transition-all ${duration === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
               {opt.label}
             </button>
@@ -125,13 +140,41 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
               </div>
             ))}
           </div>
-          <Button size="sm" className="mt-3 w-full" onClick={saveAndClearWeek}>Save durations</Button>
+          <Button size="sm" className="mt-3 w-full" onClick={onSettingChanged}>Save durations</Button>
         </EditableRow>
       )}
 
       <p className="text-[10px] text-muted text-center mt-4">
-        Changing these settings will prompt a week rebuild.
+        Changes won&apos;t affect past sessions.
       </p>
+
+      {/* Apply timing choice */}
+      {showApplyChoice && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4" onClick={() => setShowApplyChoice(false)}>
+          <div className="w-full max-w-[var(--container-max)] rounded-2xl border border-border bg-surface p-5 animate-fade-up" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-display text-base tracking-wide text-text text-center">
+              When should this take effect?
+            </h3>
+            <p className="mt-1 text-[11px] text-muted2 text-center">
+              Past sessions won&apos;t be changed.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <Button className="w-full" onClick={applyFromThisWeek}>
+                Apply from this week
+              </Button>
+              <Button className="w-full" variant="secondary" onClick={applyFromNextWeek}>
+                Apply from next week
+              </Button>
+              <button
+                onClick={() => setShowApplyChoice(false)}
+                className="mt-1 text-xs text-muted2 hover:text-text transition-colors text-center"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

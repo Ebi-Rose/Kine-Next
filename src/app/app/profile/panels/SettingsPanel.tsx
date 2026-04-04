@@ -165,7 +165,7 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
         <div className="h-px bg-border/50" />
         <div className="flex items-center justify-between">
           <span className="text-xs text-text">Export data</span>
-          <button onClick={handleExportData} className="text-xs text-accent hover:underline">Download JSON</button>
+          <button onClick={handleExportData} className="text-xs text-accent hover:underline">Export my data</button>
         </div>
         <div className="h-px bg-border/50" />
         <div className="flex items-center justify-between">

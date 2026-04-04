@@ -2,24 +2,39 @@
 
 import { useState, useEffect } from "react";
 import { useKineStore } from "@/store/useKineStore";
+import type { TrackingMode } from "@/store/useKineStore";
 import { getUser } from "@/lib/auth";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
 import { BackButton, Input } from "./_helpers";
 
+const TRACKING_OPTIONS: { value: TrackingMode; label: string; description: string }[] = [
+  { value: "lifts", label: "Lifts", description: "Track weights and reps over time" },
+  { value: "photos", label: "Photos", description: "Progress pics at set intervals" },
+  { value: "measurements", label: "Measurements", description: "Tape measurements (waist, hips, arms)" },
+  { value: "bodyweight", label: "Bodyweight", description: "Optional weigh-ins with trend line" },
+  { value: "feeling", label: "How I feel", description: "Energy, confidence, mood over time" },
+];
+
 export default function PersonalPanel({ onBack }: { onBack: () => void }) {
-  const { personalProfile, setPersonalProfile } = useKineStore();
+  const { personalProfile, setPersonalProfile, trackingModes, setTrackingModes } = useKineStore();
   const [name, setName] = useState(personalProfile.name);
-  const [weight, setWeight] = useState(personalProfile.weight);
-  const [height, setHeight] = useState(personalProfile.height);
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     getUser().then((u) => setEmail(u?.email || null));
   }, []);
 
+  function toggleTracking(mode: TrackingMode) {
+    if (trackingModes.includes(mode)) {
+      setTrackingModes(trackingModes.filter((m) => m !== mode));
+    } else {
+      setTrackingModes([...trackingModes, mode]);
+    }
+  }
+
   function save() {
-    setPersonalProfile({ ...personalProfile, name, weight, height });
+    setPersonalProfile({ ...personalProfile, name });
     toast("Profile saved", "success");
     onBack();
   }
@@ -36,10 +51,29 @@ export default function PersonalPanel({ onBack }: { onBack: () => void }) {
           </div>
         )}
         <Input label="Name" value={name} onChange={setName} />
-        <Input label="Weight (kg)" value={weight} onChange={setWeight} type="number" />
-        <Input label="Height (cm)" value={height} onChange={setHeight} type="number" />
-        <Button onClick={save} className="w-full">Save</Button>
       </div>
+
+      {/* Tracking modes */}
+      <h2 className="mt-6 text-xs tracking-wider text-muted uppercase">What do you want to track?</h2>
+      <p className="mt-1 text-[10px] text-muted2">This shapes what your Progress screen shows.</p>
+      <div className="mt-3 flex flex-col gap-2">
+        {TRACKING_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => toggleTracking(opt.value)}
+            className={`text-left rounded-[var(--radius-default)] border px-4 py-3 transition-all ${
+              trackingModes.includes(opt.value)
+                ? "border-accent bg-accent-dim text-text"
+                : "border-border bg-surface text-muted2 hover:border-border-active"
+            }`}
+          >
+            <span className="text-sm font-medium">{opt.label}</span>
+            <span className="block text-[10px] font-light mt-0.5 opacity-70">{opt.description}</span>
+          </button>
+        ))}
+      </div>
+
+      <Button onClick={save} className="w-full mt-6">Save</Button>
     </div>
   );
 }

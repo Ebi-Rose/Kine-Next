@@ -14,32 +14,17 @@ import {
   PROGRAM_MAP,
 } from "@/data/constants";
 import { detectLocale } from "@/lib/format";
-import { getLiftFields, getNextMonday } from "../helpers";
+import { getNextMonday } from "../helpers";
 
 export default function SummaryStep({ onFinish }: { onFinish: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, injuries, conditions, cycleType, dayDurations, setDayDurations, personalProfile, setPersonalProfile } = store;
-  const [showLifts, setShowLifts] = useState(false);
-  const [lifts, setLifts] = useState<Record<string, string>>({});
+  const { goal, exp, equip, trainingDays, duration, injuries, conditions, cycleType, dayDurations, setDayDurations } = store;
   const [startDate, setStartDate] = useState<"today" | "monday">("today");
 
   const programName = PROGRAM_MAP[goal || "general"]?.[exp || "new"] || "Custom Program";
   const durationLabel = DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration;
 
-  // Lift assessment fields based on equipment
-  const liftFields = getLiftFields(equip, goal);
-
   function handleFinish() {
-    // Save lifts to profile
-    if (showLifts && Object.keys(lifts).length > 0) {
-      const currentLifts: Record<string, number> = {};
-      Object.entries(lifts).forEach(([name, val]) => {
-        const num = parseFloat(val);
-        if (num > 0) currentLifts[name] = num;
-      });
-      setPersonalProfile({ ...personalProfile, currentLifts });
-    }
-
     // Set start date
     const today = appNow();
     let startStr: string;
@@ -141,38 +126,6 @@ export default function SummaryStep({ onFinish }: { onFinish: () => void }) {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Lift assessment */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between">
-          <p className="text-xs tracking-wider text-muted uppercase">Current lifts · optional</p>
-          <button onClick={() => setShowLifts(!showLifts)} className="text-xs text-accent hover:underline">
-            {showLifts ? "skip for now" : "add lifts"}
-          </button>
-        </div>
-
-        {showLifts && (
-          <div className="mt-3 flex flex-col gap-2">
-            {liftFields.map((field) => (
-              <div key={field.name} className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2">
-                <span className="text-xs text-text">{field.name}</span>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder={field.placeholder}
-                    aria-label={`${field.name} weight in ${field.unit}`}
-                    value={lifts[field.name] || ""}
-                    onChange={(e) => setLifts({ ...lifts, [field.name]: e.target.value })}
-                    className="w-16 rounded border border-border bg-bg px-2 py-1 text-center text-xs text-text outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                  />
-                  <span className="text-[10px] text-muted">{field.unit}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Start date */}

@@ -54,6 +54,8 @@ export default function PreSessionPage() {
     restConfig, setRestConfig,
     progressDB, sessionTimeBudgets,
     setSessionTimeBudgets, setCurrentDayIdx,
+    personalProfile, setPersonalProfile,
+    measurementSystem,
   } = useKineStore();
 
   const week = weekData as WeekData | null;
@@ -251,11 +253,83 @@ export default function PreSessionPage() {
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const weekNum = progressDB.currentWeek || 1;
 
+  // ── First session lifts prompt ──
+  const isFirstSession = progressDB.sessions.length === 0 && Object.keys(personalProfile.currentLifts || {}).length === 0;
+  const [showLiftPrompt, setShowLiftPrompt] = useState(isFirstSession);
+  const [liftInputs, setLiftInputs] = useState<Record<string, string>>({});
+  const unit = (measurementSystem || "metric") === "metric" ? "kg" : "lbs";
+
+  function saveLiftInputs() {
+    const currentLifts: Record<string, number> = { ...personalProfile.currentLifts };
+    Object.entries(liftInputs).forEach(([name, val]) => {
+      const num = parseFloat(val);
+      if (num > 0) currentLifts[name] = num;
+    });
+    setPersonalProfile({ ...personalProfile, currentLifts });
+    setShowLiftPrompt(false);
+  }
+
   // ── Loading guard (after all hooks) ──
   if (!mounted || !week || !day || day.isRest) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  // ── First session lift prompt popup ──
+  if (showLiftPrompt && day) {
+    return (
+      <div className="pb-10">
+        <button
+          onClick={() => setShowLiftPrompt(false)}
+          className="text-[13px] text-muted hover:text-text transition-colors mb-3"
+        >
+          ← Skip
+        </button>
+
+        <h2 className="font-display text-xl tracking-wide text-text">
+          Done these before?
+        </h2>
+        <p className="mt-2 text-xs text-muted2 font-light leading-relaxed">
+          Adding your current weights helps Kinē suggest the right starting point. Leave blank if you&apos;re not sure.
+        </p>
+
+        <div className="mt-5 flex flex-col gap-2">
+          {day.exercises.map((ex) => (
+            <div key={ex.name} className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2.5">
+              <span className="text-xs text-text">{ex.name}</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="—"
+                  aria-label={`${ex.name} weight in ${unit}`}
+                  value={liftInputs[ex.name] || ""}
+                  onChange={(e) => setLiftInputs({ ...liftInputs, [ex.name]: e.target.value })}
+                  className="w-16 rounded border border-border bg-bg px-2 py-1 text-center text-xs text-text outline-none focus:border-accent"
+                />
+                <span className="text-[10px] text-muted">{unit}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-col gap-2">
+          <button
+            onClick={saveLiftInputs}
+            className="w-full rounded-[var(--radius-default)] bg-accent px-4 py-3 text-sm font-medium text-bg transition-all hover:opacity-90"
+          >
+            Save and continue
+          </button>
+          <button
+            onClick={() => setShowLiftPrompt(false)}
+            className="text-xs text-muted2 hover:text-text transition-colors text-center"
+          >
+            I&apos;ll figure it out as I go
+          </button>
+        </div>
       </div>
     );
   }

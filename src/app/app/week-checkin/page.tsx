@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore, type SessionRecord } from "@/store/useKineStore";
 import { getPhase, getBlockWeek, getBlockNumber } from "@/lib/periodisation";
+import { isProgrammeStarted } from "@/lib/date-utils";
 import { DAY_LABELS } from "@/data/constants";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
@@ -69,6 +70,34 @@ export default function WeekCheckinPage() {
 
   const weekNum = progressDB.currentWeek;
   const plannedDays = parseInt(days || "3");
+
+  // Gate: don't allow check-in if programme hasn't started or no sessions completed
+  const programmeStarted = isProgrammeStarted(progressDB.programStartDate);
+  const weekSessCount = (progressDB.sessions as SessionRecord[])
+    .filter((s) => s.weekNum === weekNum).length;
+
+  if (!programmeStarted || weekSessCount === 0) {
+    return (
+      <div>
+        <button onClick={() => router.push("/app")} className="text-xs text-muted2 hover:text-text transition-colors">
+          ← Back to week
+        </button>
+        <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+          <h2 className="font-display text-xl tracking-wide text-text">
+            {!programmeStarted ? "Your programme hasn\u2019t started yet" : "No sessions completed"}
+          </h2>
+          <p className="mt-2 text-xs text-muted2 max-w-xs">
+            {!programmeStarted
+              ? "Check back once your programme begins."
+              : "Complete at least one session this week before checking in."}
+          </p>
+          <Button className="mt-6" onClick={() => router.push("/app")}>
+            Back to dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const phase = getPhase(weekNum, progressDB.phaseOffset);
   const blockWeek = getBlockWeek(weekNum, progressDB.phaseOffset);
   const blockNum = getBlockNumber(weekNum, progressDB.phaseOffset);

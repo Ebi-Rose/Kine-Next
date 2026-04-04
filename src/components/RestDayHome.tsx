@@ -29,11 +29,18 @@ export default function RestDayHome({
   return (
     <div>
       {/* Rest day hero */}
-      <div className="text-center py-5 mb-4">
-        <h2 className="font-display text-xl tracking-[0.08em] text-text">
-          REST DAY
-        </h2>
-        <p className="mt-1 text-sm text-muted2 font-light">{restMessage}</p>
+      <div className="relative overflow-hidden rounded-2xl mb-4">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/hero-bg-opt.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/70 to-bg/20" />
+        <div className="relative z-10 text-center py-12 px-6">
+          <h2 className="font-display text-xl tracking-[0.08em] text-text">
+            REST DAY
+          </h2>
+          <p className="mt-2 text-sm text-muted2 font-light max-w-xs mx-auto">{restMessage}</p>
+        </div>
       </div>
 
       {/* Tomorrow's session preview */}

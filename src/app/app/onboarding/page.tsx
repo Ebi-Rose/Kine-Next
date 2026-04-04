@@ -23,7 +23,7 @@ import {
 import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
 import { detectLocale } from "@/lib/format";
 
-type Step = "welcome" | "name" | "goal" | "experience" | "equipment" | "schedule" | "consent" | "cycle" | "conditions" | "injuries" | "summary";
+type Step = "welcome" | "name" | "goal" | "experience" | "equipment" | "schedule" | "injuries" | "summary";
 
 const STEP_ORDER: Step[] = [
   "welcome",
@@ -32,9 +32,6 @@ const STEP_ORDER: Step[] = [
   "experience",
   "equipment",
   "schedule",
-  "consent",
-  "cycle",
-  "conditions",
   "injuries",
   "summary",
 ];
@@ -110,13 +107,10 @@ export default function OnboardingPage() {
         {step === "equipment" && <EquipmentStep onNext={next} numberedStep={numberedStep} />}
         {step === "schedule" && (
           <ScheduleStep
-            onNext={() => goToStep("consent")}
+            onNext={() => goToStep("injuries")}
             numberedStep={numberedStep}
           />
         )}
-        {step === "consent" && <ConsentStep onNext={() => goToStep("cycle")} onSkip={() => goToStep("summary")} />}
-        {step === "cycle" && <CycleStep onNext={() => goToStep("conditions")} />}
-        {step === "conditions" && <ConditionsStep onNext={() => goToStep("injuries")} />}
         {step === "injuries" && <InjuriesStep onNext={() => goToStep("summary")} />}
         {step === "summary" && <SummaryStep onFinish={finishOnboarding} />}
       </div>
@@ -745,6 +739,12 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
   const store = useKineStore();
   const { goal, exp, equip, trainingDays, duration, injuries, conditions, cycleType, dayDurations, setDayDurations } = store;
   const [startDate, setStartDate] = useState<"today" | "monday">("today");
+  const [equipExpanded, setEquipExpanded] = useState(false);
+
+  // Match current equipment to a preset
+  const matchedPreset = EQUIP_PRESETS.find(
+    (p) => p.equip.length === equip.length && p.equip.every((e) => equip.includes(e))
+  );
 
   const durationLabel = DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration;
 
@@ -801,7 +801,20 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
           </div>
           <div className="flex items-center gap-2 text-muted2">
             <span>↗</span>
-            <span>{equip.map((e) => EQUIP_LABELS[e]).join(", ")}</span>
+            <div className="flex-1">
+              <button
+                onClick={() => setEquipExpanded(!equipExpanded)}
+                className="text-left hover:text-text transition-colors"
+              >
+                {matchedPreset ? matchedPreset.label : `${equip.length} items selected`}
+                <span className="ml-1 text-[10px] text-muted">{equipExpanded ? "▾" : "▸"}</span>
+              </button>
+              {equipExpanded && (
+                <p className="mt-0.5 text-[10px] text-muted font-light">
+                  {equip.map((e) => EQUIP_LABELS[e]).join(", ")}
+                </p>
+              )}
+            </div>
           </div>
           {conditions.length > 0 && (
             <div className="flex items-center gap-2 text-muted2">
@@ -822,6 +835,16 @@ function SummaryStep({ onFinish }: { onFinish: () => void }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Cycle & body signpost */}
+      <div className="mt-4 rounded-[var(--radius-default)] border border-accent/20 bg-accent-dim p-4">
+        <p className="text-xs font-medium text-text">
+          Adapt training around your cycle and body
+        </p>
+        <p className="mt-1 text-[11px] text-muted2 font-light leading-relaxed">
+          Kinē can adjust intensity and recovery based on your menstrual cycle, hormonal status, and conditions like PCOS or endometriosis. Set this up anytime in your <span className="text-accent">Profile → Health</span>.
+        </p>
       </div>
 
       {/* Per-day duration editing */}
