@@ -1,13 +1,28 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { detectCurrency, formatCurrency, PRICE_TABLE, yearlySavingsPercent, yearlyPerMonth, type SupportedCurrency } from "@/lib/format";
 
 export default function PricingPage() {
   const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
   const currency = useMemo(() => detectCurrency(), []) as SupportedCurrency;
+
+  // Redirect to app if user already has an active subscription
+  useEffect(() => {
+    (async () => {
+      try {
+        const { getSubscriptionStatus } = await import("@/lib/auth");
+        const sub = await getSubscriptionStatus();
+        if (sub.active) {
+          router.replace("/app");
+        }
+      } catch { /* not logged in — stay on pricing */ }
+    })();
+  }, [router]);
   const prices = PRICE_TABLE[currency];
   const savings = yearlySavingsPercent(currency);
   const perMonth = yearlyPerMonth(currency);

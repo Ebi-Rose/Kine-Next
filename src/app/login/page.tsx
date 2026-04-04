@@ -152,8 +152,8 @@ function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
       return;
     }
 
-    // New signup — no subscription yet, go to pricing
-    router.push("/pricing");
+    // Route based on subscription status
+    await routeAuthenticatedUser(router);
   }
 
   async function handleGoogle() {
