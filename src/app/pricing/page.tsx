@@ -12,11 +12,16 @@ export default function PricingPage() {
   const router = useRouter();
   const currency = useMemo(() => detectCurrency(), []) as SupportedCurrency;
 
-  // Redirect to app if user already has an active subscription
+  // Check if user already has an active subscription — redirect to app
   useEffect(() => {
     (async () => {
       try {
-        const { getSubscriptionStatus } = await import("@/lib/auth");
+        const { getSubscriptionStatus, isAuthenticated } = await import("@/lib/auth");
+        const authed = await isAuthenticated();
+        if (!authed) {
+          setReady(true);
+          return;
+        }
         const sub = await getSubscriptionStatus();
         if (sub.active) {
           window.location.href = "/app";

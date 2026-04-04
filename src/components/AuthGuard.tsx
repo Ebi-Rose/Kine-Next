@@ -74,7 +74,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         if (cancelled) return;
         if (!sub.active) {
-          router.replace("/pricing");
+          window.location.href = "/pricing";
           return;
         }
 
