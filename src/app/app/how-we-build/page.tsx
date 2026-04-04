@@ -5,15 +5,15 @@ import Link from "next/link";
 const SECTIONS = [
   {
     title: "Real periodisation, not random workouts",
-    body: "Every week follows a structured 3-week block cycle: volume, intensity, and deload. Your programme progresses systematically based on exercise science \u2014 not by shuffling exercises randomly.",
+    body: "Every week follows a structured 3-week block cycle: volume, intensity, and deload. Your programme progresses systematically based on exercise science — not by shuffling exercises randomly.",
   },
   {
     title: "Your body, not a template",
-    body: "Kin\u0113 adapts around your cycle, conditions like PCOS or endometriosis, injuries, and equipment. The AI doesn\u2019t just swap exercises \u2014 it adjusts volume, intensity, and recovery timing based on how your body works.",
+    body: "Kinē adapts around your cycle, conditions like PCOS or endometriosis, injuries, and equipment. The AI doesn\u2019t just swap exercises — it adjusts volume, intensity, and recovery timing based on how your body works.",
   },
   {
     title: "Evidence-based exercise selection",
-    body: "Every exercise in our library is tagged with muscle group, movement pattern, equipment requirements, and contraindication flags. Swaps aren\u2019t random \u2014 they match the biomechanical purpose of the original.",
+    body: "Every exercise in our library is tagged with muscle group, movement pattern, equipment requirements, and contraindication flags. Swaps aren\u2019t random — they match the biomechanical purpose of the original.",
   },
   {
     title: "Progressive overload, tracked",
@@ -21,7 +21,7 @@ const SECTIONS = [
   },
   {
     title: "Built for women who lift",
-    body: "Most fitness apps treat hormonal cycles as an afterthought. Kin\u0113 was designed from the ground up to integrate cycle-aware training, with research-backed adjustments to volume and intensity across your month.",
+    body: "Most fitness apps treat hormonal cycles as an afterthought. Kinē was designed from the ground up to integrate cycle-aware training, with research-backed adjustments to volume and intensity across your month.",
   },
   {
     title: "Your data stays yours",
@@ -29,7 +29,7 @@ const SECTIONS = [
   },
   {
     title: "No engagement tricks",
-    body: "No streaks that guilt you into training when you should rest. No gamification that prioritises app usage over recovery. Kin\u0113 tells you when to rest and means it.",
+    body: "No streaks that guilt you into training when you should rest. No gamification that prioritises app usage over recovery. Kinē tells you when to rest and means it.",
   },
   {
     title: "Transparent AI",
@@ -44,7 +44,7 @@ export default function HowWeBuildPage() {
         href="/app"
         className="text-[13px] text-muted hover:text-text transition-colors mb-3 flex items-center gap-1.5"
       >
-        \u2190 Back
+        &larr; Back
       </Link>
 
       <div className="mt-4">
@@ -52,10 +52,10 @@ export default function HowWeBuildPage() {
           Under the hood
         </p>
         <h1 className="font-display text-2xl tracking-wide text-text">
-          How Kin\u0113 is built differently
+          How Kin&#x0113; is built differently
         </h1>
         <p className="mt-2 text-xs text-muted2 font-light leading-relaxed max-w-md">
-          Most AI fitness apps wrap a chatbot around generic templates. Kin\u0113 is a structured, evidence-based training system that uses AI to personalise \u2014 not to improvise.
+          Most AI fitness apps wrap a chatbot around generic templates. Kin&#x0113; is a structured, evidence-based training system that uses AI to personalise &mdash; not to improvise.
         </p>
       </div>
 

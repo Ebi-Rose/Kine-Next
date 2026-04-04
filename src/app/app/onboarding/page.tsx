@@ -63,12 +63,14 @@ export default function OnboardingPage() {
   }
 
   function finishOnboarding() {
-    const today = appTodayISO();
-    store.setProgressDB({
-      ...store.progressDB,
-      programStartDate: today,
-      currentWeek: 1,
-    });
+    // programStartDate is already set by SummaryStep.handleFinish()
+    // Only set currentWeek if not already set
+    if (!store.progressDB.currentWeek) {
+      store.setProgressDB({
+        ...store.progressDB,
+        currentWeek: 1,
+      });
+    }
     router.push("/app");
   }
 
