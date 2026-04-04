@@ -866,6 +866,18 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
     );
   }
 
+  // Past uncompleted days: show minimal collapsed card (not the full workout)
+  if (isPast && !isCompleted && !isToday && !readOnly) {
+    return (
+      <div className="rounded-[14px] border border-border/30 bg-surface/30 opacity-60 px-[18px] py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted2">{dayLabel}</span>
+          <span className="text-xs text-muted">No session logged</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`rounded-[14px] border p-[18px] transition-all active:scale-[0.98] ${
@@ -887,11 +899,6 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
           {isCompleted && (
             <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[10px] font-medium text-accent tracking-wide">
               ✓ done
-            </span>
-          )}
-          {isPast && !isCompleted && !isToday && !readOnly && (
-            <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10px] text-muted">
-              Past
             </span>
           )}
         </div>
