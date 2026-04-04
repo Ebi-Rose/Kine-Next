@@ -16,12 +16,13 @@ function generateNonce(): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-// Nonce-based CSP for /app/* routes (dynamically rendered, Next.js applies nonce)
-function buildAppCsp(nonce: string): string {
+// CSP for /app/* routes — uses 'unsafe-inline' because Next.js inline scripts
+// don't reliably receive the nonce from the x-nonce header in production builds.
+function buildAppCsp(): string {
   const isDev = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://res.cloudinary.com",
@@ -141,9 +142,7 @@ export default async function proxy(request: NextRequest) {
 
   let csp: string;
   if (isAppRoute) {
-    const nonce = generateNonce();
-    csp = buildAppCsp(nonce);
-    requestHeaders.set("x-nonce", nonce);
+    csp = buildAppCsp();
   } else {
     csp = buildPublicCsp();
   }
