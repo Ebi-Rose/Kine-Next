@@ -142,7 +142,16 @@ export default function PricingPage() {
           {loading ? "Loading..." : "SUBSCRIBE \u2192"}
         </button>
 
-        {error && <p className="mt-3 text-center text-xs text-[#ff8a80]" role="alert">{error}</p>}
+        {error && (
+          <div className="mt-3 text-center" role="alert">
+            <p className="text-xs text-[#ff8a80]">{error}</p>
+            {error.toLowerCase().includes("active subscription") && (
+              <a href="/app" className="mt-2 inline-block text-xs text-accent hover:underline">
+                Go to your dashboard &rarr;
+              </a>
+            )}
+          </div>
+        )}
 
         <p className="mt-3 text-center text-[10px] text-muted">
           14-day money-back guarantee. Cancel anytime from your profile.
