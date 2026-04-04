@@ -63,7 +63,13 @@ export default function PricingPage() {
   }
 
   if (!ready) {
-    return <div className="flex min-h-screen items-center justify-center bg-bg" />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <div className="text-center">
+          <p className="font-display text-2xl tracking-[0.2em] text-accent">KIN&#x112;</p>
+        </div>
+      </div>
+    );
   }
 
   return (
