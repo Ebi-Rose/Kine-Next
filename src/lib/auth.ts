@@ -85,7 +85,10 @@ export async function getSubscriptionStatus() {
       .eq("user_id", user.id)
       .single();
 
-    if (error || !data) return { active: false };
+    if (error || !data) {
+      console.warn("[Kinē] Subscription check failed:", error?.message || "no data", "user:", user.id);
+      return { active: false };
+    }
 
     const isActive = data.status === "active" || data.status === "trialing";
     return {
