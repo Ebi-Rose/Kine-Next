@@ -78,13 +78,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Set server-side subscription cookie so middleware can gate routes
+        // Set server-side subscription cookie so proxy allows /app/* routes
         const session = await getSession();
         if (session?.access_token) {
-          fetch("/api/verify-subscription", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          }).catch(() => {}); // best-effort — middleware falls back to /pricing
+          try {
+            await fetch("/api/verify-subscription", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+          } catch {
+            // Cookie not set — proxy will redirect to /pricing on next navigation
+          }
         }
 
         // Post-checkout: clear any stale demo/test data so onboarding starts fresh
