@@ -88,15 +88,16 @@ export async function POST(request: NextRequest) {
       const existing = await stripeGet("/customers", { email, limit: "1" });
       if (existing.data.length > 0) {
         customerId = existing.data[0].id;
+        const cid: string = existing.data[0].id;
 
         // Block checkout if user already has an active/trialing subscription
         const activeSubs = await stripeGet("/subscriptions", {
-          customer: customerId,
+          customer: cid,
           status: "active",
           limit: "1",
         });
         const trialingSubs = await stripeGet("/subscriptions", {
-          customer: customerId,
+          customer: cid,
           status: "trialing",
           limit: "1",
         });
