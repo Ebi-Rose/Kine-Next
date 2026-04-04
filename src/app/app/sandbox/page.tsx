@@ -228,7 +228,7 @@ export default function SandboxPage() {
         <h1 className="font-display text-xl text-text">Sandbox Mode</h1>
         <p className="mt-3 text-sm text-muted2">
           Design-your-own-week is available for intermediate and advanced lifters.
-          Keep building your foundation — it won&apos;t be long.
+          Keep building your foundation with your current programme — it won&apos;t be long.
         </p>
         <Button className="mt-6" onClick={() => router.push("/app")}>
           Back to Dashboard
