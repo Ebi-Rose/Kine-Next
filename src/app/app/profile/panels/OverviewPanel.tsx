@@ -3,6 +3,7 @@
 import { useKineStore } from "@/store/useKineStore";
 import { weightUnit } from "@/lib/format";
 import { getCurrentPhase } from "@/lib/cycle";
+import { isProgrammeStarted } from "@/lib/date-utils";
 import { GOAL_OPTIONS, EQUIP_LABELS } from "@/data/constants";
 import { NavCard, type Panel } from "./_helpers";
 
@@ -48,7 +49,7 @@ export default function OverviewPanel({ onNavigate }: { onNavigate: (p: Panel) =
           <p className="text-sm font-medium text-text">{name}</p>
           <div className="flex flex-wrap gap-1.5 mt-1">
             <span className="rounded-full bg-accent-dim px-2 py-0.5 text-[9px] text-accent">
-              Week {progressDB.currentWeek}
+              {isProgrammeStarted(progressDB.programStartDate ?? null) ? `Week ${progressDB.currentWeek}` : "Not started"}
             </span>
             <span className="rounded-full bg-[rgba(106,154,122,0.15)] px-2 py-0.5 text-[9px] text-[#8aba9a]">
               {progressDB.sessions.length} sessions

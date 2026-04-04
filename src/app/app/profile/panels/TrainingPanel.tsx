@@ -9,10 +9,12 @@ import {
   EXP_OPTIONS,
   ALL_EQUIPMENT,
   EQUIP_LABELS,
+  EQUIP_PRESETS,
   DURATION_OPTIONS,
   DAY_LABELS,
 } from "@/data/constants";
 import { BackButton, EditableRow } from "./_helpers";
+import { isProgrammeStarted } from "@/lib/date-utils";
 
 export default function TrainingPanel({ onBack }: { onBack: () => void }) {
   const store = useKineStore();
@@ -20,8 +22,24 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [showApplyChoice, setShowApplyChoice] = useState(false);
 
+  const started = isProgrammeStarted(progressDB.programStartDate ?? null);
+
+  // Match equipment to a preset for display
+  const matchedPreset = EQUIP_PRESETS.find(
+    (p) => p.equip.length === equip.length && p.equip.every((e) => equip.includes(e))
+  );
+  const equipDisplay = matchedPreset
+    ? matchedPreset.label
+    : equip.map((e) => EQUIP_LABELS[e] || e).join(", ") || "—";
+
   function onSettingChanged() {
     setEditing(null);
+    if (!started) {
+      // Programme hasn't started — apply immediately
+      setWeekData(null);
+      toast("Settings updated", "success");
+      return;
+    }
     setShowApplyChoice(true);
   }
 
@@ -67,7 +85,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
         </div>
       </EditableRow>
 
-      <EditableRow label="Equipment" value={equip.map((e) => EQUIP_LABELS[e] || e).join(", ") || "—"} isEditing={editing === "equip"} onEdit={() => setEditing("equip")}>
+      <EditableRow label="Equipment" value={equipDisplay} isEditing={editing === "equip"} onEdit={() => setEditing("equip")}>
         <div className="grid grid-cols-2 gap-2">
           {ALL_EQUIPMENT.map((val) => (
             <button key={val} onClick={() => {

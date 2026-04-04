@@ -152,7 +152,7 @@ function PreStartView({
 }) {
   const router = useRouter();
   const { trainingDays, weekData, setWeekData } = useKineStore();
-  const [previewOpen, setPreviewOpen] = useState(true);
+  const [activeView, setActiveView] = useState<"this-week" | "next-week">("this-week");
   const now = appNow();
   const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1;
   const weekStart = getWeekDateRange();
@@ -181,131 +181,150 @@ function PreStartView({
           Programme starts {startLabel}
         </p>
         <p className="text-xs text-muted2 font-light mt-1">
-          {daysUntilStart === 1 ? "Tomorrow" : `${daysUntilStart} days to go`} — enjoy the rest, your training begins soon.
+          {daysUntilStart === 1 ? "Tomorrow" : `${daysUntilStart} days to go`} &mdash; enjoy the rest, your training begins soon.
         </p>
       </div>
 
-      {/* Empty week — all days shown as no-workout with add option */}
-      <div className="flex flex-col gap-2">
-        {DAY_LABELS.map((label, i) => {
-          const isPast = i < todayIdx;
-          const isToday = i === todayIdx;
-          return (
-            <div
-              key={i}
-              className={`rounded-[14px] border px-[18px] py-3 transition-all ${
-                isToday ? "border-accent/30 bg-accent-dim"
-                : isPast ? "border-border/30 bg-surface/30 opacity-60"
-                : "border-border/50 bg-surface/50"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted2">{label}</span>
-                  {isToday && (
-                    <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
-                      Today
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted">No workout</span>
-                  {!isPast && (
+      {/* Pill toggle */}
+      <div className="flex rounded-[10px] border border-border bg-surface p-[3px]">
+        <button
+          onClick={() => setActiveView("this-week")}
+          className={`flex-1 rounded-[8px] py-2 text-[11px] transition-all ${
+            activeView === "this-week"
+              ? "bg-accent-dim text-accent border border-accent/20"
+              : "text-muted border border-transparent"
+          }`}
+        >
+          This week
+        </button>
+        <button
+          onClick={() => setActiveView("next-week")}
+          className={`flex-1 rounded-[8px] py-2 text-[11px] transition-all ${
+            activeView === "next-week"
+              ? "bg-accent-dim text-accent border border-accent/20"
+              : "text-muted border border-transparent"
+          }`}
+        >
+          Next week
+        </button>
+      </div>
+
+      {/* This week view */}
+      {activeView === "this-week" && (
+        <div className="mt-4 flex flex-col gap-2">
+          {DAY_LABELS.map((label, i) => {
+            const isPast = i < todayIdx;
+            const isToday = i === todayIdx;
+            if (isPast) return null;
+            return (
+              <div
+                key={i}
+                className={`rounded-[14px] border px-[18px] py-3 transition-all ${
+                  isToday ? "border-accent/30 bg-accent-dim"
+                  : "border-border/50 bg-surface/50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted2">{label}</span>
+                    {isToday && (
+                      <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
+                        Today
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">No workout</span>
                     <button
                       onClick={() => router.push(`/app/custom-builder?day=${i}`)}
                       className="text-[10px] text-muted2 hover:text-accent transition-colors"
                     >
                       + add session
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Preview / Build Week 1 */}
-      <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-5">
-        <div className="flex items-start justify-between">
-          <div className={weekData && previewOpen ? "" : "flex-1 text-center"}>
-            <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Starting {startLabel}</p>
-            <p className="font-display text-lg tracking-wide text-text">Week 1</p>
-            <p className="mt-1 text-[10px] text-muted2">
-              {trainingDays.length} training days{!weekData && <> &middot; Your programme will be built by AI</>}
-            </p>
-          </div>
-          {weekData && (
-            <button
-              onClick={() => setPreviewOpen(!previewOpen)}
-              className="text-[10px] text-muted2 hover:text-accent transition-colors shrink-0 ml-3 mt-1"
-            >
-              {previewOpen ? "Hide" : "Show"}
-            </button>
-          )}
+            );
+          })}
         </div>
+      )}
 
-        {weekData && previewOpen ? (
-          <>
-            {/* Mini week grid */}
-            <div className="mt-4 grid grid-cols-7 gap-1">
-              {DAY_LABELS.map((label, i) => {
-                const matchingDay = (weekData as WeekData).days.find(
-                  (d) => ((d.dayNumber - 1) % 7) === i
-                );
-                const isTraining = matchingDay && !matchingDay.isRest;
-                return (
-                  <div
-                    key={i}
-                    className={`text-center rounded-lg py-2 ${
-                      isTraining
-                        ? "bg-accent/10 border border-accent/20"
-                        : "opacity-40"
-                    }`}
-                  >
-                    <p className="text-[9px] text-muted">{label.charAt(0)}</p>
-                    <div
-                      className={`mx-auto mt-1.5 w-1.5 h-1.5 rounded-full ${
-                        isTraining ? "bg-accent" : "bg-border"
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+      {/* Next week view */}
+      {activeView === "next-week" && (
+        <div className="mt-4">
+          {weekData ? (
+            <div className="rounded-[14px] border border-border/50 bg-surface/50 p-6">
+              <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Starting {startLabel}</p>
+              <p className="font-display text-lg tracking-wide text-text">Week 1</p>
+              <p className="mt-1 text-[10px] text-muted2">
+                {trainingDays.length} training days
+              </p>
 
-            {/* Split list */}
-            <div className="mt-4 flex flex-col divide-y divide-border/30">
-              {(weekData as WeekData).days
-                .filter((d) => !d.isRest)
-                .map((day, i) => {
-                  const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
+              {/* Mini week grid */}
+              <div className="mt-4 grid grid-cols-7 gap-1">
+                {DAY_LABELS.map((label, i) => {
+                  const matchingDay = (weekData as WeekData).days.find(
+                    (d) => ((d.dayNumber - 1) % 7) === i
+                  );
+                  const isTraining = matchingDay && !matchingDay.isRest;
                   return (
-                    <div key={i} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                      <div className="w-[3px] h-7 rounded-full bg-accent/60 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-text">{day.sessionTitle}</p>
-                        <p className="text-[10px] text-muted mt-0.5">
-                          {dayLabel} &middot; {day.exercises.length} exercises &middot; {day.sessionDuration}
-                        </p>
-                      </div>
+                    <div
+                      key={i}
+                      className={`text-center rounded-lg py-2 ${
+                        isTraining
+                          ? "bg-accent/10 border border-accent/20"
+                          : "opacity-40"
+                      }`}
+                    >
+                      <p className="text-[9px] text-muted">{label.charAt(0)}</p>
+                      <div
+                        className={`mx-auto mt-1.5 w-1.5 h-1.5 rounded-full ${
+                          isTraining ? "bg-accent" : "bg-border"
+                        }`}
+                      />
                     </div>
                   );
                 })}
-            </div>
+              </div>
 
-            <p className="mt-4 text-center text-[10px] text-muted">
-              Programme starts {startLabel} &mdash; you&apos;re ready to go.
-            </p>
-          </>
-        ) : !weekData ? (
-          <div className="text-center mt-3">
-            <Button variant="secondary" size="sm" onClick={onBuildWeek} disabled={loading}>
-              {loading ? LOADING_MESSAGES[loadingMsg] : "Preview Week 1 \u2192"}
-            </Button>
-          </div>
-        ) : null}
-      </div>
+              {/* Split list */}
+              <div className="mt-5 flex flex-col divide-y divide-border/30">
+                {(weekData as WeekData).days
+                  .filter((d) => !d.isRest)
+                  .map((day, i) => {
+                    const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
+                    return (
+                      <div key={i} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                        <div className="w-[3px] h-7 rounded-full bg-accent/60 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-text">{day.sessionTitle}</p>
+                          <p className="text-[10px] text-muted mt-0.5">
+                            {dayLabel} &middot; {day.exercises.length} exercises &middot; {day.sessionDuration}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <p className="mt-5 text-center text-[10px] text-muted">
+                Programme starts {startLabel} &mdash; you&apos;re ready to go.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-[14px] border border-border/50 bg-surface/50 p-6 text-center">
+              <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Starting {startLabel}</p>
+              <p className="font-display text-lg tracking-wide text-text">Week 1</p>
+              <p className="mt-1 text-[10px] text-muted2">
+                {trainingDays.length} training days &middot; Your programme will be built by AI
+              </p>
+              <Button variant="secondary" size="sm" className="mt-3" onClick={onBuildWeek} disabled={loading}>
+                {loading ? LOADING_MESSAGES[loadingMsg] : "Preview Week 1 \u2192"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Health disclaimer */}
       <p className="mt-6 text-center text-[10px] text-muted leading-relaxed">
