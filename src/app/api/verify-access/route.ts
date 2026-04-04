@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (ratelimit) {
+  if (ratelimit && process.env.NODE_ENV !== "development") {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const { success } = await ratelimit.limit(ip);

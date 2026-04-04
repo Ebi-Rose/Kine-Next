@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
 
-type View = "signup" | "login" | "forgot";
+type View = "auth" | "forgot" | "confirm-email";
 
 /** Check auth + subscription and route accordingly */
-async function routeAuthenticatedUser(_router: ReturnType<typeof useRouter>) {
+async function routeAuthenticatedUser() {
   const sub = await getSubscriptionStatus();
   if (sub.active) {
     window.location.href = "/app";
@@ -86,220 +86,124 @@ function PasswordInput({
   );
 }
 
-function KineBrand() {
-  return (
-    <div className="font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
-  );
-}
-
 export default function LoginPage() {
-  const [view, setView] = useState<View>("signup");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("view") === "signup" ? "signup" : "login";
+  const [view, setView] = useState<View>("auth");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const router = useRouter();
 
   // Auto-redirect if already authenticated
   useEffect(() => {
     isAuthenticated().then((ok) => {
-      if (ok) routeAuthenticatedUser(router);
+      if (ok) routeAuthenticatedUser();
     });
   }, [router]);
 
-  return (
-    <div className="min-h-screen bg-bg font-body">
-      {view === "signup" && <SignupView onSwitch={(v) => setView(v)} />}
-      {view === "login" && <LoginView onSwitch={(v) => setView(v)} />}
-      {view === "forgot" && <ForgotView onSwitch={(v) => setView(v)} />}
-    </div>
-  );
-}
-
-function SignupView({ onSwitch }: { onSwitch: (v: View) => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [confirmEmail, setConfirmEmail] = useState(false);
-  const router = useRouter();
-
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-
-    if (!ageConfirmed) {
-      setError("Please confirm you are at least 18 years old.");
-      return;
-    }
-
-    setLoading(true);
-
-    const { data, error: authError } = await signUp(email, password);
-    setLoading(false);
-
-    if (authError) {
-      // Normalize to prevent account enumeration
-      const msg = authError.message?.toLowerCase() || "";
-      if (msg.includes("already registered") || msg.includes("already exists") || msg.includes("duplicate")) {
-        setError("Check your email for a confirmation link, or try logging in.");
-      } else {
-        setError(authError.message);
-      }
-      return;
-    }
-
-    // If email confirmation is required, Supabase returns a user without a session
-    if (data?.user && !data.session) {
-      setConfirmEmail(true);
-      return;
-    }
-
-    // Route based on subscription status
-    await routeAuthenticatedUser(router);
-  }
-
-  async function handleGoogle() {
-    await signInWithOAuth("google");
-  }
-
-  if (confirmEmail) {
+  if (view === "confirm-email") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-bg font-body flex items-center justify-center px-6">
         <div className="w-full max-w-sm text-center">
-          <KineBrand />
+          <div className="font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
           <h2 className="mt-6 font-display text-2xl tracking-wide text-text">Check your email</h2>
           <p className="mt-3 text-sm text-muted2">
-            We sent a confirmation link to <strong className="text-text">{email}</strong>.
+            We sent a confirmation link to <strong className="text-text">{confirmEmail}</strong>.
             Click it to activate your account, then come back to log in.
           </p>
           <button
-            onClick={() => onSwitch("login")}
+            onClick={() => setView("auth")}
             className="mt-6 text-sm text-accent hover:underline"
           >
-            Go to login →
+            Go to login &rarr;
           </button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <a href="/" className="text-xs text-muted2 hover:text-text transition-colors">
-          ← Back
-        </a>
-
-        <div className="mt-6">
-          <KineBrand />
-        </div>
-
-        <h2 className="mt-4 font-display text-2xl tracking-wide text-text">
-          Create your account
-        </h2>
-        <p className="mt-1 text-xs text-muted2">
-          Full access. 14-day money-back guarantee.
-        </p>
-
-        <button
-          onClick={handleGoogle}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text transition-all hover:border-border-active"
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
-
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <form onSubmit={handleSignup} className="flex flex-col gap-3">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email address"
-            aria-label="Email address"
-            aria-describedby={error ? "signup-error" : undefined}
-            aria-invalid={error ? "true" : undefined}
-            autoComplete="email"
-            required
-            className="rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text placeholder:text-muted outline-none focus:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          />
-          <PasswordInput
-            value={password}
-            onChange={setPassword}
-            placeholder="Create password"
-            minLength={8}
-            autoComplete="new-password"
-          />
-          <p className="text-[10px] text-muted -mt-1">Must be at least 8 characters</p>
-
-          <label className="flex items-start gap-2 mt-1">
-            <input
-              type="checkbox"
-              checked={ageConfirmed}
-              onChange={(e) => setAgeConfirmed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-border accent-accent"
-            />
-            <span className="text-[11px] text-muted2 leading-snug">
-              I confirm I am at least 18 years old
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading || !ageConfirmed}
-            className="rounded-[var(--radius-default)] bg-accent px-4 py-3 text-sm font-medium text-bg transition-all hover:brightness-110 disabled:opacity-50"
-          >
-            {loading ? "Creating..." : "CREATE ACCOUNT"}
-          </button>
-        </form>
-
-        {error && (
-          <p id="signup-error" role="alert" className="mt-3 text-center text-xs text-[#ff8a80]">{error}</p>
-        )}
-
-        <p className="mt-4 text-center text-[10px] text-muted">
-          By continuing, you agree to our{" "}
-          <a href="/terms" className="text-accent underline underline-offset-2">Terms</a> &{" "}
-          <a href="/privacy" className="text-accent underline underline-offset-2">Privacy Policy</a>
-        </p>
-
-        <p className="mt-4 text-center text-xs text-muted2">
-          Already have an account?{" "}
-          <button onClick={() => onSwitch("login")} className="text-accent hover:underline">
-            Log in
-          </button>
-        </p>
-
+  if (view === "forgot") {
+    return (
+      <div className="min-h-screen bg-bg font-body">
+        <ForgotView onBack={() => setView("auth")} />
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-bg font-body">
+      <AuthView
+        initialTab={initialTab as "login" | "signup"}
+        onForgot={() => setView("forgot")}
+        onConfirmEmail={(email) => { setConfirmEmail(email); setView("confirm-email"); }}
+      />
     </div>
   );
 }
 
-function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
+function AuthView({
+  initialTab,
+  onForgot,
+  onConfirmEmail,
+}: {
+  initialTab: "login" | "signup";
+  onForgot: () => void;
+  onConfirmEmail: (email: string) => void;
+}) {
+  const [tab, setTab] = useState<"login" | "signup">(initialTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  async function handleLogin(e: React.FormEvent) {
+  function switchTab(t: "login" | "signup") {
+    setTab(t);
+    setError("");
+    setPassword("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    const { error: authError } = await signIn(email, password);
-    setLoading(false);
-
-    if (authError) {
-      // Generic message to prevent account enumeration
-      setError("Invalid email or password.");
+    if (tab === "signup" && !ageConfirmed) {
+      setError("Please confirm you are at least 18 years old.");
       return;
     }
 
-    await routeAuthenticatedUser(router);
+    setLoading(true);
+
+    if (tab === "signup") {
+      const { data, error: authError } = await signUp(email, password);
+      setLoading(false);
+
+      if (authError) {
+        const msg = authError.message?.toLowerCase() || "";
+        if (msg.includes("already registered") || msg.includes("already exists") || msg.includes("duplicate")) {
+          setError("Check your email for a confirmation link, or try logging in.");
+        } else {
+          setError(authError.message);
+        }
+        return;
+      }
+
+      if (data?.user && !data.session) {
+        onConfirmEmail(email);
+        return;
+      }
+
+      await routeAuthenticatedUser();
+    } else {
+      const { error: authError } = await signIn(email, password);
+      setLoading(false);
+
+      if (authError) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      await routeAuthenticatedUser();
+    }
   }
 
   async function handleGoogle() {
@@ -310,42 +214,62 @@ function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
     <div className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <a href="/" className="text-xs text-muted2 hover:text-text transition-colors">
-          ← Back
+          &larr; Back
         </a>
 
-        <div className="mt-6">
-          <KineBrand />
-        </div>
-
-        <h2 className="mt-4 font-display text-2xl tracking-wide text-text">
-          Welcome back
-        </h2>
-        <p className="mt-1 text-xs text-muted2">
-          Log in to pick up where you left off.
+        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
+        <p className="mt-3 text-xs text-muted2">
+          Structured training that adapts to your body.
         </p>
 
+        {/* Pill toggle */}
+        <div className="mt-5 flex rounded-[10px] border border-border bg-surface p-[3px]">
+          <button
+            onClick={() => switchTab("login")}
+            className={`flex-1 rounded-[8px] py-2.5 text-xs transition-all ${
+              tab === "login"
+                ? "bg-accent-dim text-accent border border-accent/20"
+                : "text-muted border border-transparent"
+            }`}
+          >
+            Log in
+          </button>
+          <button
+            onClick={() => switchTab("signup")}
+            className={`flex-1 rounded-[8px] py-2.5 text-xs transition-all ${
+              tab === "signup"
+                ? "bg-accent-dim text-accent border border-accent/20"
+                : "text-muted border border-transparent"
+            }`}
+          >
+            Sign up
+          </button>
+        </div>
+
+        {/* Google */}
         <button
           onClick={handleGoogle}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text transition-all hover:border-border-active"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--radius-default)] border border-border bg-surface px-4 py-3 text-sm text-text transition-all hover:border-border-active"
         >
           <GoogleIcon />
           Continue with Google
         </button>
 
-        <div className="my-5 flex items-center gap-3">
+        <div className="my-4 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
           <span className="text-xs text-muted">or</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-3">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email address"
             aria-label="Email address"
-            aria-describedby={error ? "login-error" : undefined}
+            aria-describedby={error ? "auth-error" : undefined}
             aria-invalid={error ? "true" : undefined}
             autoComplete="email"
             required
@@ -354,41 +278,66 @@ function LoginView({ onSwitch }: { onSwitch: (v: View) => void }) {
           <PasswordInput
             value={password}
             onChange={setPassword}
-            placeholder="Password"
-            autoComplete="current-password"
+            placeholder={tab === "signup" ? "Create password" : "Password"}
+            minLength={tab === "signup" ? 8 : undefined}
+            autoComplete={tab === "signup" ? "new-password" : "current-password"}
           />
+
+          {tab === "signup" && (
+            <>
+              <p className="text-[10px] text-muted -mt-1">Must be at least 8 characters</p>
+              <label className="flex items-start gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) => setAgeConfirmed(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-border accent-accent"
+                />
+                <span className="text-[11px] text-muted2 leading-snug">
+                  I confirm I am at least 18 years old
+                </span>
+              </label>
+            </>
+          )}
+
           <button
             type="submit"
-            disabled={loading}
-            className="rounded-[var(--radius-default)] bg-accent px-4 py-3 text-sm font-medium text-bg transition-all hover:brightness-110 disabled:opacity-50"
+            disabled={loading || (tab === "signup" && !ageConfirmed)}
+            className="mt-1 rounded-[var(--radius-default)] bg-accent px-4 py-3 text-sm font-medium text-bg transition-all hover:brightness-110 disabled:opacity-50"
           >
-            {loading ? "Logging in..." : "LOG IN"}
+            {loading
+              ? (tab === "signup" ? "Creating..." : "Logging in...")
+              : (tab === "signup" ? "CREATE ACCOUNT \u2192" : "LOG IN \u2192")
+            }
           </button>
         </form>
 
         {error && (
-          <p id="login-error" role="alert" className="mt-3 text-center text-xs text-[#ff8a80]">{error}</p>
+          <p id="auth-error" role="alert" className="mt-3 text-center text-xs text-[#ff8a80]">{error}</p>
         )}
 
-        <button
-          onClick={() => onSwitch("forgot")}
-          className="mt-3 block w-full text-center text-xs text-muted2 hover:text-accent transition-colors"
-        >
-          Forgot password?
-        </button>
-
-        <p className="mt-4 text-center text-xs text-muted2">
-          Don&apos;t have an account?{" "}
-          <button onClick={() => onSwitch("signup")} className="text-accent hover:underline">
-            Sign up
+        {tab === "login" && (
+          <button
+            onClick={onForgot}
+            className="mt-3 block w-full text-center text-xs text-muted2 hover:text-accent transition-colors"
+          >
+            Forgot password?
           </button>
-        </p>
+        )}
+
+        {tab === "signup" && (
+          <p className="mt-4 text-center text-[10px] text-muted">
+            By continuing, you agree to our{" "}
+            <a href="/terms" className="text-accent underline underline-offset-2">Terms</a> &{" "}
+            <a href="/privacy" className="text-accent underline underline-offset-2">Privacy Policy</a>
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
+function ForgotView({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -401,7 +350,6 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
 
     await resetPassword(email);
     setLoading(false);
-    // Always show success to prevent account enumeration
     setSent(true);
   }
 
@@ -409,7 +357,7 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm text-center">
-          <KineBrand />
+          <div className="font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
           <h2 className="mt-6 font-display text-2xl tracking-wide text-text">Check your inbox</h2>
           <p className="mt-3 text-sm text-muted2">
             We sent a password reset link to <strong className="text-text">{email}</strong>.
@@ -419,10 +367,10 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
             Don&apos;t see it? Check your spam folder.
           </p>
           <button
-            onClick={() => onSwitch("login")}
+            onClick={onBack}
             className="mt-6 text-sm text-accent hover:underline"
           >
-            Back to login →
+            Back to login &rarr;
           </button>
         </div>
       </div>
@@ -433,15 +381,13 @@ function ForgotView({ onSwitch }: { onSwitch: (v: View) => void }) {
     <div className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <button
-          onClick={() => onSwitch("login")}
+          onClick={onBack}
           className="text-xs text-muted2 hover:text-text transition-colors"
         >
-          ← Back to login
+          &larr; Back to login
         </button>
 
-        <div className="mt-6">
-          <KineBrand />
-        </div>
+        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
 
         <h2 className="mt-4 font-display text-2xl tracking-wide text-text">
           Reset your password
