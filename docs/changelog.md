@@ -15,6 +15,13 @@ Each release gets a dated entry with a short summary of what changed and why it 
 
 ---
 
+## v0.2.1 — Payment Guard (4 April 2026)
+
+### Fixed
+- **Double payment prevention** — The checkout flow now checks Stripe for existing active or trialing subscriptions before creating a new session. Users who already have a subscription see a clear error instead of being charged again.
+
+---
+
 ## v0.2.0 — Transparent Progression (29 March 2026)
 
 ### New

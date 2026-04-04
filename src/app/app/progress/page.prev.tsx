@@ -67,12 +67,7 @@ export default function ProgressPage() {
       <StrengthTrend />
 
       {/* Tools */}
-      <div className="mt-6 grid grid-cols-4 gap-2">
-        <Link href="/app/trends"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
-          <span className="text-lg">📈</span>
-          <span className="text-[10px] text-muted2 font-light">Trends</span>
-        </Link>
+      <div className="mt-6 grid grid-cols-3 gap-2">
         <Link href="/app/photos"
           className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
           <span className="text-lg">📸</span>
