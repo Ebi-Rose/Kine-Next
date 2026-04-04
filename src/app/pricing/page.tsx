@@ -12,14 +12,14 @@ export default function PricingPage() {
   const router = useRouter();
   const currency = useMemo(() => detectCurrency(), []) as SupportedCurrency;
 
-  // Check if user already has an active subscription — redirect to app
+  // Auth gate: must be logged in. If subscribed, redirect to app.
   useEffect(() => {
     (async () => {
       try {
         const { getSubscriptionStatus, isAuthenticated } = await import("@/lib/auth");
         const authed = await isAuthenticated();
         if (!authed) {
-          setReady(true);
+          window.location.href = "/login";
           return;
         }
         const sub = await getSubscriptionStatus();
@@ -27,7 +27,10 @@ export default function PricingPage() {
           window.location.href = "/app";
           return;
         }
-      } catch { /* not logged in — stay on pricing */ }
+      } catch {
+        window.location.href = "/login";
+        return;
+      }
       setReady(true);
     })();
   }, []);
