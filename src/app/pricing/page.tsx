@@ -47,14 +47,16 @@ export default function PricingPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 bg-bg font-body">
       <div className="w-full max-w-sm">
-        <a href="/login" className="text-xs text-muted2 hover:text-text transition-colors">
-          ← Back
+        <a href="/app" className="text-xs text-muted2 hover:text-text transition-colors">
+          &larr; Back
         </a>
 
-        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
+        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KIN&#x0113;</div>
 
         <h2 className="mt-4 text-[10px] tracking-[0.3em] text-accent uppercase font-normal m-0">Choose your plan</h2>
-        <p className="mt-1 text-xs text-muted2">Your coach in your pocket. 14-day money-back guarantee.</p>
+        <p className="mt-1 text-xs text-muted2 leading-relaxed">
+          Structured, periodised training that adapts to your body. Not a chatbot &mdash; a coach.
+        </p>
 
         <div className="mt-6 flex flex-col gap-3" role="radiogroup" aria-label="Subscription plan">
           <button
@@ -86,36 +88,53 @@ export default function PricingPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-text">Yearly</p>
-                <p className="text-xs text-muted2">{formatCurrency(perMonth, currency)}/mo · Best value</p>
+                <p className="text-xs text-muted2">{formatCurrency(perMonth, currency)}/mo &middot; Best value</p>
               </div>
               <p className="text-lg font-display text-accent">{formatCurrency(prices.yearly, currency)}<span className="text-xs text-muted2">/yr</span></p>
             </div>
           </button>
         </div>
 
-        <ul className="mt-6 flex flex-col gap-2 text-xs text-muted2">
-          <li>✓ AI-built weekly programs, personalised to you</li>
-          <li>✓ Adapts to your equipment, injuries & experience</li>
-          <li>✓ Body-aware programming — cycle, conditions & life stage</li>
-          <li>✓ Smart warm-ups & cooldowns</li>
-          <li>✓ Weekly check-ins that shape your next week</li>
-          <li>✓ 4-week periodised training blocks</li>
-          <li>✓ Progress tracking & photos</li>
-          <li>✓ 170+ exercise library with coaching cues</li>
-        </ul>
+        {/* Differentiators */}
+        <div className="mt-6">
+          <p className="text-[10px] tracking-[0.2em] text-muted uppercase mb-2">What makes Kin&#x0113; different</p>
+          <ul className="flex flex-col gap-2 text-xs text-muted2">
+            <li>&#10003; 3-week periodised blocks &mdash; volume, intensity, deload</li>
+            <li>&#10003; Cycle-aware programming &mdash; adapts to your body, not against it</li>
+            <li>&#10003; Transparent AI &mdash; see why every exercise was chosen</li>
+            <li>&#10003; No streaks, no guilt &mdash; rest days are real rest days</li>
+          </ul>
+        </div>
+
+        {/* Supporting features */}
+        <div className="mt-4">
+          <p className="text-[10px] tracking-[0.2em] text-muted uppercase mb-2">Everything included</p>
+          <ul className="flex flex-col gap-2 text-xs text-muted2">
+            <li>&#10003; AI-built weekly programmes, personalised to you</li>
+            <li>&#10003; Adapts to your equipment, injuries &amp; experience</li>
+            <li>&#10003; Smart warm-ups &amp; cooldowns</li>
+            <li>&#10003; Weekly check-ins that shape your next week</li>
+            <li>&#10003; Progress tracking &amp; photos</li>
+            <li>&#10003; 170+ exercise library with coaching cues</li>
+          </ul>
+        </div>
 
         <button
           onClick={handleSubscribe}
           disabled={loading}
           className="mt-6 w-full rounded-[var(--radius-default)] bg-accent px-4 py-3 text-sm font-medium text-bg transition-all hover:brightness-110 disabled:opacity-50"
         >
-          {loading ? "Loading..." : "SUBSCRIBE →"}
+          {loading ? "Loading..." : "SUBSCRIBE \u2192"}
         </button>
 
         {error && <p className="mt-3 text-center text-xs text-[#ff8a80]" role="alert">{error}</p>}
 
         <p className="mt-3 text-center text-[10px] text-muted">
           14-day money-back guarantee. Cancel anytime from your profile.
+        </p>
+
+        <p className="mt-4 text-center text-[10px] text-muted">
+          Built by lifters, for lifters. Your data stays yours &mdash; no ads, no selling, GDPR compliant.
         </p>
       </div>
     </div>
