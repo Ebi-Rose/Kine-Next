@@ -51,7 +51,7 @@ export default function PricingPage() {
           &larr; Back
         </a>
 
-        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KIN&#x0113;</div>
+        <div className="mt-6 font-display text-2xl tracking-[0.2em] text-accent">KINĒ</div>
 
         <h2 className="mt-4 text-[10px] tracking-[0.3em] text-accent uppercase font-normal m-0">Choose your plan</h2>
         <p className="mt-1 text-xs text-muted2 leading-relaxed">
