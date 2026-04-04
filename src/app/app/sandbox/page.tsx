@@ -227,8 +227,15 @@ export default function SandboxPage() {
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <h1 className="font-display text-xl text-text">Sandbox Mode</h1>
         <p className="mt-3 text-sm text-muted2">
-          Design-your-own-week is available for intermediate and advanced lifters.
-          Keep building your foundation with your current programme — it won&apos;t be long.
+          Sandbox mode is recommended for those with intermediate or advanced
+          lifting experience. If that sounds like you, make sure your experience
+          level is up to date in your{" "}
+          <button
+            onClick={() => router.push("/app/profile")}
+            className="text-accent underline underline-offset-2 hover:text-text transition-colors"
+          >
+            Profile
+          </button>.
         </p>
         <Button className="mt-6" onClick={() => router.push("/app")}>
           Back to Dashboard
