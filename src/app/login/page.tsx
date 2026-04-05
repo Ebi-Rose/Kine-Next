@@ -2,20 +2,15 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated, getSubscriptionStatus } from "@/lib/auth";
+import { signUp, signIn, signInWithOAuth, resetPassword, isAuthenticated } from "@/lib/auth";
 import PwaHead from "@/components/PwaHead";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 type View = "auth" | "forgot" | "confirm-email";
 
-/** Check auth + subscription and route accordingly */
-async function routeAuthenticatedUser() {
-  const sub = await getSubscriptionStatus();
-  if (sub.active) {
-    window.location.href = "/app";
-  } else {
-    window.location.href = "/pricing";
-  }
+/** Redirect authenticated user — AuthGuard on /app handles subscription check */
+function routeAuthenticatedUser() {
+  window.location.href = "/app";
 }
 
 function EyeIcon({ open }: { open: boolean }) {
