@@ -26,7 +26,7 @@ export default function ProgressPage() {
   // Compute actual weeks from session dates (more reliable than currentWeek counter)
   const weeksActive = (() => {
     if (totalSessions === 0 || !programStartDate) return currentWeek || 1;
-    const sessionDates = (sessions as SessionRecord[]).map((s) => s.date).filter(Boolean);
+    const sessionDates = (sessions as SessionRecord[]).map((s) => s.date).filter((d): d is string => Boolean(d));
     if (sessionDates.length === 0) return currentWeek || 1;
     const weeks = new Set(sessionDates.map((d) => {
       const date = new Date(d);
