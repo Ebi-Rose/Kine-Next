@@ -6,6 +6,15 @@ import { setDevDateOverride, getDevDateOverride, appNow, appTodayISO } from "@/l
 import { toast } from "@/components/Toast";
 
 /**
+ * Wait for Zustand's async persist (encrypted storage) to flush before reloading.
+ * The store uses AES-GCM encryption which is async — reloading immediately after
+ * a setState would lose changes. AES-GCM on small JSON is sub-ms, so 150ms is plenty.
+ */
+function reloadAfterPersist() {
+  setTimeout(() => window.location.reload(), 150);
+}
+
+/**
  * Floating dev panel — available on every /app/* page in development.
  * Renders as a draggable pill that expands into a compact overlay.
  */
@@ -54,8 +63,9 @@ export default function DevOverlay() {
       currentWeek: store.progressDB.currentWeek + 1,
     });
     store.setWeekData(null);
-    // jumpDays will reload the page — store changes are persisted to localStorage by Zustand
-    jumpDays(7);
+    // Set the date override (without reloading), then wait for store persist before reloading
+    jumpDays(7, false);
+    reloadAfterPersist();
   }
 
   function simulateSession() {
@@ -124,12 +134,15 @@ export default function DevOverlay() {
       currentWeek: store.progressDB.currentWeek + 2,
     });
     store.setWeekData(null);
-    toast("2-week gap", "success");
+    // Set the date override (without reloading), then wait for store persist before reloading
+    jumpDays(14, false);
+    reloadAfterPersist();
   }
 
   function resetAll() {
     if (confirm("Reset ALL data?")) {
       localStorage.removeItem("kine_v2");
+      setDevDateOverride(null); // clear dev time override too
       window.location.href = "/app/onboarding";
     }
   }
@@ -270,6 +283,39 @@ export default function DevOverlay() {
         {/* Sim tab */}
         {tab === "sim" && (
           <div className="flex flex-col gap-1.5">
+            {/* Persona loaders */}
+            <p className="text-[9px] text-muted uppercase tracking-wider">Load persona</p>
+            <div className="grid grid-cols-3 gap-1">
+              {[
+                { key: "mia", label: "Mia", desc: "Experienced" },
+                { key: "priya", label: "Priya", desc: "On-and-off" },
+                { key: "aisha", label: "Aisha", desc: "Beginner" },
+                { key: "emma", label: "Emma", desc: "Postpartum" },
+                { key: "diane", label: "Diane", desc: "Peri" },
+                { key: "demo", label: "Demo", desc: "Generic" },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  onClick={async () => {
+                    if (p.key === "demo") {
+                      const { loadDemoData } = await import("@/data/demo-data");
+                      loadDemoData(useKineStore.getState());
+                    } else {
+                      const { PERSONA_LOADERS } = await import("@/data/personas");
+                      PERSONA_LOADERS[p.key]?.(useKineStore.getState());
+                    }
+                    toast(`Loaded ${p.label}`, "success");
+                    reloadAfterPersist();
+                  }}
+                  className="rounded-lg border border-border bg-surface/50 py-1.5 text-center transition-all hover:border-accent/30"
+                >
+                  <span className="block text-[10px] text-text">{p.label}</span>
+                  <span className="block text-[8px] text-muted2">{p.desc}</span>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[9px] text-muted uppercase tracking-wider mt-1">Quick sim</p>
             <Btn onClick={simulateSession}>Simulate session</Btn>
             <Btn onClick={seedLifts}>Seed 8 weeks of lifts</Btn>
             <Btn onClick={simulatePerfectWeek}>Perfect week</Btn>

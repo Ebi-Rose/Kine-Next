@@ -5,17 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getSession, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
 
-/** Fetches the validated access mode from the server-side httpOnly cookie */
-async function getAccessMode(): Promise<string | null> {
-  try {
-    const res = await fetch("/api/check-access");
-    const { mode } = await res.json();
-    return mode || null; // "new" | "demo" | "real" | null
-  } catch {
-    return null;
-  }
-}
-
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState<string | null>(null);
@@ -29,27 +18,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     async function check() {
       try {
-        const mode = await getAccessMode();
-
-        // ── Demo / New mode: skip auth and subscription checks ──
-        if (mode === "demo" || mode === "new") {
-          // Brief wait for store hydration
-          await new Promise((r) => setTimeout(r, 300));
-          if (cancelled) return;
-
-          if (mode === "new") {
-            const { progressDB, goal } = useKineStore.getState();
-            if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
-              router.replace("/app/onboarding");
-              return;
-            }
-          }
-
-          setAllowed(true);
-          return;
-        }
-
-        // ── Real mode: full auth + subscription checks ──
+        // ── Auth check ──
         const authed = await isAuthenticated();
         if (cancelled) return;
         if (!authed) {
@@ -57,6 +26,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // ── Subscription check ──
         const isPostCheckout = typeof window !== "undefined" &&
           new URLSearchParams(window.location.search).get("checkout") === "success";
 
@@ -91,7 +61,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Post-checkout: clear any stale demo/test data so onboarding starts fresh
+        // Post-checkout: clear any stale data so onboarding starts fresh
         if (isPostCheckout) {
           const storeState = useKineStore.getState();
           storeState.resetOnboarding();
@@ -106,7 +76,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             phaseOffset: 0,
           });
           window.history.replaceState({}, "", pathname);
-          // If already on onboarding, fall through to setAllowed(true)
           if (pathname !== "/app/onboarding") {
             router.replace("/app/onboarding");
             return;
@@ -126,7 +95,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         setAllowed(true);
       } catch (err) {
         console.error("[AuthGuard] check failed:", err);
-        // Don't leave user stuck on spinner — redirect to login as fallback
         router.replace("/login");
       }
     }

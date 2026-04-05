@@ -6,30 +6,28 @@ import { createRatelimit } from "../_lib/rate-limit";
 const ratelimit = createRatelimit("check-access", 60, "60 s");
 
 /**
- * Returns the validated access mode from the signed httpOnly cookie.
- * AuthGuard calls this instead of trusting localStorage.
+ * Returns whether the user has a valid access cookie (beta gate).
+ * AuthGuard calls this to confirm access before proceeding with auth checks.
  */
 export async function GET(request: NextRequest) {
   if (ratelimit) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const { success } = await ratelimit.limit(ip);
     if (!success) {
-      return Response.json({ mode: null }, { status: 429 });
+      return Response.json({ valid: false }, { status: 429 });
     }
   }
   const cookieStore = await cookies();
   const raw = cookieStore.get("kine_access")?.value;
 
   if (!raw) {
-    return Response.json({ mode: null });
+    return Response.json({ valid: false });
   }
 
   const value = verifyValue(raw);
   if (!value || !value.startsWith("granted")) {
-    return Response.json({ mode: null });
+    return Response.json({ valid: false });
   }
 
-  // Format: "granted:mode" (e.g. "granted:demo", "granted:new", "granted:real")
-  const mode = value.split(":")[1] || "real";
-  return Response.json({ mode });
+  return Response.json({ valid: true });
 }

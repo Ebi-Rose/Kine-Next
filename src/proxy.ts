@@ -98,13 +98,6 @@ async function verifySignature(signed: string): Promise<boolean> {
   return mismatch === 0;
 }
 
-function extractMode(signed: string): string | null {
-  const lastDot = signed.lastIndexOf(".");
-  if (lastDot === -1) return null;
-  const value = signed.slice(0, lastDot); // "granted:mode"
-  return value.split(":")[1] || null;
-}
-
 // ── Main proxy ───────────────────────────────────────────
 
 export default async function proxy(request: NextRequest) {
