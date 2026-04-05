@@ -8,9 +8,14 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 type View = "auth" | "forgot" | "confirm-email";
 
-/** Redirect authenticated user — AuthGuard on /app handles subscription check */
-function routeAuthenticatedUser() {
+/** After login: go to /app, AuthGuard checks subscription */
+function routeAfterLogin() {
   window.location.href = "/app";
+}
+
+/** After signup: go straight to pricing (no subscription yet) */
+function routeAfterSignup() {
+  window.location.href = "/pricing";
 }
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -107,7 +112,7 @@ function LoginPageInner() {
     isAuthenticated().then((ok) => {
       if (cancelled) return;
       if (ok) {
-        routeAuthenticatedUser();
+        routeAfterLogin();
       } else {
         setReady(true);
       }
@@ -215,7 +220,7 @@ function AuthView({
         return;
       }
 
-      await routeAuthenticatedUser();
+      routeAfterSignup();
     } else {
       const { error: authError } = await signIn(email, password);
       setLoading(false);
@@ -225,7 +230,7 @@ function AuthView({
         return;
       }
 
-      await routeAuthenticatedUser();
+      routeAfterLogin();
     }
   }
 
