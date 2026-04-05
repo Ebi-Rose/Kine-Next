@@ -91,6 +91,17 @@ export default function RootLayout({
           </div>
           <div className="splash-bar" />
         </div>
+        {/* Clean up stale service workers on non-app pages */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator && !['/app','/login','/pricing'].some(function(p){return location.pathname.startsWith(p)})) {
+                navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister()})});
+                if (caches) caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})});
+              }
+            `,
+          }}
+        />
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
