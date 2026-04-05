@@ -902,6 +902,12 @@ export default function PreSessionPage() {
           {hasChanges && (
             <div className="border-t border-white/[0.06] pt-2.5 mb-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
               <div className="text-[11px] font-medium text-muted2 mb-1.5">Changes from plan</div>
+              {trimmedNames.size > 0 && (
+                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
+                  <span className="text-xs shrink-0">✕</span>
+                  <span>Cut for time: <span className="text-red-400/80">{[...trimmedNames].join(", ")}</span></span>
+                </div>
+              )}
               {skipped.size > 0 && (
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
                   <span className="text-xs shrink-0">✕</span>
@@ -911,7 +917,7 @@ export default function PreSessionPage() {
               {duration !== null && duration !== defaultDuration && (
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
                   <span className="text-xs shrink-0">⏱</span>
-                  <span>Duration: <span className="line-through text-muted">{defaultDuration} min</span> → <span className="text-[#6a9a7a]">{duration} min</span></span>
+                  <span>Duration: <span className="line-through text-muted">{defaultDuration} min</span> → <span className="text-[#6a9a7a]">{duration} min</span> <span className="text-muted">(~{estimateSessionTime(activeExercises)} min estimated)</span></span>
                 </div>
               )}
               {coaching !== eduMode && (
@@ -974,6 +980,12 @@ export default function PreSessionPage() {
             <h3 className="text-lg font-semibold -tracking-[0.2px] mb-4">Ready to go?</h3>
 
             <div className="text-left mb-5">
+              {trimmedNames.size > 0 && (
+                <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5 border-b border-border">
+                  <span className="text-red-400/80">✕</span>
+                  <span>Cut for time: <span className="text-red-400/80">{[...trimmedNames].join(", ")}</span></span>
+                </div>
+              )}
               {skipped.size > 0 && (
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5 border-b border-border">
                   <span className="text-accent">✕</span>
@@ -983,7 +995,7 @@ export default function PreSessionPage() {
               {duration !== null && duration !== defaultDuration && (
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5 border-b border-border">
                   <span className="text-[#7a8aaa]">⏱</span>
-                  <span>Duration → <span className="text-[#6a9a7a]">{duration} min</span></span>
+                  <span>Duration → <span className="text-[#6a9a7a]">{duration} min</span> <span className="text-muted">(~{estimateSessionTime(activeExercises)} min estimated)</span></span>
                 </div>
               )}
               {coaching !== eduMode && (
