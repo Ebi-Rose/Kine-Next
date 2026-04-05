@@ -22,11 +22,12 @@ export default function DevOverlay() {
 
   const activeOverride = getDevDateOverride();
 
-  function applyDateOverride(dateStr: string) {
+  function applyDateOverride(dateStr: string, reload = true) {
     if (!dateStr) {
       setDevDateOverride(null);
       setDateOverride("");
       toast("Date override cleared", "success");
+      if (reload) window.location.reload();
       return;
     }
     const d = new Date(dateStr + "T12:00:00");
@@ -37,23 +38,24 @@ export default function DevOverlay() {
     setDevDateOverride(d);
     setDateOverride(dateStr);
     toast(`App time → ${dateStr}`, "success");
+    if (reload) window.location.reload();
   }
 
-  function jumpDays(n: number) {
+  function jumpDays(n: number, reload = true) {
     const base = activeOverride || new Date(); // eslint-disable-line no-restricted-syntax
     const d = new Date(base);
     d.setDate(d.getDate() + n);
-    applyDateOverride(d.toISOString().split("T")[0]);
+    applyDateOverride(d.toISOString().split("T")[0], reload);
   }
 
   function advanceWeek() {
-    jumpDays(7);
     store.setProgressDB({
       ...store.progressDB,
       currentWeek: store.progressDB.currentWeek + 1,
     });
     store.setWeekData(null);
-    toast(`Week ${store.progressDB.currentWeek + 1}`, "success");
+    // jumpDays will reload the page — store changes are persisted to localStorage by Zustand
+    jumpDays(7);
   }
 
   function simulateSession() {
