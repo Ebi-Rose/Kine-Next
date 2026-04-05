@@ -18,10 +18,7 @@ export default function DevOverlay() {
   );
   const [showState, setShowState] = useState(false);
 
-  // Hide in production
-  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
-    return null;
-  }
+  // Dev tools available in all access modes for beta testing
 
   const activeOverride = getDevDateOverride();
 
