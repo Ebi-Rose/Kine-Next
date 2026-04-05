@@ -2,7 +2,7 @@
 // Age 23 | Muscle building | Developing | Dumbbells + machines | 4 days | Knee injury | Irregular cycle
 // Tests: incomplete weeks, gaps, mid-session skipping, irregular cycle, plateau detection
 
-import { daysAgo, weeksAgo, makeSession, buildLifts } from "./helpers";
+import { daysAgo, weeksAgo, makeSession, buildLifts, buildWeekHistory } from "./helpers";
 
 function buildSessions() {
   const sessions = [];
@@ -123,6 +123,7 @@ export function loadPriya(store: any) {
     currentLifts: {},
   });
 
+  const trainingDays = [0, 1, 3, 4];
   const sessions = buildSessions();
   store.setProgressDB({
     sessions,
@@ -137,4 +138,5 @@ export function loadPriya(store: any) {
     skippedSessions: [],
     phaseOffset: 0,
   });
+  store.setWeekHistory(buildWeekHistory(sessions, 4, trainingDays));
 }

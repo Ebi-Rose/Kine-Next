@@ -2,7 +2,7 @@
 // Age 31 | Strength | Intermediate | Full gym | Lower back injury | Hormonal contraception | Silent edu
 // Tests: seeded lifts, injury-aware selection, silent edu, time budgets, PR tracking
 
-import { daysAgo, weeksAgo, makeSession, buildLifts } from "./helpers";
+import { daysAgo, weeksAgo, makeSession, buildLifts, buildWeekHistory } from "./helpers";
 
 function buildSessions() {
   const sessions = [];
@@ -132,6 +132,7 @@ export function loadMia(store: any) {
     },
   });
 
+  const trainingDays = [0, 1, 2, 3, 4];
   const sessions = buildSessions();
   store.setProgressDB({
     sessions,
@@ -146,4 +147,5 @@ export function loadMia(store: any) {
     skippedSessions: [],
     phaseOffset: 0,
   });
+  store.setWeekHistory(buildWeekHistory(sessions, 4, trainingDays));
 }

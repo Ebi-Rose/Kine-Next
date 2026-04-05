@@ -2,7 +2,7 @@
 // Age 52 | General fitness | Developing (returning) | All equipment | 3 days | 3 injuries | N/A cycle | Conditions
 // Tests: heavy injury constraints, conditions (pelvic floor + endo), comfort flags, conservative progression
 
-import { daysAgo, weeksAgo, makeSession, buildLifts } from "./helpers";
+import { daysAgo, weeksAgo, makeSession, buildLifts, buildWeekHistory } from "./helpers";
 
 function buildSessions() {
   const sessions = [];
@@ -118,6 +118,7 @@ export function loadDiane(store: any) {
     currentLifts: {},
   });
 
+  const trainingDays = [1, 3, 5];
   const sessions = buildSessions();
   store.setProgressDB({
     sessions,
@@ -132,4 +133,5 @@ export function loadDiane(store: any) {
     skippedSessions: [],
     phaseOffset: 0,
   });
+  store.setWeekHistory(buildWeekHistory(sessions, 4, trainingDays));
 }

@@ -2,7 +2,7 @@
 // Age 35 | General fitness | New (was active years ago) | Bodyweight only | 2 days | Hip + lower back | No cycle tracking
 // Tests: multiple injuries, bodyweight-only programming, minimal frequency, N/A cycle, short sessions
 
-import { daysAgo, weeksAgo, makeSession, buildLifts } from "./helpers";
+import { daysAgo, weeksAgo, makeSession, buildLifts, buildWeekHistory } from "./helpers";
 
 function buildSessions() {
   const sessions = [];
@@ -90,6 +90,7 @@ export function loadEmma(store: any) {
     currentLifts: {},
   });
 
+  const trainingDays = [1, 4];
   const sessions = buildSessions();
   store.setProgressDB({
     sessions,
@@ -104,4 +105,5 @@ export function loadEmma(store: any) {
     skippedSessions: [],
     phaseOffset: 0,
   });
+  store.setWeekHistory(buildWeekHistory(sessions, 4, trainingDays));
 }

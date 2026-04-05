@@ -1,4 +1,5 @@
 import type { LiftEntry, SessionRecord, WeekFeedback } from "@/store/useKineStore";
+import type { WeekData, WeekDay } from "@/lib/week-builder";
 
 /** Date string N days ago (YYYY-MM-DD) */
 export function daysAgo(n: number): string {
@@ -63,4 +64,84 @@ export function buildFeedback(weeks: number, baseEffort = 3, baseSoreness = 2): 
     effort: baseEffort,
     soreness: baseSoreness,
   }));
+}
+
+/**
+ * Build weekHistory from seeded sessions.
+ * Groups sessions by weekNum, builds a WeekData per week with backdated dates.
+ * Excludes the current week (that's the live weekData, not history).
+ */
+export function buildWeekHistory(
+  sessions: SessionRecord[],
+  currentWeek: number,
+  trainingDays: number[],
+): WeekData[] {
+  // Group sessions by weekNum
+  const byWeek = new Map<number, SessionRecord[]>();
+  for (const s of sessions) {
+    if (!s.weekNum || s.weekNum >= currentWeek) continue;
+    const existing = byWeek.get(s.weekNum) || [];
+    existing.push(s);
+    byWeek.set(s.weekNum, existing);
+  }
+
+  // Build a WeekData for each historical week
+  const history: WeekData[] = [];
+  const sortedWeeks = [...byWeek.keys()].sort((a, b) => a - b);
+
+  for (const weekNum of sortedWeeks) {
+    const weekSessions = byWeek.get(weekNum)!;
+
+    // Build 7 days (Mon-Sun), filling in sessions where we have them
+    const days: WeekDay[] = Array.from({ length: 7 }, (_, i) => {
+      const session = weekSessions.find((s) => s.dayIdx === i);
+      const isTrainingDay = trainingDays.includes(i);
+
+      if (session && session.logs) {
+        const exercises = Object.values(session.logs as Record<string, { name: string; actual?: { weight: number; reps: number }[] }>)
+          .map((log) => ({
+            name: log.name,
+            sets: String(log.actual?.length || 3),
+            reps: String(log.actual?.[0]?.reps || 8),
+            rest: "90",
+          }));
+
+        return {
+          dayNumber: i + 1,
+          isRest: false,
+          sessionTitle: session.title || "Session",
+          sessionDuration: "50",
+          coachNote: "",
+          exercises,
+        };
+      }
+
+      return {
+        dayNumber: i + 1,
+        isRest: !isTrainingDay,
+        sessionTitle: isTrainingDay ? "Session" : "",
+        sessionDuration: "50",
+        coachNote: "",
+        exercises: [],
+      };
+    });
+
+    history.push({
+      programName: `Week ${weekNum}`,
+      weekCoachNote: "",
+      days,
+      _weekNum: weekNum,
+    });
+  }
+
+  return history;
+}
+
+/** Compute Monday ISO date string for a given week number relative to now */
+export function weekStartDate(weeksBack: number): string {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - weeksBack * 7);
+  return monday.toISOString().slice(0, 10);
 }

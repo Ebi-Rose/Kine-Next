@@ -2,7 +2,7 @@
 // Age 28 | Strength | Intermediate | All equipment | 5 days | Shoulder (recovered) | Regular cycle
 // Tests: high-frequency, precise weights, custom rest, PR tracking, peak phase, no edu engagement
 
-import { daysAgo, weeksAgo, makeSession, buildLifts } from "./helpers";
+import { daysAgo, weeksAgo, makeSession, buildLifts, buildWeekHistory } from "./helpers";
 
 function buildSessions() {
   const sessions = [];
@@ -94,6 +94,7 @@ export function loadAisha(store: any) {
     },
   });
 
+  const trainingDays = [0, 1, 2, 3, 4];
   const sessions = buildSessions();
   store.setProgressDB({
     sessions,
@@ -109,4 +110,5 @@ export function loadAisha(store: any) {
     skippedSessions: [],
     phaseOffset: 0,
   });
+  store.setWeekHistory(buildWeekHistory(sessions, 5, trainingDays));
 }
