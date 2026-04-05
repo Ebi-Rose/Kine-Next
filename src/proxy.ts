@@ -111,8 +111,16 @@ export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAppRoute = pathname.startsWith("/app");
 
-  // Auth, subscription, and access checks are handled client-side by AuthGuard.
-  // The proxy only sets CSP and security headers.
+  // ── Access code gate for /app/* (beta) ──
+  if (isAppRoute) {
+    const accessCookie = request.cookies.get("kine_access")?.value;
+    if (!accessCookie || !(await verifySignature(accessCookie))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/access";
+      return NextResponse.redirect(url);
+    }
+  }
+  // Subscription checks are handled client-side by AuthGuard.
 
   // ── CSP headers ──
   // /app/* routes are dynamically rendered → use nonce-based strict CSP
