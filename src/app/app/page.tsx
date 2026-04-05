@@ -613,8 +613,8 @@ function WeekView({
               {/* Today's session card — always expanded */}
               {(() => {
                 const todayDay = displayWeek.days[todayIdx];
-                const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                  .some((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === todayIdx);
+                const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number; date?: string }[])
+                  .some((s) => isInCurrentWeek(s.date) && s.dayIdx === todayIdx);
                 return (
                   <DayCard
                     day={todayDay} dayIdx={todayIdx}
@@ -643,8 +643,8 @@ function WeekView({
 
           {/* Session completion summary — current week only */}
           {!isViewingPast && (() => {
-            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-              .filter((s) => s.weekNum === progressDB.currentWeek);
+            const weekSessions = (progressDB.sessions as { date?: string }[])
+              .filter((s) => isInCurrentWeek(s.date));
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
               return (
@@ -685,8 +685,11 @@ function WeekView({
             return (
               <div className="flex flex-col gap-2">
                 {displayWeek.days.map((day, i) => {
-                  const hasSession = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                    .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
+                  const hasSession = isViewingPast
+                    ? (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                        .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i)
+                    : (progressDB.sessions as { date?: string; dayIdx?: number }[])
+                        .some((s) => isInCurrentWeek(s.date) && s.dayIdx === i);
                   const isCompleted = hasSession && (isViewingPast || i <= todayIdx);
                   return (
                     <DayCard
@@ -705,8 +708,8 @@ function WeekView({
 
           {/* Next week preview */}
           {!isViewingPast && (() => {
-            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-              .filter((s) => s.weekNum === progressDB.currentWeek);
+            const weekSessions = (progressDB.sessions as { date?: string }[])
+              .filter((s) => isInCurrentWeek(s.date));
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const nextWeekNum = (progressDB.currentWeek || 1) + 1;
@@ -861,8 +864,8 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
 
   // Find completed session log for this day
   const completedSession = isCompleted
-    ? (progressDB.sessions as { weekNum?: number; dayIdx?: number; logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string }[])
-        .find((s) => s.weekNum === progressDB.currentWeek && s.dayIdx === dayIdx)
+    ? (progressDB.sessions as { weekNum?: number; dayIdx?: number; date?: string; logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string }[])
+        .find((s) => isInCurrentWeek(s.date) && s.dayIdx === dayIdx)
     : null;
 
   if (day.isRest) {
@@ -1177,4 +1180,25 @@ function getWeekDateRange(): string {
     d.toLocaleDateString(locale, { day: "numeric", month: "short" });
 
   return `${fmt(monday)}–${fmt(sunday)}`;
+}
+
+/** Get ISO date strings for the current week's Monday and Sunday */
+function getCurrentWeekBounds(): { mondayISO: string; sundayISO: string } {
+  const now = appNow();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return {
+    mondayISO: monday.toISOString().slice(0, 10),
+    sundayISO: sunday.toISOString().slice(0, 10),
+  };
+}
+
+/** Check if a session date falls within the current calendar week */
+function isInCurrentWeek(sessionDate: string | undefined): boolean {
+  if (!sessionDate) return false;
+  const { mondayISO, sundayISO } = getCurrentWeekBounds();
+  return sessionDate >= mondayISO && sessionDate <= sundayISO;
 }
