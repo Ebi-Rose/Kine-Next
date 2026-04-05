@@ -111,22 +111,8 @@ export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAppRoute = pathname.startsWith("/app");
 
-  // ── Access + subscription checks for /app/* ──
-  if (isAppRoute) {
-    const accessCookie = request.cookies.get("kine_access")?.value;
-
-    if (!accessCookie || !(await verifySignature(accessCookie))) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/access";
-      return NextResponse.redirect(url);
-    }
-
-    const mode = extractMode(accessCookie);
-
-    // "real" mode: AuthGuard handles subscription checks client-side.
-    // The kine_sub cookie is set by AuthGuard after the first successful check,
-    // so we can't require it here — it won't exist on the first visit after login.
-  }
+  // Auth, subscription, and access checks are handled client-side by AuthGuard.
+  // The proxy only sets CSP and security headers.
 
   // ── CSP headers ──
   // /app/* routes are dynamically rendered → use nonce-based strict CSP
