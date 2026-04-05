@@ -32,21 +32,21 @@ export default function AccessPage() {
           const { PERSONA_LOADERS } = await import("@/data/personas");
           if (trimmedCode.startsWith("test-") && PERSONA_LOADERS[personaKey]) {
             PERSONA_LOADERS[personaKey](useKineStore.getState());
-            router.push("/app");
+            window.location.href = "/app";
           } else if (trimmedCode.startsWith("test-")) {
             // Unknown test- code: fresh onboarding (no demo data)
-            router.push("/app/onboarding");
+            window.location.href = "/app/onboarding";
           } else {
             const { loadDemoData } = await import("@/data/demo-data");
             loadDemoData(useKineStore.getState());
-            router.push("/app");
+            window.location.href = "/app";
           }
         } else if (mode === "new") {
           // Skip auth/stripe, fresh user → onboarding
-          router.push("/app/onboarding");
+          window.location.href = "/app/onboarding";
         } else {
           // Real flow: auth → stripe → onboarding
-          router.push("/login");
+          window.location.href = "/login";
         }
       } else {
         const data = await res.json();
