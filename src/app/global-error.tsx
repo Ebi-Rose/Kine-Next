@@ -30,7 +30,7 @@ export default function GlobalError({
               letterSpacing: "0.25em",
             }}
           >
-            <span style={{ color: "#c49098" }}>K</span>INE
+            <span style={{ color: "#c49098" }}>K</span>INĒ
           </p>
           <p style={{ color: "#8a8480", fontSize: 14, textAlign: "center" }}>
             Something went wrong. Try refreshing.
