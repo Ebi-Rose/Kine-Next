@@ -235,7 +235,7 @@ export default function LandingPage() {
         }
         .lp-phone {
           width: 210px;
-          height: 420px;
+          height: 460px;
           background: #13110f;
           border-radius: 32px;
           border: 2px solid #2a2722;
@@ -286,70 +286,132 @@ export default function LandingPage() {
           color: #8a847d;
           letter-spacing: 0.5px;
         }
-        .lp-ph-hero {
-          width: 100%;
-          height: 70px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, rgba(196,144,152,0.15) 0%, rgba(196,144,152,0.05) 100%);
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding: 10px 12px;
-          position: relative;
-          overflow: hidden;
-        }
-        .lp-ph-hero::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: url('/hero-bg.JPG') center/cover no-repeat;
-          opacity: 0.15;
-        }
-        .lp-ph-hero-title {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 16px;
-          color: #f0ebe6;
+        .lp-ph-week {
+          font-size: 7px;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: #8a847d;
           font-weight: 400;
-          position: relative;
-          z-index: 1;
         }
-        .lp-ph-hero-meta {
+        .lp-ph-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 18px;
+          color: #f0ebe6;
+          font-weight: 300;
+          font-style: italic;
+          margin: -2px 0 4px;
+        }
+        .lp-ph-badge {
+          display: inline-block;
+          font-size: 6px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: #6a9a7a;
+          border: 1px solid rgba(106,154,122,0.3);
+          border-radius: 6px;
+          padding: 2px 6px;
+          margin-bottom: 4px;
+        }
+        .lp-ph-toggle {
+          display: flex;
+          border-radius: 10px;
+          overflow: hidden;
+          border: 1px solid #2a2722;
+          margin-bottom: 2px;
+        }
+        .lp-ph-toggle-btn {
+          flex: 1;
+          text-align: center;
           font-size: 8px;
-          color: rgba(240,235,230,0.6);
-          position: relative;
-          z-index: 1;
+          padding: 4px 0;
+          color: #8a847d;
+          letter-spacing: 0.3px;
         }
-        .lp-ph-exercise {
+        .lp-ph-toggle-btn.active {
+          background: rgba(196,144,152,0.15);
+          color: #f0ebe6;
+        }
+        .lp-ph-adapt {
           background: #1a1815;
           border: 1px solid #2a2722;
           border-radius: 14px;
           padding: 10px 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
         }
-        .lp-ph-ex-thumb {
-          width: 32px;
-          height: 32px;
-          border-radius: 10px;
-          background: rgba(196,144,152,0.08);
+        .lp-ph-adapt-header {
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 4px;
+          margin-bottom: 4px;
+        }
+        .lp-ph-adapt-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: #6a9a7a;
+        }
+        .lp-ph-adapt-label {
+          font-size: 6px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          color: #8a847d;
+          font-weight: 400;
+        }
+        .lp-ph-adapt-text {
+          font-size: 8px;
+          line-height: 1.5;
+          color: #c4bdb5;
+          font-weight: 300;
+        }
+        .lp-ph-adapt-tags {
+          display: flex;
+          gap: 4px;
+          margin-top: 6px;
+        }
+        .lp-ph-adapt-tag {
+          font-size: 6px;
+          color: #8a847d;
+          border: 1px solid #2a2722;
+          border-radius: 6px;
+          padding: 2px 6px;
+          letter-spacing: 0.3px;
+        }
+        .lp-ph-session {
+          background: #1a1815;
+          border: 1px solid #2a2722;
+          border-radius: 14px;
+          padding: 10px 12px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .lp-ph-session-label {
+          font-size: 6px;
+          color: #c49098;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          font-weight: 500;
+          background: rgba(196,144,152,0.1);
+          display: inline-block;
+          padding: 2px 6px;
+          border-radius: 4px;
+          width: fit-content;
+        }
+        .lp-ph-ex-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 1px 0;
+        }
+        .lp-ph-ex-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
           flex-shrink: 0;
         }
-        .lp-ph-ex-thumb svg {
-          width: 10px;
-          height: 10px;
-          fill: #c49098;
-          opacity: 0.6;
-        }
-        .lp-ph-ex-info {
-          flex: 1;
-          min-width: 0;
-        }
         .lp-ph-ex-name {
-          font-size: 10px;
+          flex: 1;
+          font-size: 9px;
           font-weight: 400;
           color: #f0ebe6;
         }
@@ -357,31 +419,20 @@ export default function LandingPage() {
           font-size: 8px;
           color: #8a847d;
           font-weight: 300;
-        }
-        .lp-ph-cycle {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 10px;
-          background: #1a1815;
-          border: 1px solid #2a2722;
-          border-radius: 14px;
-        }
-        .lp-ph-cycle-bar {
-          flex: 1;
-          height: 4px;
-          border-radius: 2px;
-          background: #23201b;
-          overflow: hidden;
-          display: flex;
-        }
-        .lp-ph-cycle-seg {
-          height: 100%;
-        }
-        .lp-ph-cycle-label {
-          font-size: 7px;
-          color: #8a847d;
           white-space: nowrap;
+        }
+        .lp-ph-start {
+          margin-top: auto;
+          width: 100%;
+          padding: 8px 0;
+          border-radius: 12px;
+          background: #c49098;
+          border: none;
+          color: #13110f;
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.5px;
+          text-align: center;
         }
         .lp-ph-nav {
           margin-top: auto;
@@ -447,11 +498,8 @@ export default function LandingPage() {
           .lp-phone::before { width: 60px; height: 16px; }
           .lp-phone-screen { padding: 24px 10px 10px; gap: 6px; }
           .lp-ph-logo { font-size: 10px; }
-          .lp-ph-hero { height: 50px; border-radius: 10px; }
-          .lp-ph-hero-title { font-size: 12px; }
-          .lp-ph-exercise { padding: 8px 10px; border-radius: 10px; }
-          .lp-ph-ex-thumb { width: 24px; height: 24px; border-radius: 8px; }
-          .lp-ph-cycle { padding: 6px 8px; border-radius: 10px; }
+          .lp-ph-title { font-size: 14px; }
+          .lp-ph-session { padding: 8px 10px; border-radius: 10px; }
           .lp-ph-nav { display: none; }
           .lp-phone-glow { width: 220px; height: 300px; }
           .lp-footer { flex-direction: column; align-items: center; gap: 8px; }
@@ -459,7 +507,7 @@ export default function LandingPage() {
         @media (max-width: 390px) {
           .lp-logo { font-size: 40px; }
           .lp-headline { font-size: 19px; max-width: 300px; }
-          .lp-phone { width: 210px; height: 420px; }
+          .lp-phone { width: 210px; height: 460px; }
         }
       `}</style>
 
@@ -533,49 +581,61 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Phone mockup */}
+        {/* Phone mockup — mirrors actual app home screen */}
         <div className="lp-phone-wrapper">
           <div className="lp-phone-glow"></div>
           <div className="lp-phone">
             <div className="lp-phone-screen">
               <div className="lp-phone-top">
                 <div className="lp-ph-logo"><span className="lpk">K</span><span className="lpr">INĒ</span></div>
-                <div className="lp-ph-phase">Follicular · Week 2</div>
               </div>
 
-              <div className="lp-ph-hero">
-                <div className="lp-ph-hero-title">Upper Push</div>
-                <div className="lp-ph-hero-meta">Tuesday · ~45 min · 5 exercises</div>
+              <div className="lp-ph-week">Week 2 · 6 Apr–12 Apr</div>
+              <div className="lp-ph-title">Your Week</div>
+              <div className="lp-ph-badge">Follicular · Week 1/3</div>
+
+              <div className="lp-ph-toggle">
+                <div className="lp-ph-toggle-btn active">Today</div>
+                <div className="lp-ph-toggle-btn">Week</div>
               </div>
 
-              <div className="lp-ph-exercise">
-                <div className="lp-ph-ex-thumb">
-                  <svg viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              <div className="lp-ph-adapt">
+                <div className="lp-ph-adapt-header">
+                  <div className="lp-ph-adapt-dot"></div>
+                  <div className="lp-ph-adapt-label">Adapted for you</div>
                 </div>
-                <div className="lp-ph-ex-info">
+                <div className="lp-ph-adapt-text">
+                  Building your base — higher reps, moderate load. Volume is the primary driver right now.
+                </div>
+                <div className="lp-ph-adapt-tags">
+                  <div className="lp-ph-adapt-tag">Accumulation block</div>
+                  <div className="lp-ph-adapt-tag">Effort trending high</div>
+                </div>
+              </div>
+
+              <div className="lp-ph-session">
+                <div className="lp-ph-session-label">Today</div>
+                <div className="lp-ph-ex-row">
+                  <div className="lp-ph-ex-dot" style={{ background: 'var(--dot-push, #c49098)' }}></div>
                   <div className="lp-ph-ex-name">Dumbbell Bench Press</div>
-                  <div className="lp-ph-ex-rx">3 × 10 · Push</div>
+                  <div className="lp-ph-ex-rx">3×10</div>
                 </div>
-              </div>
-
-              <div className="lp-ph-exercise">
-                <div className="lp-ph-ex-thumb">
-                  <svg viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                </div>
-                <div className="lp-ph-ex-info">
+                <div className="lp-ph-ex-row">
+                  <div className="lp-ph-ex-dot" style={{ background: 'var(--dot-push, #c49098)' }}></div>
                   <div className="lp-ph-ex-name">Overhead Press</div>
-                  <div className="lp-ph-ex-rx">3 × 8 · Push</div>
+                  <div className="lp-ph-ex-rx">3×8</div>
                 </div>
-              </div>
-
-              <div className="lp-ph-cycle">
-                <div className="lp-ph-cycle-bar">
-                  <div className="lp-ph-cycle-seg" style={{ width: '25%', background: '#b05a5a' }}></div>
-                  <div className="lp-ph-cycle-seg" style={{ width: '35%', background: '#6a9a7a' }}></div>
-                  <div className="lp-ph-cycle-seg" style={{ width: '15%', background: '#c49098' }}></div>
-                  <div className="lp-ph-cycle-seg" style={{ width: '25%', background: '#8a7a5a' }}></div>
+                <div className="lp-ph-ex-row">
+                  <div className="lp-ph-ex-dot" style={{ background: 'var(--dot-push, #c49098)' }}></div>
+                  <div className="lp-ph-ex-name">Incline Dumbbell Fly</div>
+                  <div className="lp-ph-ex-rx">3×12</div>
                 </div>
-                <div className="lp-ph-cycle-label">Day 10</div>
+                <div className="lp-ph-ex-row">
+                  <div className="lp-ph-ex-dot" style={{ background: 'var(--dot-push, #c49098)' }}></div>
+                  <div className="lp-ph-ex-name">Lateral Raise</div>
+                  <div className="lp-ph-ex-rx">3×15</div>
+                </div>
+                <div className="lp-ph-start">Start session</div>
               </div>
 
               <div className="lp-ph-nav">

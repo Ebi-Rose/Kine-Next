@@ -13,7 +13,8 @@ type AuditEvent =
   | "webhook_received"
   | "webhook_signature_failed"
   | "webhook_processing"
-  | "rate_limited";
+  | "rate_limited"
+  | "account_deleted";
 
 interface AuditEntry {
   event: AuditEvent;

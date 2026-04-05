@@ -111,7 +111,7 @@ textarea:focus-visible {
 
 /* ── Placeholder contrast ── */
 ::placeholder {
-  color: #808080;
+  color: #999999;
   opacity: 1;
 }
 

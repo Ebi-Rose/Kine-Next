@@ -29,6 +29,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   handleHardReset = () => {
     localStorage.removeItem("kine_v2");
+    localStorage.removeItem("kine_dk");
     window.location.href = "/";
   };
 
@@ -64,7 +65,10 @@ export default class ErrorBoundary extends Component<Props, State> {
               color: "#fff",
               cursor: "pointer",
               fontSize: "0.9rem",
+              outline: "none",
             }}
+            onFocus={(e) => { e.currentTarget.style.outline = "2px solid #C49098"; e.currentTarget.style.outlineOffset = "3px"; }}
+            onBlur={(e) => { e.currentTarget.style.outline = "none"; }}
           >
             Try again
           </button>
@@ -79,7 +83,10 @@ export default class ErrorBoundary extends Component<Props, State> {
               cursor: "pointer",
               fontSize: "0.9rem",
               fontWeight: 500,
+              outline: "none",
             }}
+            onFocus={(e) => { e.currentTarget.style.outline = "2px solid #C49098"; e.currentTarget.style.outlineOffset = "3px"; }}
+            onBlur={(e) => { e.currentTarget.style.outline = "none"; }}
           >
             Reset app
           </button>

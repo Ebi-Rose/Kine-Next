@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     cookieStore.delete("kine_access");
     cookieStore.delete("kine_sub");
 
-    logAudit({ event: "access_code_success", user_id: user.id, ip, metadata: { action: "account_deleted" } });
+    logAudit({ event: "account_deleted", user_id: user.id, ip });
 
     return Response.json({ deleted: true });
   } catch (err) {
