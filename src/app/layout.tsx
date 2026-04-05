@@ -46,75 +46,60 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body>
-        <div
-          id="splash"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#13110f",
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              @keyframes splash-pulse {
+                0%, 100% { opacity: 0.4; }
+                50% { opacity: 1; }
+              }
+              @keyframes splash-exit {
+                to { opacity: 0; pointer-events: none; }
+              }
+              #splash {
+                position: fixed; inset: 0; z-index: 9999;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                background: #13110f;
+              }
+              #splash .splash-mark {
+                font-family: "Cormorant Garamond", serif;
+                font-weight: 300;
+                font-size: 40px;
+                letter-spacing: 0.25em;
+                animation: splash-pulse 2s ease-in-out infinite;
+              }
+              #splash .splash-bar {
+                width: 48px; height: 2px; margin-top: 20px;
+                border-radius: 1px; background: #c49098; opacity: 0.5;
+                animation: splash-pulse 2s ease-in-out infinite;
+                animation-delay: 0.3s;
+              }
+              #splash.splash-exit {
+                animation: splash-exit 0.4s ease forwards;
+              }
+              /* Hide splash on return visits — no DOM mutation, no hydration mismatch */
+              #splash.splash-hidden { display: none; }
+              @media (prefers-reduced-motion: reduce) {
+                #splash .splash-mark,
+                #splash .splash-bar { animation: none; opacity: 1; }
+                #splash.splash-exit { animation: splash-exit 0.01ms forwards; }
+              }
+            `,
           }}
-        >
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-                @keyframes splash-pulse {
-                  0%, 100% { opacity: 0.4; }
-                  50% { opacity: 1; }
-                }
-                @keyframes splash-exit {
-                  to { opacity: 0; pointer-events: none; }
-                }
-                #splash .splash-mark {
-                  font-family: "Cormorant Garamond", serif;
-                  font-weight: 300;
-                  font-size: 40px;
-                  letter-spacing: 0.25em;
-                  animation: splash-pulse 2s ease-in-out infinite;
-                }
-                #splash .splash-bar {
-                  width: 48px;
-                  height: 2px;
-                  margin-top: 20px;
-                  border-radius: 1px;
-                  background: #c49098;
-                  opacity: 0.5;
-                  animation: splash-pulse 2s ease-in-out infinite;
-                  animation-delay: 0.3s;
-                }
-                #splash.splash-exit {
-                  animation: splash-exit 0.4s ease forwards;
-                }
-                @media (prefers-reduced-motion: reduce) {
-                  #splash .splash-mark,
-                  #splash .splash-bar {
-                    animation: none;
-                    opacity: 1;
-                  }
-                  #splash.splash-exit {
-                    animation: splash-exit 0.01ms forwards;
-                  }
-                }
-              `,
-            }}
-          />
+        />
+        <div id="splash">
           <div className="splash-mark">
             <span style={{ color: "#c49098" }}>K</span>
             <span style={{ color: "#f0ebe6" }}>INĒ</span>
           </div>
           <div className="splash-bar" />
         </div>
-        {/* Remove splash instantly on return visits (sessionStorage persists within tab session) */}
+        {/* Hide splash on return visits — CSS class instead of DOM removal avoids hydration mismatch */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if (sessionStorage.getItem('kine_loaded')) {
-                var s = document.getElementById('splash');
-                if (s) s.remove();
+                document.getElementById('splash').classList.add('splash-hidden');
               }
             `,
           }}

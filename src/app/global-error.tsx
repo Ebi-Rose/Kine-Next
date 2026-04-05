@@ -1,11 +1,16 @@
 "use client";
 
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Log error details to help debug
+  if (typeof window !== "undefined") {
+    console.error("[GlobalError]", error?.message, error?.stack);
+  }
   return (
     <html lang="en">
       <body>
@@ -35,6 +40,11 @@ export default function GlobalError({
           <p style={{ color: "#8a8480", fontSize: 14, textAlign: "center" }}>
             Something went wrong. Try refreshing.
           </p>
+          {error?.message && (
+            <p style={{ color: "#555", fontSize: 11, textAlign: "center", maxWidth: 400, wordBreak: "break-word", marginTop: 4 }}>
+              {error.message}
+            </p>
+          )}
           <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
             <button
               onClick={reset}
