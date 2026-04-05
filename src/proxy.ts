@@ -107,7 +107,13 @@ export default async function proxy(request: NextRequest) {
   // ── Access code gate for /app/* (beta) ──
   if (isAppRoute) {
     const accessCookie = request.cookies.get("kine_access")?.value;
-    if (!accessCookie || !(await verifySignature(accessCookie))) {
+    let verified = false;
+    try {
+      verified = !!accessCookie && (await verifySignature(accessCookie));
+    } catch {
+      // crypto.subtle can throw on transient platform errors — treat as unverified
+    }
+    if (!verified) {
       const url = request.nextUrl.clone();
       url.pathname = "/access";
       return NextResponse.redirect(url);
