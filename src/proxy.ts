@@ -123,16 +123,9 @@ export default async function proxy(request: NextRequest) {
 
     const mode = extractMode(accessCookie);
 
-    // "real" mode: require signed subscription cookie
-    // Allow onboarding through — AuthGuard handles subscription with retry
-    if (mode === "real" && pathname !== "/app/onboarding") {
-      const subCookie = request.cookies.get("kine_sub")?.value;
-      if (!subCookie || !(await verifySignature(subCookie))) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/pricing";
-        return NextResponse.redirect(url);
-      }
-    }
+    // "real" mode: AuthGuard handles subscription checks client-side.
+    // The kine_sub cookie is set by AuthGuard after the first successful check,
+    // so we can't require it here — it won't exist on the first visit after login.
   }
 
   // ── CSP headers ──
