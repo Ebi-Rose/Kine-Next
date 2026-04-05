@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import SplashDismiss from "@/components/SplashDismiss";
 import "./globals.css";
 import "./custom.css";
@@ -106,6 +107,7 @@ export default function RootLayout({
           {children}
         </ErrorBoundary>
         <SplashDismiss />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
