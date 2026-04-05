@@ -10,7 +10,7 @@ import type { AnalysisResult } from "@/lib/session-analysis";
 import { apiFetchStreaming } from "@/lib/api";
 import { findExercise, EXERCISE_LIBRARY } from "@/data/exercise-library";
 import { buildWarmup } from "@/lib/warmup-engine";
-import { trimSessionToTime } from "@/lib/time-budget";
+import { trimSessionToTime, estimateSessionTime } from "@/lib/time-budget";
 import { toast } from "@/components/Toast";
 import Button from "@/components/Button";
 import MuscleDiagram from "@/components/MuscleDiagram";
@@ -61,7 +61,7 @@ export default function SessionPage() {
   const trimResult = (() => {
     if (!day || day.isRest) return null;
     const budget = sessionTimeBudgets[dayIdx];
-    if (budget && budget < (parseInt(day.sessionDuration) || 50)) {
+    if (budget && budget < estimateSessionTime(day.exercises)) {
       return trimSessionToTime(day.exercises, budget);
     }
     return null;

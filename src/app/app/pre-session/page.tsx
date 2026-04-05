@@ -85,7 +85,8 @@ export default function PreSessionPage() {
   const exercises = day?.exercises || [];
 
   // ── Derived data ──
-  const defaultDuration = parseInt(day?.sessionDuration || "50") || 50;
+  const estimatedDuration = estimateSessionTime(exercises);
+  const defaultDuration = Math.ceil(estimatedDuration / 5) * 5 || 50;
   const currentDuration = duration ?? defaultDuration;
 
   // Compute trim result when duration is reduced

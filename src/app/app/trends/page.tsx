@@ -981,7 +981,7 @@ function EffortRecoveryPanel() {
             {weekFeedbackHistory.slice(-6).reverse().map((fb) => {
               const effortLabel = fb.effort >= 4 ? "Max effort" : fb.effort >= 3 ? "Pushed hard" : fb.effort >= 2 ? "Moderate" : "Easy";
               const sorenessLabel = fb.soreness >= 4 ? "Very sore" : fb.soreness >= 3 ? "Sore" : fb.soreness >= 2 ? "Mild soreness" : "Feeling good";
-              const scheduleLabel = fb.scheduleFeeling === "about_right" ? "Volume felt right" : fb.scheduleFeeling === "too_much" ? "Too much" : fb.scheduleFeeling === "too_little" ? "Wanted more" : null;
+              const scheduleLabel = fb.scheduleFeeling === "about_right" ? "Volume felt right" : fb.scheduleFeeling === "too_much" ? "Too much" : fb.scheduleFeeling === "too_easy" ? "Wanted more" : null;
               return (
                 <div key={fb.weekNum} className="flex flex-col gap-1">
                   <span className="text-xs text-text font-medium">Week {fb.weekNum}</span>
