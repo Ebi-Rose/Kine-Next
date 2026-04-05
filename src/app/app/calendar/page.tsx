@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore, type SessionRecord } from "@/store/useKineStore";
-import { kgToDisplay, weightUnit, formatDateLong, detectLocale } from "@/lib/format";
+import { kgToDisplay, weightUnit, formatDateLong, formatDateShortLocale, detectLocale } from "@/lib/format";
 import { appNow, appTodayISO } from "@/lib/dev-time";
 import BottomSheet from "@/components/BottomSheet";
 
@@ -179,7 +179,7 @@ export default function CalendarPage() {
               <button
                 key={name}
                 onClick={() => setSelectedLift(selectedLift === name ? null : name)}
-                className={`rounded-full border px-3 py-1 text-[11px] transition-all ${
+                className={`rounded-full border px-3 py-1.5 text-[11px] transition-all ${
                   selectedLift === name
                     ? "border-accent bg-accent-dim text-text"
                     : "border-border text-muted2 hover:border-border-active"
@@ -190,43 +190,116 @@ export default function CalendarPage() {
             ))}
           </div>
 
-          {selectedLift && (
-            <div className="rounded-xl border border-border bg-surface p-4 animate-fade-up">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-text">{selectedLift}</p>
-                <p className="text-[11px] text-muted2 font-light">{progressDB.lifts[selectedLift].length} entries</p>
-              </div>
+          {selectedLift && (() => {
+            const entries = progressDB.lifts[selectedLift];
+            const isBodyweight = entries.every((e) => e.weight === 0);
+            // Use reps as the charted metric for bodyweight exercises
+            const metricFn = (e: { weight: number; reps: number }) => isBodyweight ? e.reps : e.weight;
+            const metricLabel = (e: { weight: number; reps: number }) =>
+              isBodyweight
+                ? `${e.reps} reps`
+                : `${kgToDisplay(e.weight, system)}${unit} × ${e.reps}`;
 
-              {/* Bar chart */}
-              {progressDB.lifts[selectedLift].length >= 2 && (
-                <div className="h-24 flex items-end gap-[2px] mb-3">
-                  {progressDB.lifts[selectedLift].slice(-16).map((entry, i) => {
-                    const maxW = Math.max(...progressDB.lifts[selectedLift].map((e) => e.weight));
-                    const h = maxW > 0 ? (entry.weight / maxW) * 100 : 50;
+            // Group entries by date for the history view
+            const byDate = new Map<string, typeof entries>();
+            for (const e of entries) {
+              const list = byDate.get(e.date) || [];
+              list.push(e);
+              byDate.set(e.date, list);
+            }
+            const dates = [...byDate.keys()].sort().reverse().slice(0, 6);
+
+            // Best set per date for the chart (use max metric value)
+            const chartPoints = [...byDate.entries()]
+              .map(([date, sets]) => ({
+                date,
+                best: sets.reduce((a, b) => metricFn(a) >= metricFn(b) ? a : b),
+              }))
+              .sort((a, b) => a.date.localeCompare(b.date))
+              .slice(-12);
+
+            const chartValues = chartPoints.map((p) => metricFn(p.best));
+            const chartMax = Math.max(...chartValues);
+            const chartMin = Math.min(...chartValues);
+            const chartRange = chartMax - chartMin || 1;
+
+            // Overall best
+            const best = entries.reduce((a, b) => metricFn(a) >= metricFn(b) ? a : b, entries[0]);
+            // Trend
+            const trend = chartPoints.length >= 2
+              ? metricFn(chartPoints[chartPoints.length - 1].best) - metricFn(chartPoints[chartPoints.length - 2].best)
+              : 0;
+
+            return (
+              <div className="rounded-[var(--radius-default)] border border-border bg-surface p-4 animate-fade-up">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-medium text-text">{selectedLift}</p>
+                  <div className="flex items-center gap-1.5">
+                    {trend > 0 && <span className="text-[10px] text-green-400">↑</span>}
+                    {trend < 0 && <span className="text-[10px] text-accent">↓</span>}
+                    <span className="text-[10px] text-muted2">{byDate.size} session{byDate.size !== 1 ? "s" : ""}</span>
+                  </div>
+                </div>
+
+                {/* Summary stats */}
+                <div className="flex gap-4 text-[11px] text-muted2 mb-4">
+                  <span>Best: {metricLabel(best)}</span>
+                  <span>Latest: {metricLabel(entries[entries.length - 1])}</span>
+                </div>
+
+                {/* Chart */}
+                {chartPoints.length >= 2 && (
+                  <div className="mb-4">
+                    <div className="h-28 flex items-end gap-1">
+                      {chartPoints.map((point, i) => {
+                        const val = metricFn(point.best);
+                        const h = ((val - chartMin) / chartRange) * 100;
+                        const isLatest = i === chartPoints.length - 1;
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <span className={`text-[8px] ${isLatest ? "text-text" : "text-muted"}`}>
+                              {isBodyweight ? val : kgToDisplay(val, system)}
+                            </span>
+                            <div
+                              className={`w-full rounded-t transition-colors ${
+                                isLatest ? "bg-accent" : "bg-accent/30"
+                              }`}
+                              style={{ height: `${Math.max(h, 10)}%` }}
+                            />
+                            <span className="text-[7px] text-muted">
+                              {formatDateShortLocale(point.date).split(" ")[0]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* History grouped by date */}
+                <div className="flex flex-col gap-2">
+                  {dates.map((date) => {
+                    const sets = byDate.get(date)!;
                     return (
-                      <div key={i} className="flex-1 flex flex-col items-center justify-end">
-                        <div
-                          className="w-full rounded-t bg-accent/50 hover:bg-accent/80 transition-colors"
-                          style={{ height: `${Math.max(h, 8)}%` }}
-                          title={`${kgToDisplay(entry.weight, system)}${unit} × ${entry.reps}`}
-                        />
+                      <div key={date} className="flex items-start gap-3">
+                        <span className="text-[11px] text-muted w-12 shrink-0 pt-0.5">
+                          {formatDateShortLocale(date)}
+                        </span>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                          {sets.map((s, j) => (
+                            <span key={j} className="text-[11px] text-text">
+                              {metricLabel(s)}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
-              )}
-
-              {/* Recent entries */}
-              <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
-                {progressDB.lifts[selectedLift].slice(-8).reverse().map((entry, i) => (
-                  <div key={i} className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted font-light">{entry.date}</span>
-                    <span className="text-text">{kgToDisplay(entry.weight, system)}{unit} × {entry.reps}</span>
-                  </div>
-                ))}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
     </div>

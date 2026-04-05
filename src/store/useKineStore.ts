@@ -10,6 +10,7 @@ export type Duration = "short" | "medium" | "long" | "extended" | null;
 export type EduMode = "full" | "feel" | "silent";
 export type TrackingMode = "lifts" | "photos" | "measurements" | "bodyweight" | "feeling";
 export type SessionMode = "timed" | "stopwatch" | "off";
+export type CheckInField = "photos" | "weight" | "mood" | "notes";
 export type Units = "kg" | "lbs";
 export type MeasurementSystem = "metric" | "imperial";
 export type SupportedCurrency = "GBP" | "USD";
@@ -110,6 +111,7 @@ interface KineState {
   eduFlags: Record<string, boolean>;
   skillPreferences: Record<string, string>;
   trackingModes: TrackingMode[];
+  checkinFields: CheckInField[];
   units: Units;
   measurementSystem: MeasurementSystem;
   currency: SupportedCurrency;
@@ -177,6 +179,7 @@ interface KineState {
   setEduFlags: (flags: Record<string, boolean>) => void;
   setSkillPreferences: (prefs: Record<string, string>) => void;
   setTrackingModes: (modes: TrackingMode[]) => void;
+  setCheckinFields: (fields: CheckInField[]) => void;
   setConsents: (consents: ConsentRecord[]) => void;
   recordConsent: (type: ConsentRecord["type"], granted: boolean) => void;
   resetOnboarding: () => void;
@@ -204,6 +207,7 @@ const initialOnboarding = {
   eduFlags: {} as Record<string, boolean>,
   skillPreferences: {} as Record<string, string>,
   trackingModes: ["lifts", "feeling"] as TrackingMode[],
+  checkinFields: ["photos", "weight", "mood", "notes"] as CheckInField[],
   units: "kg" as Units,
   measurementSystem: "metric" as MeasurementSystem,
   currency: "GBP" as SupportedCurrency,
@@ -315,6 +319,7 @@ export const useKineStore = create<KineState>()(
       setEduFlags: (flags) => set({ eduFlags: flags, _lastModifiedAt: new Date().toISOString() }),
       setSkillPreferences: (prefs) => set({ skillPreferences: prefs, _lastModifiedAt: new Date().toISOString() }),
       setTrackingModes: (modes) => set({ trackingModes: modes, _lastModifiedAt: new Date().toISOString() }),
+      setCheckinFields: (fields) => set({ checkinFields: fields, _lastModifiedAt: new Date().toISOString() }),
       setConsents: (consents) => set({ consents, _lastModifiedAt: new Date().toISOString() }),
       recordConsent: (type, granted) => set((state) => {
         const now = new Date().toISOString();
@@ -375,6 +380,8 @@ export const useKineStore = create<KineState>()(
             state.personalProfile = { name: name ?? "", height: height ?? "", weight: weight ?? "", trainingAge: trainingAge ?? "", currentLifts: currentLifts ?? {} };
           }
         }
+        // Backfill checkinFields for all versions
+        state.checkinFields ??= ["photos", "weight", "mood", "notes"];
         return state as unknown as KineState;
       },
       onRehydrateStorage: () => () => {

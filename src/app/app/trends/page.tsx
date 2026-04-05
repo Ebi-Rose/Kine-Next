@@ -97,8 +97,12 @@ function ORMTrendPanel() {
   const unit = weightUnit(system);
   const { lifts } = progressDB;
 
+  // Filter out bodyweight exercises (all entries have weight 0) from 1RM view
   const liftNames = Object.keys(lifts).filter(
-    (k) => Array.isArray(lifts[k]) && lifts[k].length >= 2
+    (k) =>
+      Array.isArray(lifts[k]) &&
+      lifts[k].length >= 2 &&
+      lifts[k].some((e) => e.weight > 0)
   );
 
   const [selected, setSelected] = useState<string>(liftNames[0] || "");
@@ -369,7 +373,7 @@ function VolumeTrendPanel() {
   const { progressDB, measurementSystem } = useKineStore();
   const system = measurementSystem || "metric";
   const unit = weightUnit(system);
-  const { sessions, lifts, phaseOffset } = progressDB;
+  const { sessions, phaseOffset } = progressDB;
 
   const weeklyVolume = useMemo(() => {
     const byWeek: Record<number, { totalVolume: number; sessionCount: number; phase: string }> = {};
@@ -382,20 +386,16 @@ function VolumeTrendPanel() {
         byWeek[wk] = { totalVolume: 0, sessionCount: 0, phase: phaseInfo.phase.name };
       }
       byWeek[wk].sessionCount++;
-    });
 
-    // Calculate volume from lift entries per week
-    // Approximate: distribute lift entries across weeks based on session count
-    Object.entries(lifts).forEach(([, entries]) => {
-      if (!Array.isArray(entries)) return;
-      entries.forEach((entry: LiftEntry) => {
-        // Find which week this entry belongs to
-        (sessions as SessionRecord[]).forEach((s) => {
-          if (s.date === entry.date && s.weekNum && byWeek[s.weekNum]) {
-            byWeek[s.weekNum].totalVolume += entry.weight * entry.reps;
+      // Calculate volume directly from session logs (no date-join needed)
+      if (s.logs) {
+        for (const log of Object.values(s.logs) as { actual?: { weight: number; reps: number }[] }[]) {
+          if (!log.actual) continue;
+          for (const set of log.actual) {
+            byWeek[wk].totalVolume += (set.weight || 0) * (set.reps || 0);
           }
-        });
-      });
+        }
+      }
     });
 
     return Object.entries(byWeek)
@@ -407,7 +407,7 @@ function VolumeTrendPanel() {
       }))
       .sort((a, b) => a.week - b.week)
       .filter((w) => w.volume > 0);
-  }, [sessions, lifts, phaseOffset]);
+  }, [sessions, phaseOffset]);
 
   if (weeklyVolume.length < 2) {
     return <EmptyState message="Complete a couple of weeks to see volume trends." />;
@@ -782,18 +782,40 @@ function EffortRecoveryPanel() {
     <div>
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <div className="rounded-[10px] border border-border bg-surface p-4 text-center">
-          <p className="font-display text-2xl text-accent">{avgEffort.toFixed(1)}</p>
-          <p className="text-[9px] text-muted2 tracking-wider uppercase mt-0.5">Avg effort</p>
-          <p className="text-[10px] text-muted font-light mt-1">
-            {avgEffort >= 3 ? "Pushing well" : avgEffort >= 2 ? "Steady" : "Low energy period"}
+        <div className="rounded-[10px] border border-border bg-surface p-4">
+          <p className="text-[9px] text-muted2 tracking-wider uppercase mb-2">How hard you&apos;re training</p>
+          <div className="flex items-center gap-1 mb-1.5">
+            {[1, 2, 3, 4].map((v) => (
+              <div
+                key={v}
+                className="h-2 flex-1 rounded-full"
+                style={{
+                  background: v <= Math.round(avgEffort) ? "var(--color-accent)" : "var(--color-border)",
+                  opacity: v <= Math.round(avgEffort) ? 1 : 0.4,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-text font-medium">
+            {avgEffort >= 3.5 ? "Giving it your all" : avgEffort >= 2.5 ? "Pushing well" : avgEffort >= 1.5 ? "Taking it easy" : "Very light"}
           </p>
         </div>
-        <div className="rounded-[10px] border border-border bg-surface p-4 text-center">
-          <p className="font-display text-2xl text-[#7b8fa8]">{avgSoreness.toFixed(1)}</p>
-          <p className="text-[9px] text-muted2 tracking-wider uppercase mt-0.5">Avg soreness</p>
-          <p className="text-[10px] text-muted font-light mt-1">
-            {avgSoreness >= 3 ? "Heavy load" : avgSoreness >= 2 ? "Recovering well" : "Fresh"}
+        <div className="rounded-[10px] border border-border bg-surface p-4">
+          <p className="text-[9px] text-muted2 tracking-wider uppercase mb-2">How your body feels</p>
+          <div className="flex items-center gap-1 mb-1.5">
+            {[1, 2, 3, 4].map((v) => (
+              <div
+                key={v}
+                className="h-2 flex-1 rounded-full"
+                style={{
+                  background: v <= Math.round(avgSoreness) ? "#7b8fa8" : "var(--color-border)",
+                  opacity: v <= Math.round(avgSoreness) ? 1 : 0.4,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-text font-medium">
+            {avgSoreness >= 3.5 ? "Really feeling it" : avgSoreness >= 2.5 ? "A bit sore" : avgSoreness >= 1.5 ? "Recovering well" : "Feeling fresh"}
           </p>
         </div>
       </div>
@@ -955,31 +977,41 @@ function EffortRecoveryPanel() {
           <h4 className="text-[10px] tracking-[0.15em] uppercase text-muted font-medium mb-3">
             Weekly check-ins
           </h4>
-          <div className="flex flex-col gap-2">
-            {weekFeedbackHistory.slice(-6).reverse().map((fb) => (
-              <div key={fb.weekNum} className="flex items-center justify-between text-xs">
-                <span className="text-text font-medium">Week {fb.weekNum}</span>
-                <div className="flex items-center gap-3 text-[10px] text-muted2">
-                  <span>Energy: {fb.effort}/4</span>
-                  <span>Body: {fb.soreness}/4</span>
-                  {fb.scheduleFeeling && (
-                    <span className={
-                      fb.scheduleFeeling === "about_right"
-                        ? "text-green-400"
-                        : fb.scheduleFeeling === "too_much"
-                          ? "text-accent"
-                          : "text-muted2"
-                    }>
-                      {fb.scheduleFeeling === "about_right"
-                        ? "Right"
-                        : fb.scheduleFeeling === "too_much"
-                          ? "Heavy"
-                          : "Light"}
+          <div className="flex flex-col gap-2.5">
+            {weekFeedbackHistory.slice(-6).reverse().map((fb) => {
+              const effortLabel = fb.effort >= 4 ? "Max effort" : fb.effort >= 3 ? "Pushed hard" : fb.effort >= 2 ? "Moderate" : "Easy";
+              const sorenessLabel = fb.soreness >= 4 ? "Very sore" : fb.soreness >= 3 ? "Sore" : fb.soreness >= 2 ? "Mild soreness" : "Feeling good";
+              const scheduleLabel = fb.scheduleFeeling === "about_right" ? "Volume felt right" : fb.scheduleFeeling === "too_much" ? "Too much" : fb.scheduleFeeling === "too_little" ? "Wanted more" : null;
+              return (
+                <div key={fb.weekNum} className="flex flex-col gap-1">
+                  <span className="text-xs text-text font-medium">Week {fb.weekNum}</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-accent-dim border border-accent/10 px-2 py-0.5 text-[10px] text-accent">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+                      {effortLabel}
                     </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#7b8fa8]/10 border border-[#7b8fa8]/10 px-2 py-0.5 text-[10px] text-[#7b8fa8]">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#7b8fa8]" />
+                      {sorenessLabel}
+                    </span>
+                    {scheduleLabel && (
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] border ${
+                        fb.scheduleFeeling === "about_right"
+                          ? "bg-green-400/10 border-green-400/10 text-green-400"
+                          : fb.scheduleFeeling === "too_much"
+                            ? "bg-accent/10 border-accent/10 text-accent"
+                            : "bg-muted/10 border-muted/10 text-muted2"
+                      }`}>
+                        {scheduleLabel}
+                      </span>
+                    )}
+                  </div>
+                  {fb.notes && (
+                    <p className="text-[10px] text-muted2 font-light italic pl-0.5">&ldquo;{fb.notes}&rdquo;</p>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

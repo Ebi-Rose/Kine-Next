@@ -104,28 +104,50 @@ export default function DevOverlay() {
   function simulatePerfectWeek() {
     const planned = parseInt(store.days || "3");
     const sessions = [...store.progressDB.sessions];
+    const wk = store.progressDB.currentWeek;
     for (let i = 0; i < planned; i++) {
       sessions.push({
         dayIdx: i, date: appTodayISO(),
-        weekNum: store.progressDB.currentWeek, title: `Session ${i + 1}`,
+        weekNum: wk, title: `Session ${i + 1}`,
         logs: {}, effort: 2, soreness: 1, prs: [],
       });
     }
-    store.setProgressDB({ ...store.progressDB, sessions });
-    toast("Perfect week", "success");
+    store.setProgressDB({
+      ...store.progressDB,
+      sessions,
+      currentWeek: wk + 1,
+      weekFeedbackHistory: [
+        ...store.progressDB.weekFeedbackHistory,
+        { weekNum: wk, effort: 2, soreness: 1 },
+      ],
+    });
+    store.setWeekData(null);
+    jumpDays(7, false);
+    reloadAfterPersist();
   }
 
   function simulateStruggledWeek() {
     const sessions = [...store.progressDB.sessions];
+    const wk = store.progressDB.currentWeek;
     for (let i = 0; i < 2; i++) {
       sessions.push({
         dayIdx: i, date: appTodayISO(),
-        weekNum: store.progressDB.currentWeek, title: `Session ${i + 1}`,
+        weekNum: wk, title: `Session ${i + 1}`,
         logs: {}, effort: 4, soreness: 3 + i, prs: [],
       });
     }
-    store.setProgressDB({ ...store.progressDB, sessions });
-    toast("Struggled week", "success");
+    store.setProgressDB({
+      ...store.progressDB,
+      sessions,
+      currentWeek: wk + 1,
+      weekFeedbackHistory: [
+        ...store.progressDB.weekFeedbackHistory,
+        { weekNum: wk, effort: 4, soreness: 3 },
+      ],
+    });
+    store.setWeekData(null);
+    jumpDays(7, false);
+    reloadAfterPersist();
   }
 
   function simulateGap() {

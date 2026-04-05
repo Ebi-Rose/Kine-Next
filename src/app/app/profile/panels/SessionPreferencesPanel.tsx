@@ -1,7 +1,7 @@
 "use client";
 
 import { useKineStore } from "@/store/useKineStore";
-import type { EduMode, SessionMode } from "@/store/useKineStore";
+import type { EduMode, SessionMode, CheckInField } from "@/store/useKineStore";
 import Tile from "@/components/Tile";
 import { toast } from "@/components/Toast";
 import { BackButton } from "./_helpers";
@@ -12,6 +12,13 @@ const COACHING_MODES: { value: EduMode; label: string; description: string }[] =
   { value: "silent", label: "Silent", description: "No coaching overlays. Just log your sets." },
 ];
 
+const CHECKIN_FIELDS: { value: CheckInField; label: string; description: string }[] = [
+  { value: "photos", label: "Photos", description: "Front, side, back — visual progress" },
+  { value: "weight", label: "Bodyweight", description: "Track weight over time" },
+  { value: "mood", label: "Mood & energy", description: "How you're feeling day-to-day" },
+  { value: "notes", label: "Notes", description: "Free-text reflections" },
+];
+
 const SESSION_MODES: { value: SessionMode; label: string; description: string }[] = [
   { value: "off", label: "Self-paced", description: "See your full session at once. Move through exercises at your own pace." },
   { value: "timed", label: "Timed", description: "Rest timer between sets with auto-advance" },
@@ -19,7 +26,7 @@ const SESSION_MODES: { value: SessionMode; label: string; description: string }[
 ];
 
 export default function SessionPreferencesPanel({ onBack }: { onBack: () => void }) {
-  const { eduMode, setEduMode, sessionMode, setSessionMode, restConfig, setRestConfig, progressDB } = useKineStore();
+  const { eduMode, setEduMode, sessionMode, setSessionMode, restConfig, setRestConfig, progressDB, checkinFields, setCheckinFields } = useKineStore();
 
   const showSilentWarning = eduMode === "silent" && progressDB.sessions.length < 20;
   const restCompoundLow = restConfig.compound < 90;
@@ -110,6 +117,42 @@ export default function SessionPreferencesPanel({ onBack }: { onBack: () => void
             <p className="text-[9px] text-muted mt-1">{m.description}</p>
           </button>
         ))}
+      </div>
+      {/* Check-in fields */}
+      <p className="mt-5 mb-2 text-[10px] tracking-[0.15em] uppercase text-muted">Check-in fields</p>
+      <p className="text-[10px] text-muted2 mb-3">Choose what shows up when you log a check-in. All fields are always optional.</p>
+      <div className="flex flex-col gap-2">
+        {CHECKIN_FIELDS.map((f) => {
+          const active = (checkinFields ?? CHECKIN_FIELDS.map(x => x.value)).includes(f.value);
+          return (
+            <button
+              key={f.value}
+              onClick={() => {
+                const current = checkinFields ?? CHECKIN_FIELDS.map(x => x.value);
+                const updated = active
+                  ? current.filter((v) => v !== f.value)
+                  : [...current, f.value];
+                setCheckinFields(updated);
+                toast(active ? `${f.label} hidden` : `${f.label} shown`, "success");
+              }}
+              className={`flex items-center gap-3 rounded-[10px] border p-3 text-left transition-all ${
+                active
+                  ? "border-accent bg-accent-dim"
+                  : "border-border bg-surface hover:border-border-active"
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${
+                active ? "border-accent bg-accent" : "border-border"
+              }`}>
+                {active && <span className="text-[10px] text-bg font-bold">✓</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-xs font-medium ${active ? "text-text" : "text-muted2"}`}>{f.label}</p>
+                <p className="text-[9px] text-muted">{f.description}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

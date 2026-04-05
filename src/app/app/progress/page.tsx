@@ -111,8 +111,16 @@ export default function ProgressPage() {
           <div className="flex flex-col gap-2">
             {liftNames
               .sort((a, b) => {
+                // Weighted exercises first (sorted by max weight), then bodyweight (sorted by max reps)
                 const aMax = lifts[a].reduce((m, e) => Math.max(m, e.weight), 0);
                 const bMax = lifts[b].reduce((m, e) => Math.max(m, e.weight), 0);
+                if (aMax === 0 && bMax > 0) return 1;
+                if (bMax === 0 && aMax > 0) return -1;
+                if (aMax === 0 && bMax === 0) {
+                  const aReps = lifts[a].reduce((m, e) => Math.max(m, e.reps), 0);
+                  const bReps = lifts[b].reduce((m, e) => Math.max(m, e.reps), 0);
+                  return bReps - aReps;
+                }
                 return bMax - aMax;
               })
               .map((name) => {
@@ -121,18 +129,22 @@ export default function ProgressPage() {
               const best = entries.reduce((b, e) => e.weight > b.weight ? e : b, entries[0]);
               const orm = calculateORM(best.weight, best.reps);
 
-              // Trend: compare last entry to 2nd-to-last
+              // Trend: compare last entry to 2nd-to-last (use reps for bodyweight)
+              const isBodyweight = best.weight === 0;
               const prev = entries.length >= 2 ? entries[entries.length - 2] : null;
-              const trend = prev
-                ? latest.weight > prev.weight ? "up" : latest.weight < prev.weight ? "down" : "flat"
+              const latestVal = isBodyweight ? latest.reps : latest.weight;
+              const prevVal = prev ? (isBodyweight ? prev.reps : prev.weight) : null;
+              const trend = prevVal !== null
+                ? latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "flat"
                 : "new";
               const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : trend === "flat" ? "→" : "✦";
               const trendColor = trend === "up" ? "text-green-400" : trend === "down" ? "text-accent" : "text-muted2";
 
-              // Sparkline data (last 8 entries)
+              // Sparkline data (last 8 entries) — use reps for bodyweight exercises
               const sparkData = entries.slice(-8);
-              const sparkMax = Math.max(...sparkData.map(e => e.weight));
-              const sparkMin = Math.min(...sparkData.map(e => e.weight));
+              const sparkValues = sparkData.map(e => isBodyweight ? e.reps : e.weight);
+              const sparkMax = Math.max(...sparkValues);
+              const sparkMin = Math.min(...sparkValues);
               const sparkRange = sparkMax - sparkMin || 1;
 
               return (
@@ -151,8 +163,8 @@ export default function ProgressPage() {
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-text">{name}</span>
                       <div className="flex gap-3 mt-0.5">
-                        <span className="text-[10px] text-muted2">{kgToDisplay(latest.weight, system)}{unit} × {latest.reps}</span>
-                        {best.weight > latest.weight && (
+                        <span className="text-[10px] text-muted2">{latest.weight > 0 ? `${kgToDisplay(latest.weight, system)}${unit} × ${latest.reps}` : `${latest.reps} reps`}</span>
+                        {best.weight > 0 && best.weight > latest.weight && (
                           <span className="text-[10px] text-muted">Best: {kgToDisplay(best.weight, system)}{unit}</span>
                         )}
                       </div>
@@ -162,7 +174,8 @@ export default function ProgressPage() {
                     {sparkData.length >= 2 && (
                       <div className="flex items-end gap-[2px] h-6 w-16 shrink-0">
                         {sparkData.map((entry, i) => {
-                          const h = ((entry.weight - sparkMin) / sparkRange) * 100;
+                          const val = isBodyweight ? entry.reps : entry.weight;
+                          const h = ((val - sparkMin) / sparkRange) * 100;
                           return (
                             <div
                               key={i}
@@ -178,8 +191,14 @@ export default function ProgressPage() {
                   {selectedLift === name && (
                     <div className="mt-3 border-t border-border pt-3">
                       <div className="flex gap-4 text-xs text-muted2 mb-3">
-                        <span>Best: {kgToDisplay(best.weight, system)}{unit} × {best.reps}</span>
-                        <span>Est 1RM: {kgToDisplay(orm, system)}{unit}</span>
+                        {best.weight > 0 ? (
+                          <>
+                            <span>Best: {kgToDisplay(best.weight, system)}{unit} × {best.reps}</span>
+                            <span>Est 1RM: {kgToDisplay(orm, system)}{unit}</span>
+                          </>
+                        ) : (
+                          <span>Best: {best.reps} reps</span>
+                        )}
                         <span>{entries.length} entries</span>
                       </div>
 
@@ -187,10 +206,12 @@ export default function ProgressPage() {
                       {entries.length >= 2 && (
                         <div className="mb-3 h-20 flex items-end gap-1">
                           {entries.slice(-12).map((entry, i) => {
-                            const maxW = Math.max(...entries.map((e) => e.weight));
-                            const minW = Math.min(...entries.map((e) => e.weight));
+                            const vals = entries.map((e) => isBodyweight ? e.reps : e.weight);
+                            const maxW = Math.max(...vals);
+                            const minW = Math.min(...vals);
                             const range = maxW - minW || 1;
-                            const h = ((entry.weight - minW) / range) * 100;
+                            const entryVal = isBodyweight ? entry.reps : entry.weight;
+                            const h = ((entryVal - minW) / range) * 100;
                             return (
                               <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
                                 <div className="w-full rounded-t bg-accent/60" style={{ height: `${Math.max(h, 8)}%` }} />
@@ -204,7 +225,7 @@ export default function ProgressPage() {
                         {entries.slice(-8).reverse().map((entry, i) => (
                           <div key={i} className="flex items-center justify-between text-xs">
                             <span className="text-muted">{entry.date}</span>
-                            <span className="text-text">{kgToDisplay(entry.weight, system)}{unit} × {entry.reps}</span>
+                            <span className="text-text">{entry.weight > 0 ? `${kgToDisplay(entry.weight, system)}${unit} × ${entry.reps}` : `${entry.reps} reps`}</span>
                           </div>
                         ))}
                       </div>
