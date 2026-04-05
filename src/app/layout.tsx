@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     template: "%s — KINĒ",
   },
   description: "Intelligent training — so you don't have to figure it out alone.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Kinē",
+  },
 };
 
 export const viewport: Viewport = {
@@ -83,6 +89,16 @@ export default function RootLayout({
                 #splash.splash-exit {
                   animation: splash-exit 0.4s ease forwards;
                 }
+                @media (prefers-reduced-motion: reduce) {
+                  #splash .splash-mark,
+                  #splash .splash-bar {
+                    animation: none;
+                    opacity: 1;
+                  }
+                  #splash.splash-exit {
+                    animation: splash-exit 0.01ms forwards;
+                  }
+                }
               `,
             }}
           />
@@ -92,6 +108,17 @@ export default function RootLayout({
           </div>
           <div className="splash-bar" />
         </div>
+        {/* Remove splash instantly on return visits (sessionStorage persists within tab session) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (sessionStorage.getItem('kine_loaded')) {
+                var s = document.getElementById('splash');
+                if (s) s.remove();
+              }
+            `,
+          }}
+        />
         {/* Clean up stale service workers on non-app pages */}
         <script
           dangerouslySetInnerHTML={{
