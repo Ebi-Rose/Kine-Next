@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinē — AI-powered strength training, built for women</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #111111;
+      color: #F0F0F0;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.7;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* ── Section spacing ── */
+    section {
+      padding: 90px 0;
+    }
+
+    /* ── Typography ── */
+    h1, h2, h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      color: #F0F0F0;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      margin-bottom: 48px;
+    }
+
+    h2::after {
+      content: '';
+      display: block;
+      width: 48px;
+      height: 3px;
+      background: #C49098;
+      margin-top: 12px;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #d0d0d0;
+    }
+
+    strong {
+      font-weight: 300;
+      color: #F0F0F0;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #191919;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 32px;
+      transition: border-color 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: #C49098;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 140px 0 100px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(4rem, 10vw, 7rem);
+      letter-spacing: 0.1em;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .hero-sub {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      letter-spacing: 0.08em;
+      color: #C49098;
+      margin-bottom: 28px;
+    }
+
+    .hero-desc {
+      max-width: 680px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+      color: #b0b0b0;
+    }
+
+    /* ── THE PROBLEM ── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .problem-grid .card h3 {
+      color: #C49098;
+      margin-bottom: 12px;
+    }
+
+    .closing-line {
+      font-size: 1.05rem;
+      color: #F0F0F0;
+      max-width: 720px;
+      border-left: 3px solid #C49098;
+      padding-left: 20px;
+    }
+
+    /* ── FEATURES ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .feature-grid .card h3 {
+      margin-bottom: 8px;
+    }
+
+    .feature-grid .card p {
+      font-size: 0.95rem;
+    }
+
+    /* ── AUDIENCE ── */
+    .audience-cards {
+      display: grid;
+      gap: 24px;
+    }
+
+    .audience-card {
+      background: #191919;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 36px;
+      transition: border-color 0.3s ease;
+    }
+
+    .audience-card:hover {
+      border-color: #C49098;
+    }
+
+    .audience-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      color: #C49098;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .audience-card p {
+      font-size: 0.97rem;
+      line-height: 1.8;
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #191919;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    th {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      color: #F0F0F0;
+      background: #212121;
+    }
+
+    th:nth-child(2) {
+      color: #C49098;
+    }
+
+    td:first-child {
+      color: #F0F0F0;
+      font-weight: 300;
+    }
+
+    td:nth-child(2) {
+      color: #C49098;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    td:not(:first-child):not(:nth-child(2)) {
+      color: #888;
+    }
+
+    /* ── PRICING ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 700px;
+      margin: 0 auto 40px;
+    }
+
+    .pricing-card {
+      background: #191919;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 40px 32px;
+      text-align: center;
+      transition: border-color 0.3s ease;
+    }
+
+    .pricing-card:hover {
+      border-color: #C49098;
+    }
+
+    .pricing-card.featured {
+      border-color: #C49098;
+      position: relative;
+    }
+
+    .pricing-card.featured::before {
+      content: 'Best value';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      background: #C49098;
+      color: #111111;
+      padding: 4px 16px;
+      border-radius: 20px;
+    }
+
+    .pricing-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      color: #999;
+      margin-bottom: 12px;
+    }
+
+    .pricing-amount {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      color: #F0F0F0;
+      line-height: 1.1;
+    }
+
+    .pricing-amount span {
+      font-size: 1rem;
+      color: #888;
+    }
+
+    .pricing-detail {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 8px;
+    }
+
+    .pricing-note {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .pricing-note p {
+      font-size: 1rem;
+    }
+
+    .pricing-note .beta {
+      color: #C49098;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    .pricing-note .context {
+      color: #888;
+      font-size: 0.9rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ── COMING SOON ── */
+    .suggestions-list {
+      display: grid;
+      gap: 20px;
+    }
+
+    .suggestion-item {
+      background: #191919;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 16px;
+      align-items: start;
+      transition: border-color 0.3s ease;
+    }
+
+    .suggestion-item:hover {
+      border-color: #C49098;
+    }
+
+    .suggestion-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: #C49098;
+      line-height: 1.6;
+    }
+
+    .suggestion-item h3 {
+      margin-bottom: 6px;
+    }
+
+    .suggestion-item p {
+      font-size: 0.93rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid #2a2a2a;
+      padding: 48px 0;
+      text-align: center;
+    }
+
+    footer .tagline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      color: #F0F0F0;
+      margin-bottom: 12px;
+    }
+
+    footer .copy {
+      font-size: 0.82rem;
+      color: #666;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      section {
+        padding: 64px 0;
+      }
+
+      .hero {
+        padding: 100px 0 72px;
+      }
+
+      .problem-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+      }
+
+      th, td {
+        padding: 12px 14px;
+        font-size: 0.82rem;
+      }
+
+      .container {
+        padding: 0 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <h1>Kin&#x113;</h1>
+      <p class="hero-sub">AI-powered strength training, built for women.</p>
+      <p class="hero-desc">Kin&#x113; generates personalised weekly programmes that adapt to your goals, equipment, schedule, and body &mdash; including cycle phases, health conditions, and life stages.</p>
+    </div>
+  </section>
+
+  <!-- THE PROBLEM -->
+  <section>
+    <div class="container">
+      <h2>Most training apps weren&rsquo;t built for you</h2>
+      <div class="problem-grid">
+        <div class="card">
+          <h3>Generic logging apps</h3>
+          <p>Track what you did, don&rsquo;t tell you what to do. You&rsquo;re still programming yourself.</p>
+        </div>
+        <div class="card">
+          <h3>Cookie-cutter programmes</h3>
+          <p>No personalisation for your body or life. One template for every woman, regardless of physiology.</p>
+        </div>
+        <div class="card">
+          <h3>Personal trainers</h3>
+          <p>&pound;200+/month, fixed schedules. Effective, but inaccessible for most women long-term.</p>
+        </div>
+      </div>
+      <p class="closing-line">Women deserve intelligent programming that respects their physiology, their intelligence, and their time.</p>
+    </div>
+  </section>
+
+  <!-- WHAT KINE DOES -->
+  <section>
+    <div class="container">
+      <h2>A programming coach, not a digital notebook</h2>
+      <div class="feature-grid">
+        <div class="card">
+          <h3>AI-generated weekly programmes</h3>
+          <p>Complete 7-day programmes personalised to your goals, equipment, schedule, and experience.</p>
+        </div>
+        <div class="card">
+          <h3>Women&rsquo;s physiology first</h3>
+          <p>Cycle-phase awareness, PCOS, endometriosis, fibroids, pelvic floor, perimenopause &mdash; silent adaptations, not labels.</p>
+        </div>
+        <div class="card">
+          <h3>Every decision explained</h3>
+          <p>Session rationales in plain language. Know why every exercise was chosen, not just what to do.</p>
+        </div>
+        <div class="card">
+          <h3>170+ curated exercises with education</h3>
+          <p>Coaching cues, common mistakes, muscle anatomy, skill progressions. Learn while you train.</p>
+        </div>
+        <div class="card">
+          <h3>Intelligent injury management</h3>
+          <p>Programmes around limitations with smart exercise swaps. Injuries are constraints, not disqualifiers.</p>
+        </div>
+        <div class="card">
+          <h3>Progressive overload built in</h3>
+          <p>Weights, sets, and reps progress intelligently each week. Deloads are autoregulated by your body signals, not a fixed calendar.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO KINE IS FOR -->
+  <section>
+    <div class="container">
+      <h2>Built for women who train with intention</h2>
+      <div class="audience-cards">
+        <div class="audience-card">
+          <div class="audience-label">Primary audience</div>
+          <p>Women aged 22&ndash;40 who want to strength train consistently but feel overwhelmed by programming. You&rsquo;ve tried apps like Hevy or Strong but felt unsupported. You don&rsquo;t want to pay &pound;200+/month for a personal trainer. You want your body acknowledged &mdash; cycle, conditions, life stage &mdash; without gimmicks.</p>
+        </div>
+        <div class="audience-card">
+          <div class="audience-label">Education-motivated</div>
+          <p>Women who don&rsquo;t just want to be told what to do &mdash; you want to understand why. You research training online, follow evidence-based creators, but can&rsquo;t translate knowledge into a structured programme. You see a training tool as a bridge to independence: get stronger and smarter, until you don&rsquo;t need us at all.</p>
+        </div>
+        <div class="audience-card">
+          <div class="audience-label">Returning and adapting</div>
+          <p>Women returning to training postpartum. Women in perimenopause looking for adapted programming. Experienced lifters who want smarter periodisation. Your body has changed &mdash; your training should know that.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPETITIVE POSITIONING -->
+  <section>
+    <div class="container">
+      <h2>How Kin&#x113; compares</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Kin&#x113;</th>
+              <th>Hevy</th>
+              <th>Strong</th>
+              <th>Fitbod</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Builds your programme</td>
+              <td>Yes &mdash; full AI-generated week</td>
+              <td>No</td>
+              <td>No</td>
+              <td>Session-level only</td>
+            </tr>
+            <tr>
+              <td>Explains decisions</td>
+              <td>Yes &mdash; plain language rationales</td>
+              <td>No</td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Women&rsquo;s physiology</td>
+              <td>Cycle, PCOS, endo, perimenopause</td>
+              <td>No</td>
+              <td>No</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Exercise education</td>
+              <td>Coaching cues, skill paths, anatomy</td>
+              <td>Demos only</td>
+              <td>Demos only</td>
+              <td>Demos only</td>
+            </tr>
+            <tr>
+              <td>Injury management</td>
+              <td>Smart swaps around limitations</td>
+              <td>No</td>
+              <td>No</td>
+              <td>Basic</td>
+            </tr>
+            <tr>
+              <td>Observation, not judgement</td>
+              <td>No scores, streaks, or guilt</td>
+              <td>Streaks</td>
+              <td>PRs</td>
+              <td>Scores</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section>
+    <div class="container">
+      <h2>Smarter than a template. Cheaper than a coach.</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-label">Monthly</div>
+          <div class="pricing-amount">&pound;29.99<span>/month</span></div>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-label">Yearly</div>
+          <div class="pricing-amount">&pound;300<span>/year</span></div>
+          <div class="pricing-detail">&pound;25/month &mdash; save 17%</div>
+        </div>
+      </div>
+      <div class="pricing-note">
+        <p class="beta">Currently in private beta &mdash; free during beta period.</p>
+        <p class="context">A good online coach costs &pound;150&ndash;400/month. Kin&#x113; delivers ~80% of the programming for ~15&ndash;20% of the cost.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMING SOON -->
+  <section>
+    <div class="container">
+      <h2>Coming soon to this page</h2>
+      <div class="suggestions-list">
+        <div class="suggestion-item">
+          <div class="suggestion-num">1</div>
+          <div>
+            <h3>Founder story</h3>
+            <p>Why this exists, who built it, what motivated it. Personal conviction sells.</p>
+          </div>
+        </div>
+        <div class="suggestion-item">
+          <div class="suggestion-num">2</div>
+          <div>
+            <h3>A week with Kin&#x113;</h3>
+            <p>Walk through what a real user&rsquo;s week looks like: onboarding, first programme, mid-session logging, weekly check-in, programme adapts. Shows the product in motion.</p>
+          </div>
+        </div>
+        <div class="suggestion-item">
+          <div class="suggestion-num">3</div>
+          <div>
+            <h3>Social proof</h3>
+            <p>Beta user testimonials with real quotes, context (name, age, training background), and outcomes. Focus on what changed, not just &ldquo;I love it.&rdquo;</p>
+          </div>
+        </div>
+        <div class="suggestion-item">
+          <div class="suggestion-num">4</div>
+          <div>
+            <h3>Live demo or screenshots</h3>
+            <p>Show the actual UI: weekly calendar, session view, exercise education cards, rationale explanations. Seeing is believing.</p>
+          </div>
+        </div>
+        <div class="suggestion-item">
+          <div class="suggestion-num">5</div>
+          <div>
+            <h3>FAQ</h3>
+            <p>Address the obvious questions: Is this safe? Why women-only? Why no native app? Why this price? How does the AI work? Already drafted in the press kit &mdash; just needs to be surfaced here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p class="tagline">Kin&#x113; &mdash; train with intention.</p>
+      <p class="copy">&copy; 2026 Kin&#x113;. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
