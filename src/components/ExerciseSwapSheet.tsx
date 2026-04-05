@@ -47,6 +47,7 @@ export default function ExerciseSwapSheet({
         if (ex.minExp === "developing" && exp === "new") return false;
         if (ex.minExp === "intermediate" && (exp === "new" || exp === "developing")) return false;
         if (mode === "like" && currentEx && ex.muscle !== currentEx.muscle) return false;
+        if (mode === "all" && currentEx && ex.muscle === currentEx.muscle) return false;
         if (search && !ex.name.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       })
@@ -60,7 +61,6 @@ export default function ExerciseSwapSheet({
   // Group by compound/isolation for "like" mode, by muscle group for "all" mode
   const grouped = useMemo(() => {
     if (mode === "like") {
-      // Group by compound vs isolation
       const compounds = candidates.filter((c) => c.tags.includes("Compound"));
       const isolations = candidates.filter((c) => !c.tags.includes("Compound"));
       const groups: { label: string; items: typeof candidates }[] = [];
@@ -69,22 +69,19 @@ export default function ExerciseSwapSheet({
       return groups;
     }
 
-    // "all" mode: group by muscle group, ordered by relevance to current exercise
+    // "all" mode: group by muscle group, session focus muscles first
     const muscleOrder = [
-      currentEx?.muscle,
       ...sessionMuscles.filter((m) => m !== currentEx?.muscle),
       ...Object.keys(MUSCLE_LABELS).filter((m) => !sessionMuscles.includes(m) && m !== currentEx?.muscle),
-    ].filter(Boolean) as string[];
+    ];
 
     const groups: { label: string; items: typeof candidates }[] = [];
     for (const muscle of muscleOrder) {
       const items = candidates.filter((c) => c.muscle === muscle);
       if (items.length) {
-        const label = muscle === currentEx?.muscle
-          ? `${MUSCLE_LABELS[muscle] || muscle} — same muscle`
-          : sessionMuscles.includes(muscle)
-            ? `${MUSCLE_LABELS[muscle] || muscle} — fits session focus`
-            : `${MUSCLE_LABELS[muscle] || muscle} — changes session balance`;
+        const label = sessionMuscles.includes(muscle)
+          ? `${MUSCLE_LABELS[muscle] || muscle} — fits session focus`
+          : `${MUSCLE_LABELS[muscle] || muscle} — changes session balance`;
         groups.push({ label, items });
       }
     }
