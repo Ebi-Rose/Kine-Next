@@ -85,9 +85,22 @@ export default function PreSessionPage() {
   const exercises = day?.exercises || [];
 
   // ── Derived data ──
-  const activeExercises = exercises.filter((_, i) => !skipped.has(i));
   const defaultDuration = parseInt(day?.sessionDuration || "50") || 50;
   const currentDuration = duration ?? defaultDuration;
+
+  // Compute trim result when duration is reduced
+  const trimResult = useMemo(() => {
+    if (duration === null || duration >= defaultDuration) return null;
+    return trimSessionToTime(exercises, duration);
+  }, [exercises, duration, defaultDuration]);
+
+  // Set of exercise names removed by time trimming
+  const trimmedNames = useMemo(() => {
+    if (!trimResult) return new Set<string>();
+    return new Set(trimResult.removedNames.map((r) => r.name));
+  }, [trimResult]);
+
+  const activeExercises = exercises.filter((_, i) => !skipped.has(i) && !trimmedNames.has(exercises[i].name));
 
   // Session number
   const sessionNum = useMemo(() => {
@@ -543,22 +556,14 @@ export default function PreSessionPage() {
           </div>
           {/* Duration change context */}
           {duration !== null && duration !== defaultDuration && (() => {
-            // Smart trim: remove isolations first, then compounds, then reduce sets
-            const trimResult = trimSessionToTime(exercises, duration);
-            const removedCount = exercises.length - trimResult.exercises.length;
-            const removedNames = exercises
-              .filter(ex => !trimResult.exercises.some(te => te.name === ex.name))
-              .map(ex => ex.name);
-
             return (
               <div className="mt-2 animate-fade-up">
                 {duration < defaultDuration ? (
-                  removedCount > 0 ? (
+                  trimResult && trimResult.removedNames.length > 0 ? (
                     <div className="text-[10px] leading-snug">
                       <span className="text-accent/80 font-display tracking-wider">TRIMMED TO ~{duration} MIN</span>
                       <p className="text-muted2 font-light mt-1">
-                        Cut: {removedNames.map(n => <strong key={n} className="text-text font-normal">{n}</strong>).reduce((a, b, i) => i === 0 ? [b] : [...a, ', ', b], [] as React.ReactNode[])}
-                        <span className="text-muted"> (least critical)</span>. Compounds kept.
+                        {trimResult.removedNames.length} exercise{trimResult.removedNames.length !== 1 ? "s" : ""} removed — see list below.
                       </p>
                     </div>
                   ) : (
@@ -632,7 +637,28 @@ export default function PreSessionPage() {
           {exercises.map((ex, i) => {
             const lib = findExercise(ex.name);
             const isSkipped = skipped.has(i);
+            const isTrimmed = trimmedNames.has(ex.name);
+            const trimInfo = trimResult?.removedNames.find((r) => r.name === ex.name);
             const muscleColor = MUSCLE_COLORS[lib?.muscle || ""] || "bg-muted";
+
+            if (isTrimmed) {
+              return (
+                <div
+                  key={i}
+                  className="py-2 px-3 mb-1.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] opacity-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted line-through truncate">{ex.name}</span>
+                    <span className="text-[9px] tracking-wider text-red-400/80 font-display shrink-0">REMOVED</span>
+                  </div>
+                  <div className="text-[10px] text-muted font-light mt-0.5">
+                    {trimInfo?.isIsolation
+                      ? "Isolation cut first to protect compounds"
+                      : "Cut to fit time budget — compounds trimmed after isolations"}
+                  </div>
+                </div>
+              );
+            }
 
             if (isSkipped) {
               return (
@@ -708,9 +734,12 @@ export default function PreSessionPage() {
           })}
         </div>
 
-        {skipped.size > 0 && (
+        {(skipped.size > 0 || trimmedNames.size > 0) && (
           <div className="text-[11px] text-accent tracking-wider font-display mt-2">
-            {skipped.size} SKIPPED · {exercises.length - skipped.size} REMAINING
+            {trimmedNames.size > 0 && <>{trimmedNames.size} CUT FOR TIME</>}
+            {trimmedNames.size > 0 && skipped.size > 0 && <> · </>}
+            {skipped.size > 0 && <>{skipped.size} SKIPPED</>}
+            {" "}· {activeExercises.length} REMAINING
           </div>
         )}
 
