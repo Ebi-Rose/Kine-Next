@@ -372,7 +372,7 @@ export default function PreSessionPage() {
           {day.sessionTitle || "Session"}
         </h1>
         <div className="flex items-center gap-2 text-[11px] text-muted2 font-light">
-          <span>~{currentDuration} min</span>
+          <span>~{estimateSessionTime(activeExercises)} min{trimmedNames.size > 0 && <> <span className="text-muted">(was ~{estimateSessionTime(exercises)} min)</span></>}</span>
           <span className="text-border">·</span>
           <span>{activeExercises.length} exercise{activeExercises.length !== 1 ? "s" : ""}</span>
           <span className="text-border">·</span>
@@ -534,7 +534,11 @@ export default function PreSessionPage() {
         <div className="pt-2.5 border-t border-border mt-2">
           <div className="flex items-center justify-between">
             <div className="text-xs">
-              Session length <span className="text-muted font-light text-[11px]">· adjusts exercises</span>
+              Session length
+              <span className="text-muted font-light text-[11px]">
+                {" "}· ~{estimateSessionTime(activeExercises)} min estimated
+                {currentDuration !== defaultDuration && <> / {currentDuration} min target</>}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <button
