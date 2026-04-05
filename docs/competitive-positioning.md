@@ -28,7 +28,7 @@ Kine is an AI-powered strength training coach built from the ground up for women
 | **Body-intelligent** | Cycle, PCOS, endo, fibroids, pelvic floor, perimenopause | No | No | No | No |
 | **Women-first design** | Built for women's physiology | Gender-neutral | Gender-neutral | Gender-neutral | Gender-neutral |
 | **Post-session coaching** | AI analyses performance and adjusts | No | No | No | Basic |
-| **Education built in** | 170+ exercises with cues, muscle education, coaching | Exercise demos | Exercise demos | Exercise demos | Exercise demos |
+| **Education built in** | 170+ exercises with coaching cues, muscle education, skill paths, and session rationales that explain every programming decision | Exercise demos | Exercise demos | Exercise demos | Exercise demos |
 | **Injury management** | Programs around limitations with smart swaps | No | No | No | Basic |
 | **Transparent progression** | Shows reasoning, volume trends; user accepts or adjusts | Auto-increments or manual | Manual | Manual | Auto, no explanation |
 | **Observation, not judgement** | No scores, streaks, or grades | Streaks, PRs | PRs | Badges, levels | Scores |
@@ -95,6 +95,7 @@ Unlike logging apps that assume you already know what to do, Kine gives you a co
 3. **"Your body is doing more than you think. Your training should know that."** — Adapts to your cycle, your conditions, and your life stage — quietly, without labels.
 4. **"Programs around limitations, not through them."** — Injury-aware with intelligent swaps.
 5. **"No streaks. No scores. No guilt."** — Observation-based coaching that treats you like an adult.
+6. **"Every decision explained. Every exercise teachable."** — Kine doesn't just programme your training — it teaches you why, so you get stronger *and* smarter.
 
 ---
 
@@ -105,6 +106,13 @@ Unlike logging apps that assume you already know what to do, Kine gives you a co
 - Have tried apps like Hevy or Strong but felt unsupported
 - Don't want to pay £200+/month for a personal trainer
 - Want their body acknowledged — cycle, conditions, life stage — without it being made into a gimmick
+- Want to *understand* their training, not just follow instructions — they're drawn to tools that explain the reasoning, teach form, and build real knowledge over time
+
+**Education-motivated segment:** Women who:
+- Research nutrition and training online, follow evidence-based fitness creators, but can't translate knowledge into a structured program
+- See a training tool as a bridge to independence, not a permanent crutch — they want to eventually need Kine less, not more
+- Have been burned by black-box apps that tell you what to do but never explain why
+- Apply a knowledge-worker mindset to training — designers, engineers, PMs, researchers, academics who won't follow a program they don't understand
 
 **Secondary:**
 - Women returning to training postpartum
