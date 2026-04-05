@@ -153,6 +153,7 @@ function PreStartView({
   const router = useRouter();
   const { trainingDays, weekData, setWeekData } = useKineStore();
   const [activeView, setActiveView] = useState<"this-week" | "next-week">("this-week");
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const now = appNow();
   const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1;
   const weekStart = getWeekDateRange();
@@ -253,63 +254,58 @@ function PreStartView({
       {activeView === "next-week" && (
         <div className="mt-4">
           {weekData ? (
-            <div className="rounded-[14px] border border-border/50 bg-surface/50 p-6">
-              <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Starting {startLabel}</p>
-              <p className="font-display text-lg tracking-wide text-text">Week 1</p>
-              <p className="mt-1 text-[10px] text-muted2">
-                {trainingDays.length} training days
-              </p>
-
-              {/* Mini week grid */}
-              <div className="mt-4 grid grid-cols-7 gap-1">
-                {DAY_LABELS.map((label, i) => {
-                  const matchingDay = (weekData as WeekData).days.find(
-                    (d) => ((d.dayNumber - 1) % 7) === i
-                  );
-                  const isTraining = matchingDay && !matchingDay.isRest;
-                  return (
-                    <div
-                      key={i}
-                      className={`text-center rounded-lg py-2 ${
-                        isTraining
-                          ? "bg-accent/10 border border-accent/20"
-                          : "opacity-40"
-                      }`}
+            <div className="flex flex-col gap-2">
+              {DAY_LABELS.map((label, i) => {
+                const matchingDay = (weekData as WeekData).days.find(
+                  (d) => ((d.dayNumber - 1) % 7) === i
+                );
+                const isTraining = matchingDay && !matchingDay.isRest;
+                const isExpanded = expandedDay === i;
+                // Compute the actual date for this day in next week
+                const dayDate = new Date(startDate);
+                dayDate.setDate(startDate.getDate() + i - (startDate.getDay() === 0 ? 6 : startDate.getDay() - 1));
+                const dateStr = dayDate.toLocaleDateString(locale, { day: "numeric", month: "short" });
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-[14px] border px-[18px] py-3 transition-all ${
+                      isTraining ? "border-accent/30 bg-accent-dim" : "border-border/50 bg-surface/50"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => isTraining && setExpandedDay(isExpanded ? null : i)}
+                      className={`flex w-full items-center justify-between text-left ${isTraining ? "cursor-pointer" : "cursor-default"}`}
                     >
-                      <p className="text-[9px] text-muted">{label.charAt(0)}</p>
-                      <div
-                        className={`mx-auto mt-1.5 w-1.5 h-1.5 rounded-full ${
-                          isTraining ? "bg-accent" : "bg-border"
-                        }`}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Split list */}
-              <div className="mt-5 flex flex-col divide-y divide-border/30">
-                {(weekData as WeekData).days
-                  .filter((d) => !d.isRest)
-                  .map((day, i) => {
-                    const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
-                    return (
-                      <div key={i} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                        <div className="w-[3px] h-7 rounded-full bg-accent/60 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-text">{day.sessionTitle}</p>
-                          <p className="text-[10px] text-muted mt-0.5">
-                            {dayLabel} &middot; {day.exercises.length} exercises &middot; {day.sessionDuration}
-                          </p>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted2">{label}</span>
+                        <span className="text-[10px] text-muted">{dateStr}</span>
                       </div>
-                    );
-                  })}
-              </div>
-
-              <p className="mt-5 text-center text-[10px] text-muted">
-                Programme starts {startLabel} &mdash; you&apos;re ready to go.
-              </p>
+                      {isTraining && matchingDay ? (
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <p className="text-xs text-text">{matchingDay.sessionTitle}</p>
+                            <p className="text-[10px] text-muted">{matchingDay.exercises.length} exercises &middot; {matchingDay.sessionDuration}</p>
+                          </div>
+                          <span className={`text-[10px] text-muted transition-transform ${isExpanded ? "rotate-90" : ""}`}>&rsaquo;</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted">Rest</span>
+                      )}
+                    </button>
+                    {isExpanded && isTraining && matchingDay && (
+                      <div className="mt-3 border-t border-border/30 pt-3 flex flex-col gap-2">
+                        {matchingDay.exercises.map((ex, j) => (
+                          <div key={j} className="flex items-center justify-between">
+                            <span className="text-[11px] text-text">{ex.name}</span>
+                            <span className="text-[10px] text-muted">{ex.sets} &times; {ex.reps}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-[14px] border border-border/50 bg-surface/50 p-6 text-center">
