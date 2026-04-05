@@ -74,6 +74,22 @@ export async function POST(request: NextRequest) {
             subscription.error?.message || "Failed to retrieve subscription"
           );
 
+        // Guard: if user already has a different active subscription, cancel the new one
+        const customerId = session.customer as string;
+        const allActiveSubs = await stripe.subscriptions.list({
+          customer: customerId,
+          status: "active",
+          limit: 10,
+        });
+        const duplicates = allActiveSubs.data.filter(
+          (s) => s.id !== session.subscription
+        );
+        for (const dup of duplicates) {
+          console.warn(`[webhook] cancelling duplicate subscription ${dup.id} for user ${userId}`);
+          await stripe.subscriptions.cancel(dup.id, { prorate: true });
+          logAudit({ event: "duplicate_subscription_cancelled", user_id: userId, ip: getRequestIp(request.headers), metadata: { cancelled_sub: dup.id, kept_sub: session.subscription as string } });
+        }
+
         // Period dates: top-level on older API versions, items-level on newer
         const item = subscription.items?.data?.[0];
         const periodStart = subscription.current_period_start

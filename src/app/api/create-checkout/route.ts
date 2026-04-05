@@ -107,6 +107,17 @@ export async function POST(request: NextRequest) {
             { status: 409 },
           );
         }
+
+        // Block if there's already an open checkout session (prevents double-tab payments)
+        const openSessions = await stripeGet("/checkout/sessions", {
+          customer: cid,
+          status: "open",
+          limit: "1",
+        });
+        if (openSessions.data.length > 0) {
+          // Expire the stale session and let the user start fresh
+          await stripeRequest(`/checkout/sessions/${openSessions.data[0].id}/expire`, {});
+        }
       } else {
         const customer = await stripeRequest("/customers", {
           email,
