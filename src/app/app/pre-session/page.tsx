@@ -648,8 +648,14 @@ export default function PreSessionPage() {
                   className="py-2 px-3 mb-1.5 rounded-lg border border-dashed border-white/[0.08] bg-white/[0.02] opacity-50"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted line-through truncate">{ex.name}</span>
+                    <span className="text-xs text-muted line-through truncate flex-1">{ex.name}</span>
                     <span className="text-[9px] tracking-wider text-red-400/80 font-display shrink-0">REMOVED</span>
+                    <button
+                      onClick={() => setDuration(null)}
+                      className="text-[10px] text-accent bg-accent/10 border border-accent/40 rounded px-1.5 py-0.5 shrink-0"
+                    >
+                      restore
+                    </button>
                   </div>
                   <div className="text-[10px] text-muted font-light mt-0.5">
                     {trimInfo?.isIsolation
@@ -735,11 +741,21 @@ export default function PreSessionPage() {
         </div>
 
         {(skipped.size > 0 || trimmedNames.size > 0) && (
-          <div className="text-[11px] text-accent tracking-wider font-display mt-2">
-            {trimmedNames.size > 0 && <>{trimmedNames.size} CUT FOR TIME</>}
-            {trimmedNames.size > 0 && skipped.size > 0 && <> · </>}
-            {skipped.size > 0 && <>{skipped.size} SKIPPED</>}
-            {" "}· {activeExercises.length} REMAINING
+          <div className="flex items-center justify-between mt-2">
+            <div className="text-[11px] text-accent tracking-wider font-display">
+              {trimmedNames.size > 0 && <>{trimmedNames.size} CUT FOR TIME</>}
+              {trimmedNames.size > 0 && skipped.size > 0 && <> · </>}
+              {skipped.size > 0 && <>{skipped.size} SKIPPED</>}
+              {" "}· {activeExercises.length} REMAINING
+            </div>
+            {trimmedNames.size > 0 && (
+              <button
+                onClick={() => setDuration(null)}
+                className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
+              >
+                Restore all
+              </button>
+            )}
           </div>
         )}
 
