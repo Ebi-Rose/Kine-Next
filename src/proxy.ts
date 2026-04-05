@@ -98,13 +98,6 @@ async function verifySignature(signed: string): Promise<boolean> {
   return mismatch === 0;
 }
 
-function extractMode(signed: string): string | null {
-  const lastDot = signed.lastIndexOf(".");
-  if (lastDot === -1) return null;
-  const value = signed.slice(0, lastDot); // "granted:mode"
-  return value.split(":")[1] || null;
-}
-
 // ── Main proxy ───────────────────────────────────────────
 
 export default async function proxy(request: NextRequest) {
@@ -114,7 +107,13 @@ export default async function proxy(request: NextRequest) {
   // ── Access code gate for /app/* (beta) ──
   if (isAppRoute) {
     const accessCookie = request.cookies.get("kine_access")?.value;
-    if (!accessCookie || !(await verifySignature(accessCookie))) {
+    let verified = false;
+    try {
+      verified = !!accessCookie && (await verifySignature(accessCookie));
+    } catch {
+      // crypto.subtle can throw on transient platform errors — treat as unverified
+    }
+    if (!verified) {
       const url = request.nextUrl.clone();
       url.pathname = "/access";
       return NextResponse.redirect(url);

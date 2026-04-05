@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useKineStore } from "@/store/useKineStore";
 
 export default function AccessPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,31 +20,8 @@ export default function AccessPage() {
       });
 
       if (res.ok) {
-        const { mode } = await res.json();
-
-        if (mode === "demo") {
-          // Check if this is a persona code (test-mia, test-emma, etc.)
-          const trimmedCode = code.trim().toLowerCase();
-          const personaKey = trimmedCode.replace("test-", "");
-          const { PERSONA_LOADERS } = await import("@/data/personas");
-          if (trimmedCode.startsWith("test-") && PERSONA_LOADERS[personaKey]) {
-            PERSONA_LOADERS[personaKey](useKineStore.getState());
-            window.location.href = "/app";
-          } else if (trimmedCode.startsWith("test-")) {
-            // Unknown test- code: fresh onboarding (no demo data)
-            window.location.href = "/app/onboarding";
-          } else {
-            const { loadDemoData } = await import("@/data/demo-data");
-            loadDemoData(useKineStore.getState());
-            window.location.href = "/app";
-          }
-        } else if (mode === "new") {
-          // Skip auth/stripe, fresh user → onboarding
-          window.location.href = "/app/onboarding";
-        } else {
-          // Real flow: auth → stripe → onboarding
-          window.location.href = "/login";
-        }
+        // Access granted — proceed to login/signup
+        window.location.href = "/login";
       } else {
         const data = await res.json();
         setError(data.error || "Invalid access code.");

@@ -9,18 +9,13 @@ import { checkBodySize } from "../_lib/body-limit";
 const MAX_ACCESS_BODY = 4_096; // 4 KB — only a code field
 const ratelimit = createRatelimit("access", 5, "900 s");
 
-// Codes and modes from env vars — nothing hardcoded
-// ACCESS_CODES: comma-separated "code:mode" pairs
-// e.g. "kine2026:real,kinenew:new,kinedemo:demo"
-// Codes without a mode default to "real"
-function getCodeMap(): Record<string, string> {
+// Valid codes from env var — nothing hardcoded
+// ACCESS_CODES: comma-separated list of valid codes (e.g. "kine2026,kinebeta")
+function getValidCodes(): Set<string> {
   const raw = process.env.ACCESS_CODES || "";
-  const map: Record<string, string> = {};
-  raw.split(",").forEach((entry) => {
-    const [code, mode] = entry.trim().toLowerCase().split(":");
-    if (code) map[code] = mode || "real";
-  });
-  return map;
+  return new Set(
+    raw.split(",").map((c) => c.trim().toLowerCase().split(":")[0]).filter(Boolean)
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -55,18 +50,17 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
 
-    const codeMap = getCodeMap();
-    const mode = codeMap[trimmed];
+    const validCodes = getValidCodes();
 
-    if (!mode) {
+    if (!validCodes.has(trimmed)) {
       logAudit({ event: "access_code_failure", ip });
       return Response.json({ error: "Invalid access code" }, { status: 401 });
     }
 
-    logAudit({ event: "access_code_success", ip, metadata: { mode } });
+    logAudit({ event: "access_code_success", ip });
 
     const cookieStore = await cookies();
-    cookieStore.set("kine_access", signValue(`granted:${mode}`), {
+    cookieStore.set("kine_access", signValue("granted"), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -74,7 +68,7 @@ export async function POST(request: NextRequest) {
       maxAge: 30 * 24 * 60 * 60,
     });
 
-    return Response.json({ ok: true, mode: mode || "real" });
+    return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Invalid request" }, { status: 400 });
   }
