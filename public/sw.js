@@ -1,7 +1,7 @@
 // ── Kinē Service Worker ──
 // Provides offline support and asset caching
 
-const CACHE_NAME = "kine-v2";
+const CACHE_NAME = "kine-v3";
 const OFFLINE_URL = "/app";
 
 // Assets to pre-cache
@@ -62,7 +62,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages: network-first with offline fallback
+  // Only cache app-related pages (login, pricing, /app/*)
+  const isAppPage = url.pathname.startsWith("/app") ||
+    url.pathname === "/login" ||
+    url.pathname === "/pricing";
+
+  if (!isAppPage) return;
+
+  // App pages: network-first with offline fallback
   event.respondWith(
     fetch(request)
       .then((response) => {
