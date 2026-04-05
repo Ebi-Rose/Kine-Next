@@ -103,14 +103,30 @@ function LoginPageInner() {
   const initialTab = searchParams.get("view") === "signup" ? "signup" : "login";
   const [view, setView] = useState<View>("auth");
   const [confirmEmail, setConfirmEmail] = useState("");
+  const [ready, setReady] = useState(false);
   const router = useRouter();
 
   // Auto-redirect if already authenticated
   useEffect(() => {
+    let cancelled = false;
     isAuthenticated().then((ok) => {
-      if (ok) routeAuthenticatedUser();
+      if (cancelled) return;
+      if (ok) {
+        routeAuthenticatedUser();
+      } else {
+        setReady(true);
+      }
     });
-  }, [router]);
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <p className="font-display text-2xl tracking-[0.2em] text-accent">KINĒ</p>
+      </div>
+    );
+  }
 
   if (view === "confirm-email") {
     return (
