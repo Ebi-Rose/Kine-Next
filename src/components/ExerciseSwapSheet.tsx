@@ -57,7 +57,7 @@ export default function ExerciseSwapSheet({
       }));
   }, [currentExercise, currentEx, sessionExercises, equip, exp, mode, search, sessionMuscles]);
 
-  // Group by fit score for "all" mode, by muscle for "like" mode
+  // Group by compound/isolation for "like" mode, by muscle group for "all" mode
   const grouped = useMemo(() => {
     if (mode === "like") {
       // Group by compound vs isolation
@@ -69,14 +69,25 @@ export default function ExerciseSwapSheet({
       return groups;
     }
 
-    // "all" mode: group by fit score
-    const ideal = candidates.filter((c) => c.fit === "ideal");
-    const acceptable = candidates.filter((c) => c.fit === "acceptable");
-    const compromise = candidates.filter((c) => c.fit === "compromise");
+    // "all" mode: group by muscle group, ordered by relevance to current exercise
+    const muscleOrder = [
+      currentEx?.muscle,
+      ...sessionMuscles.filter((m) => m !== currentEx?.muscle),
+      ...Object.keys(MUSCLE_LABELS).filter((m) => !sessionMuscles.includes(m) && m !== currentEx?.muscle),
+    ].filter(Boolean) as string[];
+
     const groups: { label: string; items: typeof candidates }[] = [];
-    if (ideal.length) groups.push({ label: "Same muscle — like for like", items: ideal });
-    if (acceptable.length) groups.push({ label: "Fits session focus", items: acceptable });
-    if (compromise.length) groups.push({ label: "Different focus — changes session balance", items: compromise });
+    for (const muscle of muscleOrder) {
+      const items = candidates.filter((c) => c.muscle === muscle);
+      if (items.length) {
+        const label = muscle === currentEx?.muscle
+          ? `${MUSCLE_LABELS[muscle] || muscle} — same muscle`
+          : sessionMuscles.includes(muscle)
+            ? `${MUSCLE_LABELS[muscle] || muscle} — fits session focus`
+            : `${MUSCLE_LABELS[muscle] || muscle} — changes session balance`;
+        groups.push({ label, items });
+      }
+    }
     return groups;
   }, [candidates, mode]);
 
