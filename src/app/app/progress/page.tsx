@@ -22,6 +22,20 @@ export default function ProgressPage() {
   const [replaySession, setReplaySession] = useState<SessionRecord | null>(null);
 
   const totalSessions = sessions.length;
+
+  // Compute actual weeks from session dates (more reliable than currentWeek counter)
+  const weeksActive = (() => {
+    if (totalSessions === 0 || !programStartDate) return currentWeek || 1;
+    const sessionDates = (sessions as SessionRecord[]).map((s) => s.date).filter(Boolean);
+    if (sessionDates.length === 0) return currentWeek || 1;
+    const weeks = new Set(sessionDates.map((d) => {
+      const date = new Date(d);
+      const startOfWeek = new Date(date);
+      startOfWeek.setDate(date.getDate() - date.getDay());
+      return startOfWeek.toISOString().slice(0, 10);
+    }));
+    return Math.max(weeks.size, 1);
+  })();
   const liftNames = Object.keys(lifts).filter(
     (k) => Array.isArray(lifts[k]) && lifts[k].length > 0
   );
@@ -48,7 +62,7 @@ export default function ProgressPage() {
       {/* Stats grid */}
       <div className="mt-6 grid grid-cols-4 gap-2">
         <StatCard label="Sessions" value={String(totalSessions)} />
-        <StatCard label="Week" value={String(currentWeek)} />
+        <StatCard label="Week" value={String(weeksActive)} />
         <StatCard label="PRs" value={String(totalPRs)} />
         <StatCard label="Avg effort" value={avgEffort} />
       </div>
@@ -57,7 +71,7 @@ export default function ProgressPage() {
       {totalSessions > 0 && programStartDate && (
         <div className="mt-6 rounded-[var(--radius-default)] border border-border bg-surface p-4">
           <p className="text-xs text-muted2">
-            {totalSessions} session{totalSessions > 1 ? "s" : ""} completed across {currentWeek} week{currentWeek > 1 ? "s" : ""}.
+            {totalSessions} session{totalSessions > 1 ? "s" : ""} completed across {weeksActive} week{weeksActive > 1 ? "s" : ""}.
             {totalPRs > 0 && ` ${totalPRs} personal record${totalPRs > 1 ? "s" : ""} set.`}
           </p>
         </div>
