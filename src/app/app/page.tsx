@@ -1053,25 +1053,27 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
               </div>
             ))}
           </div>
-          <div className="mt-4 flex gap-2">
-            {isCompleted ? (
-              <>
-                <Button className="flex-1" size="sm" variant="secondary"
-                  onClick={() => setShowSessionReview(true)}>
-                  View results
-                </Button>
-                <Button className="flex-1" size="sm" variant="ghost"
+          {!readOnly && (
+            <div className="mt-4 flex gap-2">
+              {isCompleted ? (
+                <>
+                  <Button className="flex-1" size="sm" variant="secondary"
+                    onClick={() => setShowSessionReview(true)}>
+                    View results
+                  </Button>
+                  <Button className="flex-1" size="sm" variant="ghost"
+                    onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
+                    Redo
+                  </Button>
+                </>
+              ) : (
+                <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
                   onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
-                  Redo
+                  {isToday ? "Start session" : isPast ? "Start session" : "Preview & edit"}
                 </Button>
-              </>
-            ) : (
-              <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
-                onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
-                {isToday ? "Start session" : isPast ? "Start session" : "Preview & edit"}
-              </Button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
