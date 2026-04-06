@@ -2,10 +2,27 @@ import { create } from "zustand";
 import { persist, type StateStorage } from "zustand/middleware";
 import { encrypt, decrypt } from "@/lib/store-encryption";
 import type { WeekData } from "@/lib/week-builder";
+import type { CardId, TimeWindow } from "@/lib/progress-engine";
 
 export type Goal = "muscle" | "strength" | "general" | null;
 export type Experience = "new" | "developing" | "intermediate" | null;
+export type LifeStage =
+  | "general"
+  | "pregnancy"
+  | "postpartum"
+  | "perimenopause"
+  | "post_menopause"
+  | null;
 export type CycleType = "regular" | "irregular" | "hormonal" | "perimenopause" | "na" | null;
+
+/**
+ * User overrides for the Progress page personalization engine.
+ * Principle #20 — engine personalizes; user has final say.
+ */
+export interface ProgressPreferences {
+  overrides: Partial<Record<CardId, "force_show" | "force_hide">>;
+  timeWindowOverride: TimeWindow | null;
+}
 export type Duration = "short" | "medium" | "long" | "extended" | null;
 export type EduMode = "full" | "feel" | "silent";
 export type TrackingMode = "lifts" | "photos" | "measurements" | "bodyweight" | "feeling";
@@ -61,6 +78,10 @@ export interface PersonalProfile {
   weight: string;
   trainingAge: string;
   currentLifts: Record<string, number>;
+  /** Optional life stage — drives Progress page personalization. Undefined = treat as "general". */
+  lifeStage?: LifeStage;
+  /** Optional age — drives default time-window heuristics in the engine. */
+  age?: number;
 }
 
 export interface ConsentRecord {
@@ -136,6 +157,9 @@ interface KineState {
   // Profile
   personalProfile: PersonalProfile;
 
+  // Progress page personalization overrides (principle #20)
+  progressPreferences: ProgressPreferences;
+
   // Session
   currentDayIdx: number | null;
   sessionLogs: Record<number, SessionLog>;
@@ -174,6 +198,11 @@ interface KineState {
   setSessionLogs: (logs: Record<number, SessionLog>) => void;
   setFeedbackState: (state: FeedbackState) => void;
   setPersonalProfile: (profile: PersonalProfile) => void;
+  setLifeStage: (lifeStage: LifeStage) => void;
+  setAge: (age: number | undefined) => void;
+  setProgressPreference: (id: CardId, action: "force_show" | "force_hide" | null) => void;
+  setProgressTimeWindow: (window: TimeWindow | null) => void;
+  resetProgressPreferences: () => void;
   setSessionTimeBudgets: (budgets: Record<number, number>) => void;
   setSessionMode: (mode: SessionMode) => void;
   setRestConfig: (config: RestConfig) => void;
@@ -244,6 +273,12 @@ export const useKineStore = create<KineState>()(
         currentLifts: {},
       },
 
+      // Progress page personalization overrides
+      progressPreferences: {
+        overrides: {},
+        timeWindowOverride: null,
+      },
+
       // Consents
       consents: [] as ConsentRecord[],
 
@@ -278,6 +313,8 @@ export const useKineStore = create<KineState>()(
           comfortFlags.push("impactSensitive");
         if (conditions.includes("pelvic_floor"))
           comfortFlags.push("proneSensitive");
+        if (conditions.includes("hypermobility"))
+          comfortFlags.push("stabilityRequired");
         set({ conditions, comfortFlags, _lastModifiedAt: new Date().toISOString() });
       },
       setCycleType: (cycleType) => set({ cycleType, _lastModifiedAt: new Date().toISOString() }),
@@ -321,6 +358,31 @@ export const useKineStore = create<KineState>()(
       setSessionLogs: (logs) => set({ sessionLogs: logs }),
       setFeedbackState: (state) => set({ feedbackState: state }),
       setPersonalProfile: (profile) => set({ personalProfile: profile, _lastModifiedAt: new Date().toISOString() }),
+      setLifeStage: (lifeStage) => set((state) => ({
+        personalProfile: { ...state.personalProfile, lifeStage: lifeStage ?? undefined },
+        _lastModifiedAt: new Date().toISOString(),
+      })),
+      setAge: (age) => set((state) => ({
+        personalProfile: { ...state.personalProfile, age },
+        _lastModifiedAt: new Date().toISOString(),
+      })),
+      setProgressPreference: (id, action) => set((state) => {
+        const next = { ...state.progressPreferences.overrides };
+        if (action === null) delete next[id];
+        else next[id] = action;
+        return {
+          progressPreferences: { ...state.progressPreferences, overrides: next },
+          _lastModifiedAt: new Date().toISOString(),
+        };
+      }),
+      setProgressTimeWindow: (window) => set((state) => ({
+        progressPreferences: { ...state.progressPreferences, timeWindowOverride: window },
+        _lastModifiedAt: new Date().toISOString(),
+      })),
+      resetProgressPreferences: () => set({
+        progressPreferences: { overrides: {}, timeWindowOverride: null },
+        _lastModifiedAt: new Date().toISOString(),
+      }),
       setSessionTimeBudgets: (budgets) => set({ sessionTimeBudgets: budgets }),
       setSessionMode: (mode) => set({ sessionMode: mode, _lastModifiedAt: new Date().toISOString() }),
       setRestConfig: (config) => set({ restConfig: config, _lastModifiedAt: new Date().toISOString() }),
@@ -341,7 +403,7 @@ export const useKineStore = create<KineState>()(
     }),
     {
       name: "kine_v2",
-      version: 4,
+      version: 5,
       storage: {
         getItem: async (name: string) => {
           const raw = localStorage.getItem(name);
@@ -409,6 +471,10 @@ export const useKineStore = create<KineState>()(
               w?.days?.some((d) => Array.isArray(d.exercises) && d.exercises.length > 0)
             );
           }
+        }
+        // v4 → v5: progress page personalization preferences slice
+        if (version < 5) {
+          state.progressPreferences ??= { overrides: {}, timeWindowOverride: null };
         }
         return state as unknown as KineState;
       },

@@ -2,18 +2,19 @@
 
 import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
-import type { CycleType, PeriodLog } from "@/store/useKineStore";
+import type { CycleType, LifeStage, PeriodLog } from "@/store/useKineStore";
 import { getCurrentPhase } from "@/lib/cycle";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
-import { CYCLE_OPTIONS, INJURY_OPTIONS, CONDITION_OPTIONS } from "@/data/constants";
+import { CYCLE_OPTIONS, INJURY_OPTIONS, CONDITION_OPTIONS, LIFE_STAGE_OPTIONS } from "@/data/constants";
 import { BackButton } from "./_helpers";
 
 const CONDITION_COMFORT_MAP: Record<string, string[]> = {
   fibroids: ["impactSensitive"],
   endometriosis: ["impactSensitive"],
   pelvic_floor: ["proneSensitive"],
+  hypermobility: ["stabilityRequired"],
 };
 
 const INJURY_PROTECTIONS: Record<string, string[]> = {
@@ -32,14 +33,16 @@ const INJURY_PROTECTIONS: Record<string, string[]> = {
 const COMFORT_LABELS: Record<string, string> = {
   impactSensitive: "Impact-sensitive exercises avoided",
   proneSensitive: "Prone-position exercises avoided",
+  stabilityRequired: "Deep-ROM capped, tempo and isometric work prioritised",
 };
 
 export default function HealthPanel({ onBack }: { onBack: () => void }) {
-  const { cycleType, setCycleType, cycle, setCycle, injuries, setInjuries, injuryNotes, setInjuryNotes, conditions, setConditions, comfortFlags, setWeekData } = useKineStore();
+  const { cycleType, setCycleType, cycle, setCycle, injuries, setInjuries, injuryNotes, setInjuryNotes, conditions, setConditions, comfortFlags, setWeekData, personalProfile, setLifeStage, setAge } = useKineStore();
   const [newDate, setNewDate] = useState("");
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [conditionWarning, setConditionWarning] = useState<string | null>(null);
   const [injuryWarning, setInjuryWarning] = useState<string | null>(null);
+  const [ageDraft, setAgeDraft] = useState(personalProfile?.age?.toString() ?? "");
 
   const phase = cycleType === "regular" ? getCurrentPhase(cycle.periodLog, cycle.avgLength) : null;
 
@@ -161,6 +164,74 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
             {editingSection === "cycleHistory" ? "Hide history" : `History (${cycle.periodLog.length} entries)`}
           </button>
         )}
+      </div>
+
+      {/* Life stage + Age — drives Progress page personalization */}
+      <div className="mt-3 rounded-[10px] border border-border bg-surface p-4">
+        <p className="text-[10px] tracking-[0.15em] uppercase text-muted mb-3">Life stage</p>
+
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-muted2">Stage</span>
+          <button
+            onClick={() => setEditingSection(editingSection === "lifeStage" ? null : "lifeStage")}
+            className="text-xs text-text hover:text-accent transition-colors"
+          >
+            {LIFE_STAGE_OPTIONS.find((s) => s.value === personalProfile?.lifeStage)?.label || "Not set"}{" "}
+            <span className="text-muted text-[10px]">▸</span>
+          </button>
+        </div>
+
+        {editingSection === "lifeStage" && (
+          <div className="flex flex-col gap-2 mb-3">
+            {LIFE_STAGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setLifeStage(opt.value as LifeStage);
+                  setEditingSection(null);
+                  toast(`Life stage: ${opt.label}`, "success");
+                }}
+                className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${
+                  personalProfile?.lifeStage === opt.value
+                    ? "border-accent bg-accent-dim text-text"
+                    : "border-border text-muted2 hover:border-border-active"
+                }`}
+              >
+                <div>{opt.label}</div>
+                <div className="text-[10px] text-muted mt-0.5 font-light">{opt.description}</div>
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                setLifeStage(null);
+                setEditingSection(null);
+                toast("Life stage cleared", "success");
+              }}
+              className="rounded-lg border border-dashed border-border text-[10px] text-muted2 px-3 py-2 mt-1"
+            >
+              Prefer not to say
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+          <span className="text-xs text-muted2">Age</span>
+          <input
+            type="number"
+            value={ageDraft}
+            onChange={(e) => setAgeDraft(e.target.value)}
+            onBlur={() => {
+              const n = parseInt(ageDraft, 10);
+              setAge(Number.isFinite(n) && n > 0 ? n : undefined);
+            }}
+            placeholder="Optional"
+            className="w-20 rounded border border-border bg-bg px-2 py-1 text-xs text-text outline-none focus:border-accent text-right"
+          />
+        </div>
+
+        <p className="text-[10px] text-muted mt-3 font-light">
+          Used silently to personalise your Progress page — never shown anywhere else.
+        </p>
       </div>
 
       {/* Conditions */}

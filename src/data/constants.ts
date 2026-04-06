@@ -1,4 +1,18 @@
-import type { Goal, Experience, CycleType, Duration } from "@/store/useKineStore";
+import type { Goal, Experience, CycleType, Duration, LifeStage } from "@/store/useKineStore";
+
+/**
+ * Life stage drives the Progress page personalization engine.
+ * Optional — undefined means "general" (no special framing).
+ * Spec: docs/specs/progress-personalization-engine.md §4.2
+ */
+export const LIFE_STAGE_OPTIONS: { value: NonNullable<LifeStage>; label: string; description: string }[] = [
+  { value: "general", label: "General", description: "No specific life-stage adjustments" },
+  { value: "pregnancy", label: "Pregnancy", description: "Sessions tracked as showing-up; no PR or load deltas surfaced" },
+  { value: "postpartum", label: "Postpartum", description: "Returning to training framing; rehab work and reintroduced exercises lead" },
+  { value: "perimenopause", label: "Perimenopause", description: "12-week trend window; week-over-week dips contextualised, never punitive" },
+  { value: "post_menopause", label: "Post-menopause", description: "Mobility and pattern balance promoted alongside strength" },
+];
+
 
 export const GOAL_OPTIONS: { value: Goal & string; label: string; description: string }[] = [
   {
@@ -130,6 +144,7 @@ export const CONDITION_OPTIONS: { value: string; label: string; description: str
   { value: "fibroids", label: "Fibroids", description: "We manage intra-abdominal pressure, moderate high-impact movements, and adapt around flare days." },
   { value: "endometriosis", label: "Endometriosis", description: "We pace volume across the month, reduce load on high-pain days, and avoid aggravating movements." },
   { value: "pelvic_floor", label: "Pelvic floor", description: "We modify bracing cues, swap high-pressure exercises, and progress loading gradually." },
+  { value: "hypermobility", label: "Hypermobility", description: "We cap deep range of motion, prioritise tempo and isometric work, avoid ballistic movements, and emphasise joint stability." },
 ];
 
 export const PROGRAM_MAP: Record<string, Record<string, string>> = {

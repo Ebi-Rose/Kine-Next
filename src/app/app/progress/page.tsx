@@ -1,329 +1,413 @@
 "use client";
 
-import { useState } from "react";
+// ── Progress page — A+B Combined layout, driven by personalization engine ──
+//
+// Architecture:
+//   1. The store is projected into an EngineProfile + EngineHistory.
+//   2. computeProgressLayout() returns the card list, hero, tabs, and window.
+//   3. This page maps cards by id to the components in @/components/progress.
+//
+// All personalization logic lives in @/lib/progress-engine. This file is
+// purely a renderer — no business rules here.
+//
+// Spec: docs/specs/progress-personalization-engine.md
+// Visual: docs/design-mockups/progress-page-ab-combined.html
+
+import { useMemo, useState } from "react";
 import { useKineStore, type SessionRecord } from "@/store/useKineStore";
+import {
+  computeProgressLayout,
+  deriveEngineHistory,
+  type EngineProfile,
+  type LayoutCard,
+  type LifeStage,
+  type ProgressLayout,
+} from "@/lib/progress-engine";
 import { calculateORM } from "@/lib/progression";
 import { formatRelativeDate } from "@/lib/date-utils";
 import { kgToDisplay, weightUnit } from "@/lib/format";
-import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
-import Link from "next/link";
-import StrengthTrend from "@/components/StrengthTrend";
+import {
+  ProgressHero,
+  ProgressTabs,
+  StatGrid,
+  TopLiftsCard,
+  RecentPRsStrip,
+  PatternBalanceCard,
+  RehabWorkCard,
+  EffortObservationCard,
+  EffortControlCard,
+  MobilityLogCard,
+  ExercisesLearnedCard,
+  SymptomContextCard,
+  PhasePositionCard,
+  EmptyStateCard,
+  BodyPhotosHero,
+  PhotoCompareCard,
+  BodyWeightDemoteCard,
+  MeasurementsOptInTile,
+  type StatTileId,
+  type TopLiftsVariant,
+  type RecentPRsVariant,
+  type PatternBalanceVariant,
+} from "@/components/progress";
+
+type TabId = "strength" | "body" | "history";
+
+/** Project the Zustand store into the engine's narrow profile shape. */
+function buildEngineProfile(state: ReturnType<typeof useKineStore.getState>): EngineProfile {
+  const lifeStage: LifeStage = (state.personalProfile?.lifeStage as LifeStage | undefined) ?? "general";
+  return {
+    rawGoal: state.goal,
+    experience: state.exp,
+    lifeStage,
+    age: state.personalProfile?.age ?? null,
+    conditions: state.conditions ?? [],
+    injuries: state.injuries ?? [],
+    cycleTrackingEnabled: state.cycleType !== null && state.cycleType !== "na",
+    cycleType: state.cycleType,
+    equipment: state.equip ?? [],
+  };
+}
 
 export default function ProgressPage() {
-  const { progressDB, measurementSystem } = useKineStore();
+  const store = useKineStore();
+  const { progressDB, measurementSystem, progressPreferences } = store;
   const system = measurementSystem || "metric";
-  const unit = weightUnit(system);
-  const { sessions, currentWeek, lifts, programStartDate } = progressDB;
-  const [selectedLift, setSelectedLift] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<TabId>("strength");
   const [showORM, setShowORM] = useState(false);
   const [ormWeight, setOrmWeight] = useState("");
   const [ormReps, setOrmReps] = useState("");
   const [replaySession, setReplaySession] = useState<SessionRecord | null>(null);
 
-  const totalSessions = sessions.length;
-
-  // Compute actual weeks from session dates (more reliable than currentWeek counter)
-  const weeksActive = (() => {
-    if (totalSessions === 0 || !programStartDate) return currentWeek || 1;
-    const sessionDates = (sessions as SessionRecord[]).map((s) => s.date).filter((d): d is string => Boolean(d));
-    if (sessionDates.length === 0) return currentWeek || 1;
-    const weeks = new Set(sessionDates.map((d) => {
-      const date = new Date(d);
-      const startOfWeek = new Date(date);
-      startOfWeek.setDate(date.getDate() - date.getDay());
-      return startOfWeek.toISOString().slice(0, 10);
-    }));
-    return Math.max(weeks.size, 1);
-  })();
-  const liftNames = Object.keys(lifts).filter(
-    (k) => Array.isArray(lifts[k]) && lifts[k].length > 0
+  const profile = useMemo(() => buildEngineProfile(store), [store]);
+  const history = useMemo(
+    () => deriveEngineHistory(progressDB, { injuries: profile.injuries }),
+    [progressDB, profile.injuries]
+  );
+  const layout = useMemo(
+    () => computeProgressLayout(profile, history, progressPreferences),
+    [profile, history, progressPreferences]
   );
 
-  // PR count
-  const totalPRs = (sessions as SessionRecord[]).reduce(
-    (sum, s) => sum + (s.prs?.length || 0), 0
-  );
-
-  // Average effort
-  const avgEffort = totalSessions > 0
-    ? ((sessions as SessionRecord[]).reduce((sum, s) => sum + (s.effort || 0), 0) / totalSessions).toFixed(1)
-    : "—";
+  // Sparkline points for the strength delta hero — normalized to 0..1.
+  const sparklinePoints = useMemo(() => {
+    const lifts = Object.values(progressDB.lifts ?? {});
+    if (lifts.length === 0) return [];
+    // Take the densest lift (most entries) and normalize last 10 weights.
+    const dense = lifts.reduce((a, b) => (b.length > a.length ? b : a), lifts[0]);
+    const slice = dense.slice(-10);
+    const weights = slice.map((e) => e.weight).filter((w) => w > 0);
+    if (weights.length < 2) return [];
+    const min = Math.min(...weights);
+    const max = Math.max(...weights);
+    const range = max - min || 1;
+    return weights.map((w) => (w - min) / range);
+  }, [progressDB.lifts]);
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl tracking-wide text-accent">Progress</h1>
-        <Link href="/app/calendar" className="text-xs text-muted2 hover:text-accent transition-colors">
-          Calendar →
-        </Link>
-      </div>
+      <h1 className="font-display text-3xl tracking-wide text-accent">Progress</h1>
+      <p className="text-[11px] text-muted2 font-light mt-0.5">{layout.headerLabel}</p>
 
-      {/* Stats grid */}
-      <div className="mt-6 grid grid-cols-4 gap-2">
-        <StatCard label="Sessions" value={String(totalSessions)} />
-        <StatCard label="Week" value={String(weeksActive)} />
-        <StatCard label="PRs" value={String(totalPRs)} />
-        <StatCard label="Avg effort" value={avgEffort} />
-      </div>
+      <div className="mt-4">
+        <HeroRenderer layout={layout} sparklinePoints={sparklinePoints} historyData={history} />
 
-      {/* Journey summary */}
-      {totalSessions > 0 && programStartDate && (
-        <div className="mt-6 rounded-[var(--radius-default)] border border-border bg-surface p-4">
-          <p className="text-xs text-muted2">
-            {totalSessions} session{totalSessions > 1 ? "s" : ""} completed across {weeksActive} week{weeksActive > 1 ? "s" : ""}.
-            {totalPRs > 0 && ` ${totalPRs} personal record${totalPRs > 1 ? "s" : ""} set.`}
-          </p>
-        </div>
-      )}
+        <ProgressTabs tabs={layout.tabs} active={activeTab} onChange={setActiveTab} />
 
-      {/* Strength trend — capability tracking with phase overlay */}
-      <StrengthTrend />
+        {activeTab === "strength" && (
+          <StrengthTabBody
+            layout={layout}
+            history={history}
+            system={system}
+            onOpenORM={() => setShowORM(true)}
+          />
+        )}
 
-      {/* Tools */}
-      <div className="mt-6 grid grid-cols-4 gap-2">
-        <Link href="/app/trends"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
-          <span className="text-lg">📈</span>
-          <span className="text-[10px] text-muted2 font-light">Trends</span>
-        </Link>
-        <Link href="/app/photos"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
-          <span className="text-lg">📸</span>
-          <span className="text-[10px] text-muted2 font-light">Photos</span>
-        </Link>
-        <button onClick={() => setShowORM(true)}
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
-          <span className="text-lg">🏋️</span>
-          <span className="text-[10px] text-muted2 font-light">1RM Calc</span>
-        </button>
-        <Link href="/app/calendar"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-surface p-3 text-center hover:border-border-active transition-all">
-          <span className="text-lg">📅</span>
-          <span className="text-[10px] text-muted2 font-light">Calendar</span>
-        </Link>
-      </div>
+        {activeTab === "body" && <BodyTabBody layout={layout} />}
 
-      {/* Lift tracking */}
-      {liftNames.length > 0 && (
-        <div className="mt-6">
-          <h2 className="mb-3 text-xs tracking-wider text-muted uppercase">Lift history</h2>
-          <div className="flex flex-col gap-2">
-            {liftNames
-              .sort((a, b) => {
-                // Weighted exercises first (sorted by max weight), then bodyweight (sorted by max reps)
-                const aMax = lifts[a].reduce((m, e) => Math.max(m, e.weight), 0);
-                const bMax = lifts[b].reduce((m, e) => Math.max(m, e.weight), 0);
-                if (aMax === 0 && bMax > 0) return 1;
-                if (bMax === 0 && aMax > 0) return -1;
-                if (aMax === 0 && bMax === 0) {
-                  const aReps = lifts[a].reduce((m, e) => Math.max(m, e.reps), 0);
-                  const bReps = lifts[b].reduce((m, e) => Math.max(m, e.reps), 0);
-                  return bReps - aReps;
-                }
-                return bMax - aMax;
-              })
-              .map((name) => {
-              const entries = lifts[name];
-              const latest = entries[entries.length - 1];
-              const best = entries.reduce((b, e) => e.weight > b.weight ? e : b, entries[0]);
-              const orm = calculateORM(best.weight, best.reps);
-
-              // Trend: compare last entry to 2nd-to-last (use reps for bodyweight)
-              const isBodyweight = best.weight === 0;
-              const prev = entries.length >= 2 ? entries[entries.length - 2] : null;
-              const latestVal = isBodyweight ? latest.reps : latest.weight;
-              const prevVal = prev ? (isBodyweight ? prev.reps : prev.weight) : null;
-              const trend = prevVal !== null
-                ? latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "flat"
-                : "new";
-              const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : trend === "flat" ? "→" : "✦";
-              const trendColor = trend === "up" ? "text-green-400" : trend === "down" ? "text-accent" : "text-muted2";
-
-              // Sparkline data (last 8 entries) — use reps for bodyweight exercises
-              const sparkData = entries.slice(-8);
-              const sparkValues = sparkData.map(e => isBodyweight ? e.reps : e.weight);
-              const sparkMax = Math.max(...sparkValues);
-              const sparkMin = Math.min(...sparkValues);
-              const sparkRange = sparkMax - sparkMin || 1;
-
-              return (
-                <button
-                  key={name}
-                  onClick={() => setSelectedLift(selectedLift === name ? null : name)}
-                  className={`rounded-[var(--radius-default)] border p-4 text-left transition-all ${
-                    selectedLift === name ? "border-accent bg-surface" : "border-border bg-surface hover:border-border-active"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Trend indicator */}
-                    <span className={`text-sm font-medium ${trendColor}`}>{trendIcon}</span>
-
-                    {/* Name + meta */}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-text">{name}</span>
-                      <div className="flex gap-3 mt-0.5">
-                        <span className="text-[10px] text-muted2">{latest.weight > 0 ? `${kgToDisplay(latest.weight, system)}${unit} × ${latest.reps}` : `${latest.reps} reps`}</span>
-                        {best.weight > 0 && best.weight > latest.weight && (
-                          <span className="text-[10px] text-muted">Best: {kgToDisplay(best.weight, system)}{unit}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Mini sparkline */}
-                    {sparkData.length >= 2 && (
-                      <div className="flex items-end gap-[2px] h-6 w-16 shrink-0">
-                        {sparkData.map((entry, i) => {
-                          const val = isBodyweight ? entry.reps : entry.weight;
-                          const h = ((val - sparkMin) / sparkRange) * 100;
-                          return (
-                            <div
-                              key={i}
-                              className={`flex-1 rounded-t ${i === sparkData.length - 1 ? "bg-accent" : "bg-accent/30"}`}
-                              style={{ height: `${Math.max(h, 12)}%` }}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedLift === name && (
-                    <div className="mt-3 border-t border-border pt-3">
-                      <div className="flex gap-4 text-xs text-muted2 mb-3">
-                        {best.weight > 0 ? (
-                          <>
-                            <span>Best: {kgToDisplay(best.weight, system)}{unit} × {best.reps}</span>
-                            <span>Est 1RM: {kgToDisplay(orm, system)}{unit}</span>
-                          </>
-                        ) : (
-                          <span>Best: {best.reps} reps</span>
-                        )}
-                        <span>{entries.length} entries</span>
-                      </div>
-
-                      {/* Bigger chart */}
-                      {entries.length >= 2 && (
-                        <div className="mb-3 h-20 flex items-end gap-1">
-                          {entries.slice(-12).map((entry, i) => {
-                            const vals = entries.map((e) => isBodyweight ? e.reps : e.weight);
-                            const maxW = Math.max(...vals);
-                            const minW = Math.min(...vals);
-                            const range = maxW - minW || 1;
-                            const entryVal = isBodyweight ? entry.reps : entry.weight;
-                            const h = ((entryVal - minW) / range) * 100;
-                            return (
-                              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                                <div className="w-full rounded-t bg-accent/60" style={{ height: `${Math.max(h, 8)}%` }} />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-1">
-                        {entries.slice(-8).reverse().map((entry, i) => (
-                          <div key={i} className="flex items-center justify-between text-xs">
-                            <span className="text-muted">{entry.date}</span>
-                            <span className="text-text">{entry.weight > 0 ? `${kgToDisplay(entry.weight, system)}${unit} × ${entry.reps}` : `${entry.reps} reps`}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Recent sessions */}
-      <div className="mt-6">
-        <h2 className="mb-3 text-xs tracking-wider text-muted uppercase">Recent sessions</h2>
-        {totalSessions === 0 ? (
-          <div className="rounded-[var(--radius-default)] border border-border bg-surface p-6 text-center">
-            <p className="text-sm text-muted2">Complete your first session to see progress here.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {(sessions as SessionRecord[]).slice(-10).reverse().map((session, i) => (
-              <button
-                key={i}
-                onClick={() => setReplaySession(session)}
-                className="rounded-[var(--radius-default)] border border-border bg-surface p-4 text-left hover:border-border-active transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-text">{session.title || `Session`}</p>
-                    <p className="text-xs text-muted2">
-                      Week {session.weekNum} · {session.date ? formatRelativeDate(session.date) : ""}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 text-xs text-muted2">
-                    {session.effort && <span>Effort {session.effort}/4</span>}
-                    {session.prs && session.prs.length > 0 && (
-                      <span className="text-accent">{session.prs.length} PR{session.prs.length > 1 ? "s" : ""}</span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+        {activeTab === "history" && (
+          <HistoryTabBody
+            sessions={(progressDB.sessions ?? []) as SessionRecord[]}
+            onReplay={setReplaySession}
+            system={system}
+          />
         )}
       </div>
 
       {/* ORM Calculator */}
       <BottomSheet open={showORM} onClose={() => setShowORM(false)} title="1RM Calculator">
-        <p className="text-xs text-muted2 mb-4">Enter a weight and reps to estimate your one-rep max (Brzycki formula).</p>
+        <p className="text-xs text-muted2 mb-4">
+          Enter a weight and reps to estimate your one-rep max (Brzycki formula).
+        </p>
         <div className="flex gap-3 mb-4">
-          <input type="number" placeholder={`Weight (${unit})`} aria-label={`Weight in ${unit}`} value={ormWeight} onChange={(e) => setOrmWeight(e.target.value)}
-            className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
-          <input type="number" placeholder="Reps" aria-label="Number of reps" value={ormReps} onChange={(e) => setOrmReps(e.target.value)}
-            className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent" />
+          <input
+            type="number"
+            placeholder={`Weight (${weightUnit(system)})`}
+            aria-label={`Weight in ${weightUnit(system)}`}
+            value={ormWeight}
+            onChange={(e) => setOrmWeight(e.target.value)}
+            className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
+          />
+          <input
+            type="number"
+            placeholder="Reps"
+            aria-label="Number of reps"
+            value={ormReps}
+            onChange={(e) => setOrmReps(e.target.value)}
+            className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
+          />
         </div>
         {ormWeight && ormReps && (
           <div className="rounded-lg border border-accent bg-accent-dim p-4 text-center">
             <p className="text-xs text-muted2">Estimated 1RM</p>
             <p className="font-display text-3xl text-accent">
-              {calculateORM(parseFloat(ormWeight), parseInt(ormReps))}{unit}
+              {calculateORM(parseFloat(ormWeight), parseInt(ormReps))}
+              {weightUnit(system)}
             </p>
           </div>
         )}
       </BottomSheet>
 
       {/* Session Replay */}
-      <BottomSheet open={!!replaySession} onClose={() => setReplaySession(null)} title={replaySession?.title || "Session"}>
-        {replaySession && (
-          <div>
-            <p className="text-xs text-muted2 mb-4">
-              {replaySession.date} · Week {replaySession.weekNum} · Effort: {replaySession.effort}/4
-            </p>
-            {replaySession.logs && Object.values(replaySession.logs).map((ex: unknown, i) => {
-              const e = ex as { name: string; actual: { reps: string; weight: string }[]; note?: string };
-              if (!e.name) return null;
-              return (
-                <div key={i} className="mb-3 rounded-lg border border-border bg-bg p-3">
-                  <p className="text-sm font-medium text-text">{e.name}</p>
-                  {e.actual?.filter(s => s.reps || s.weight).map((s, j) => (
-                    <p key={j} className="text-xs text-muted2">Set {j + 1}: {s.reps} × {s.weight || "BW"}{unit}</p>
-                  ))}
-                  {e.note && <p className="mt-1 text-xs text-muted italic">{e.note}</p>}
-                </div>
-              );
-            })}
-          </div>
-        )}
+      <BottomSheet
+        open={!!replaySession}
+        onClose={() => setReplaySession(null)}
+        title={replaySession?.title || "Session"}
+      >
+        {replaySession && <SessionReplay session={replaySession} system={system} />}
       </BottomSheet>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+// ── Hero renderer ────────────────────────────────────────────────────────
+
+function HeroRenderer({
+  layout,
+  sparklinePoints,
+  historyData,
+}: {
+  layout: ProgressLayout;
+  sparklinePoints: number[];
+  historyData: ReturnType<typeof deriveEngineHistory>;
+}) {
   return (
-    <div className="rounded-[var(--radius-default)] border border-border bg-surface p-3 text-center">
-      <p className="font-display text-xl text-accent">{value}</p>
-      <p className="mt-0.5 text-[9px] tracking-wider text-muted uppercase">{label}</p>
+    <ProgressHero
+      variant={layout.hero.variant as never}
+      combinedDeltaPct={historyData.combinedStrengthDeltaPct}
+      sparklinePoints={sparklinePoints}
+      totalSessions={historyData.sessionCountTotal}
+      weeks={historyData.weeksSinceReturn ?? historyData.weeksTraining}
+      phaseShort={historyData.currentPhaseShort}
+    />
+  );
+}
+
+// ── Strength tab ─────────────────────────────────────────────────────────
+
+function StrengthTabBody({
+  layout,
+  history,
+  system,
+  onOpenORM,
+}: {
+  layout: ProgressLayout;
+  history: ReturnType<typeof deriveEngineHistory>;
+  system: ReturnType<typeof useKineStore.getState>["measurementSystem"];
+  onOpenORM: () => void;
+}) {
+  const tileIds = layout.gridTiles.map((t) => t.id) as StatTileId[];
+  return (
+    <div>
+      <StatGrid tiles={tileIds} history={history} />
+
+      <div className="mt-4">
+        {layout.strengthCards.map((card) => (
+          <StrengthCardRenderer key={card.id + card.reason} card={card} history={history} system={system!} />
+        ))}
+      </div>
+
+      {layout.isEmptyState && <EmptyStateCard />}
+
+      <div className="mt-4">
+        <button
+          onClick={onOpenORM}
+          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-left flex items-center justify-between hover:border-border-active transition-colors"
+        >
+          <span className="text-xs text-text">1RM calculator</span>
+          <span className="text-muted">→</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StrengthCardRenderer({
+  card,
+  history,
+  system,
+}: {
+  card: LayoutCard;
+  history: ReturnType<typeof deriveEngineHistory>;
+  system: NonNullable<ReturnType<typeof useKineStore.getState>["measurementSystem"]>;
+}) {
+  switch (card.id) {
+    case "top_lifts":
+      return (
+        <TopLiftsCard
+          variant={card.variant as TopLiftsVariant}
+          lifts={history.topLifts}
+          hiddenLifts={history.injuryHiddenLifts}
+          system={system}
+        />
+      );
+    case "pr_feed":
+      return (
+        <RecentPRsStrip
+          variant={card.variant as RecentPRsVariant}
+          prs={history.recentPRs}
+          system={system}
+        />
+      );
+    case "pattern_balance":
+      return (
+        <PatternBalanceCard
+          variant={card.variant as PatternBalanceVariant}
+          balance={history.patternBalance}
+        />
+      );
+    case "rehab_work":
+      return <RehabWorkCard history={history} />;
+    case "effort_observation":
+      return <EffortObservationCard history={history} />;
+    case "effort_control":
+      return <EffortControlCard history={history} />;
+    case "mobility_log":
+      return <MobilityLogCard history={history} />;
+    case "exercises_learned":
+      return <ExercisesLearnedCard history={history} variant={card.variant} />;
+    case "symptom_context":
+      return <SymptomContextCard history={history} />;
+    case "phase_position":
+      return <PhasePositionCard history={history} />;
+    default:
+      return null;
+  }
+}
+
+// ── Body tab ─────────────────────────────────────────────────────────────
+
+function BodyTabBody({ layout }: { layout: ProgressLayout }) {
+  return (
+    <div>
+      <BodyPhotosHero />
+      {layout.bodyCards.map((card) => {
+        if (card.id === "photos") {
+          // The hero already explains photos; this is the compare/empty card.
+          return <PhotoCompareCard key={card.reason} />;
+        }
+        if (card.id === "bodyweight") {
+          return <BodyWeightDemoteCard key={card.reason} variant={card.variant} />;
+        }
+        if (card.id === "measurements_optin") {
+          return <MeasurementsOptInTile key={card.reason} />;
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
+// ── History tab ──────────────────────────────────────────────────────────
+
+function HistoryTabBody({
+  sessions,
+  onReplay,
+  system,
+}: {
+  sessions: SessionRecord[];
+  onReplay: (s: SessionRecord) => void;
+  system: NonNullable<ReturnType<typeof useKineStore.getState>["measurementSystem"]>;
+}) {
+  if (sessions.length === 0) {
+    return (
+      <div className="rounded-[var(--radius-default)] border border-border bg-surface p-6 text-center mt-2">
+        <p className="text-sm text-muted2">Complete your first session to see history here.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2 mt-2">
+      {sessions
+        .slice(-10)
+        .reverse()
+        .map((session, i) => (
+          <button
+            key={i}
+            onClick={() => onReplay(session)}
+            className="rounded-[var(--radius-default)] border border-border bg-surface p-4 text-left hover:border-border-active transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text">{session.title || "Session"}</p>
+                <p className="text-xs text-muted2">
+                  Week {session.weekNum} · {session.date ? formatRelativeDate(session.date) : ""}
+                </p>
+              </div>
+              <div className="flex gap-3 text-xs text-muted2">
+                {session.effort && <span>Effort {session.effort}/4</span>}
+                {session.prs && session.prs.length > 0 && (
+                  <span className="text-accent">
+                    {session.prs.length} PR{session.prs.length > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+            </div>
+          </button>
+        ))}
+    </div>
+  );
+}
+
+// ── Session replay (extracted from old page) ─────────────────────────────
+
+function SessionReplay({
+  session,
+  system,
+}: {
+  session: SessionRecord;
+  system: NonNullable<ReturnType<typeof useKineStore.getState>["measurementSystem"]>;
+}) {
+  const unit = weightUnit(system);
+  return (
+    <div>
+      <p className="text-xs text-muted2 mb-4">
+        {session.date} · Week {session.weekNum} · Effort: {session.effort}/4
+      </p>
+      {session.logs &&
+        Object.values(session.logs).map((ex: unknown, i) => {
+          const e = ex as {
+            name: string;
+            actual: { reps: string; weight: string }[];
+            note?: string;
+          };
+          if (!e.name) return null;
+          return (
+            <div key={i} className="mb-3 rounded-lg border border-border bg-bg p-3">
+              <p className="text-sm font-medium text-text">{e.name}</p>
+              {e.actual
+                ?.filter((s) => s.reps || s.weight)
+                .map((s, j) => (
+                  <p key={j} className="text-xs text-muted2">
+                    Set {j + 1}: {s.reps} × {s.weight ? `${kgToDisplay(parseFloat(s.weight), system)}${unit}` : "BW"}
+                  </p>
+                ))}
+              {e.note && <p className="mt-1 text-xs text-muted italic">{e.note}</p>}
+            </div>
+          );
+        })}
     </div>
   );
 }
