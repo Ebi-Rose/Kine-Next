@@ -723,11 +723,15 @@ function WeekView({
           {/* All 7 day cards */}
           {(() => {
             const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
-            // Calculate Monday of current week for date labels
+            // Calculate Monday of the *viewed* week for date labels
             const today = appNow();
             const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
             const monday = new Date(today);
             monday.setDate(today.getDate() - dayOfWeek);
+            if (isViewingPast) {
+              const weeksBack = (progressDB.currentWeek || 1) - displayWeekNum;
+              monday.setDate(monday.getDate() - weeksBack * 7);
+            }
             return (
               <div className="flex flex-col gap-2">
                 {displayWeek.days.map((day, i) => {
