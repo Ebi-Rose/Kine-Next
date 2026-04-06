@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kine — Progress A+B × Personalization Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #13110f;
+    --sf: #1a1815;
+    --sf2: #211e1a;
+    --bd: #272420;
+    --ac: #c49098;
+    --acd: rgba(196,144,152,0.08);
+    --acm: rgba(196,144,152,0.15);
+    --acl: rgba(196,144,152,0.25);
+    --tx: #f0ebe6;
+    --mt: #7a7570;
+    --mt2: #a8a29e;
+    --sage: #8ba88b;
+    --r: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "DM Sans", sans-serif; background: #0a0a0a; color: #f0ebe6; padding: 40px 20px 80px; line-height: 1.5; }
+  .page-title { font-family: "Cormorant Garamond", serif; font-size: 38px; font-style: italic; text-align: center; margin-bottom: 6px; }
+  .page-sub { text-align: center; color: #8a8a8a; font-size: 13px; font-weight: 300; max-width: 780px; margin: 0 auto 24px; }
+
+  .legend { max-width: 900px; margin: 0 auto 40px; padding: 20px 26px; background: #141210; border: 1px solid #272420; border-radius: 16px; font-size: 12px; color: #a8a29e; font-weight: 300; line-height: 1.8; }
+  .legend strong { color: #f0ebe6; font-weight: 500; }
+  .legend em { color: var(--ac); font-style: normal; }
+  .legend code { font-family: ui-monospace, monospace; font-size: 11px; color: var(--tx); background: var(--sf2); padding: 1px 6px; border-radius: 4px; }
+
+  .archetype { max-width: 1200px; margin: 0 auto 56px; display: grid; grid-template-columns: 320px 1fr; gap: 32px; align-items: start; }
+  @media (max-width: 900px) { .archetype { grid-template-columns: 1fr; } }
+  .meta-col { padding-top: 20px; }
+  .meta-num { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--mt); }
+  .meta-title { font-family: "Cormorant Garamond", serif; font-size: 26px; font-style: italic; margin: 2px 0 6px; }
+  .meta-profile { font-size: 11px; color: var(--mt2); font-weight: 300; margin-bottom: 12px; line-height: 1.7; }
+  .engine { font-size: 11px; color: var(--mt2); font-weight: 300; line-height: 1.7; padding: 12px 14px; background: #141210; border: 1px solid #1f1c19; border-radius: 10px; }
+  .engine strong { color: var(--tx); font-weight: 500; }
+  .engine em { color: var(--ac); font-style: normal; }
+  .engine .row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .engine .pill { font-size: 9px; padding: 3px 8px; border-radius: 999px; background: var(--sf); border: 1px solid var(--bd); color: var(--mt2); letter-spacing: 0.5px; }
+  .engine .pill.hide { background: transparent; border-style: dashed; color: var(--mt); text-decoration: line-through; }
+  .engine .pill.show { background: var(--acd); border-color: var(--acl); color: var(--ac); }
+
+  .phone-col { display: flex; justify-content: center; }
+
+  .phone {
+    width: 320px; height: 700px; border-radius: 32px; overflow: hidden; overflow-y: auto;
+    box-shadow: 0 0 0 2px #2a2520, 0 16px 48px rgba(0,0,0,0.5);
+    background: var(--bg);
+  }
+  .phone::-webkit-scrollbar { width: 0; }
+  .pi { padding: 38px 18px 70px; min-height: 700px; position: relative; }
+  .pi::before {
+    content: ""; position: absolute; top: -50px; right: -30px; width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(196,144,152,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .h1 { font-family: "Cormorant Garamond", serif; font-size: 24px; font-style: italic; margin-bottom: 4px; }
+  .lens { font-size: 10px; color: var(--mt2); font-weight: 300; margin-bottom: 14px; }
+  .eyebrow { font-size: 8px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mt); margin-bottom: 4px; }
+
+  .card { background: var(--sf); border: 1px solid var(--bd); border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px; }
+  .card.acc { background: linear-gradient(135deg, var(--acd), transparent); border-color: var(--acl); }
+  .card.ghost { background: transparent; border: 1px dashed #2a2520; color: var(--mt); font-size: 10px; text-align: center; padding: 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .stat-n { font-family: "Cormorant Garamond", serif; font-size: 22px; line-height: 1.1; }
+  .muted { color: var(--mt2); font-size: 11px; font-weight: 300; }
+  .tiny { font-size: 9px; color: var(--mt); }
+  .up { color: var(--sage); }
+  .ac { color: var(--ac); }
+
+  .tabs { display: flex; gap: 3px; background: var(--sf2); border: 1px solid var(--bd); border-radius: 999px; padding: 3px; margin-bottom: 10px; }
+  .tab { flex: 1; text-align: center; font-size: 9px; padding: 6px 0; border-radius: 999px; color: var(--mt2); }
+  .tab.on { background: var(--ac); color: #1a1310; font-weight: 500; }
+
+  .lift { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--bd); }
+  .lift:last-child { border: none; }
+  .lift-name { font-size: 11px; }
+  .lift-meta { font-size: 9px; color: var(--mt); }
+  .lift-val { font-family: "Cormorant Garamond", serif; font-size: 14px; }
+
+  .pr-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .pr { flex: 0 0 auto; background: var(--acd); border: 1px solid var(--acl); border-radius: 10px; padding: 6px 10px; min-width: 80px; }
+  .pr-lift { font-size: 8px; color: var(--mt); letter-spacing: 1px; text-transform: uppercase; }
+  .pr-val { font-family: "Cormorant Garamond", serif; font-size: 13px; color: var(--ac); }
+
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 10px; }
+  .bar-row .lbl { width: 30px; color: var(--mt); letter-spacing: 1px; text-transform: uppercase; font-size: 8px; }
+  .bar { flex: 1; height: 4px; background: var(--sf2); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--ac); }
+  .bar-row .n { font-family: "Cormorant Garamond", serif; width: 28px; text-align: right; font-size: 11px; }
+
+  .tile-link { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: var(--sf); border: 1px solid var(--bd); border-radius: 10px; margin-bottom: 6px; font-size: 10px; }
+  .tile-link .arr { color: var(--mt); }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Progress · A+B × Personalization Engine</h1>
+<p class="page-sub">The combined A+B layout (hero card · tabs · dashboard grid · depth reads) rendered for all 8 archetypes. Same skeleton, eight different stories — each driven by <code>computeProgressLayout(profile, history)</code>.</p>
+
+<div class="legend">
+  <strong>Reading guide.</strong> Each row shows the engine's reasoning on the left (which rules fired, which cards are <em>shown</em> or <em>hidden</em>) and the rendered combined-layout phone on the right. The hero card always carries the headline verdict; the tabs always exist (Strength/Body/History or Training/Rehab/History depending on goal); the grid tiles and depth cards change per profile. Personalization is silent — the only tell is the single line under "Progress".
+</div>
+
+<!-- ========================================= ARCHETYPE 1 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 01</div>
+    <div class="meta-title">Sarah — intermediate, building strength</div>
+    <div class="meta-profile">32 · intermediate · full gym · goal: build_strength · cycle tracking on · no conditions · no injuries</div>
+    <div class="engine">
+      <strong>Engine:</strong> base layout for <em>build_strength</em>. 6-week window. Cycle lens on (luteal weeks annotated). All default cards shown.
+      <div class="row">
+        <span class="pill show">strength_trend</span>
+        <span class="pill show">top_lifts(load)</span>
+        <span class="pill show">pr_feed</span>
+        <span class="pill show">pattern_balance</span>
+        <span class="pill show">phase_position</span>
+        <span class="pill show">cycle_lens</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Strength · 6-week view</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Combined top weights</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <div class="stat-n up">Stronger by 8%</div>
+          <div class="tiny">vs. your baseline</div>
+        </div>
+        <svg width="100" height="34" viewBox="0 0 100 34"><path d="M0,26 L12,24 L24,25 L36,19 L48,15 L60,13 L72,9 L84,6 L100,3" fill="none" stroke="#c49098" stroke-width="1.5"/><circle cx="100" cy="3" r="2.5" fill="#c49098"/></svg>
+      </div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Strength</div><div class="tab">Body</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">This week</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">sessions</div></div>
+      <div class="card"><div class="eyebrow">Recent PRs</div><div class="stat-n ac">4</div><div class="tiny">this phase</div></div>
+      <div class="card"><div class="eyebrow">Phase</div><div style="font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;">P2 · wk 6/8</div><div class="tiny">intensification</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">steady</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Top lifts · vs. own avg</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div><div class="lift-name">Back squat</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 5kg</div></div>
+      <div class="lift"><div><div class="lift-name">Romanian deadlift</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 10kg</div></div>
+      <div class="lift"><div><div class="lift-name">Bench press</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 2.5kg</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Recent PRs</div>
+    <div class="pr-row">
+      <div class="pr"><div class="pr-lift">Squat</div><div class="pr-val">70 × 5</div></div>
+      <div class="pr"><div class="pr-lift">RDL</div><div class="pr-val">60 × 8</div></div>
+      <div class="pr"><div class="pr-lift">Bench</div><div class="pr-val">40 × 6</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Pattern balance</div>
+    <div class="card">
+      <div class="bar-row"><div class="lbl">Push</div><div class="bar"><i style="width:60%"></i></div><div class="n">↑4%</div></div>
+      <div class="bar-row"><div class="lbl">Pull</div><div class="bar"><i style="width:55%"></i></div><div class="n">↑6%</div></div>
+      <div class="bar-row" style="margin-bottom:0;"><div class="lbl">Legs</div><div class="bar"><i style="width:78%"></i></div><div class="n">↑12%</div></div>
+    </div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 2 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 02</div>
+    <div class="meta-title">Mia — beginner, recomp</div>
+    <div class="meta-profile">27 · 4 weeks training · full gym · goal: recomp · no conditions · no injuries</div>
+    <div class="engine">
+      <strong>Engine:</strong> recomp base + <em>beginner override</em>. Trend deltas hidden (too noisy in neural-adaptation phase). Only upward-valent cards. Photos prompted, not auto-shown.
+      <div class="row">
+        <span class="pill hide">strength_trend</span>
+        <span class="pill hide">weekly deltas</span>
+        <span class="pill show">exercises_learned</span>
+        <span class="pill show">sessions_completed</span>
+        <span class="pill show">top_lifts(absolute)</span>
+        <span class="pill show">pr_feed(upward)</span>
+        <span class="pill show">photos(prompt)</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Getting started · week 4</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Your start</div>
+      <div class="stat-n ac">12 sessions in 4 weeks</div>
+      <div class="tiny">strong start — page fills out as you log more</div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Training</div><div class="tab">Body</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">This week</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 3</span></div><div class="tiny">done</div></div>
+      <div class="card"><div class="eyebrow">Learned</div><div class="stat-n">8</div><div class="tiny">new exercises</div></div>
+      <div class="card"><div class="eyebrow">First PRs</div><div class="stat-n ac">6</div><div class="tiny">every session</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">2<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">honest</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Exercises learned</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div class="lift-name">Back squat</div><div class="lift-val ac">new</div></div>
+      <div class="lift"><div class="lift-name">Romanian deadlift</div><div class="lift-val ac">new</div></div>
+      <div class="lift"><div class="lift-name">Hip thrust</div><div class="lift-val ac">new</div></div>
+      <div class="lift"><div class="lift-name">Lat pulldown</div><div class="lift-val ac">new</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Current top weights</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div class="lift-name">Squat</div><div class="lift-val">40 kg</div></div>
+      <div class="lift"><div class="lift-name">RDL</div><div class="lift-val">35 kg</div></div>
+      <div class="lift"><div class="lift-name">Bench</div><div class="lift-val">25 kg</div></div>
+    </div>
+
+    <div class="card ghost" style="margin-top:8px;">📷 Take your first progress photo (optional)</div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 3 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 03</div>
+    <div class="meta-title">Alex — post-partum, week 10</div>
+    <div class="meta-profile">34 · post_partum · weeks_since_return = 10 · diastasis flagged · was lifting heavy pre-pregnancy</div>
+    <div class="engine">
+      <strong>Engine:</strong> <em>post_partum &lt; 16w</em> override dominates. No load PRs, no strength trend, no bodyweight headline, no auto photos. Tabs become Training / Rehab / History. Absolutely no comparisons to pre-pregnancy load.
+      <div class="row">
+        <span class="pill hide">pr_feed</span>
+        <span class="pill hide">strength_trend</span>
+        <span class="pill hide">top_lifts(load)</span>
+        <span class="pill hide">bodyweight</span>
+        <span class="pill show">sessions(neutral)</span>
+        <span class="pill show">rehab_work</span>
+        <span class="pill show">exercises_reintroduced</span>
+        <span class="pill show">effort_trend</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Returning to training · week 10</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Since you came back</div>
+      <div class="stat-n">12 sessions</div>
+      <div class="tiny">every one of them counts</div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Training</div><div class="tab">Rehab</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">This week</div><div class="stat-n">2<span class="muted" style="font-size:13px;"> / 2</span></div><div class="tiny">done</div></div>
+      <div class="card"><div class="eyebrow">Reintroduced</div><div class="stat-n ac">6</div><div class="tiny">exercises</div></div>
+      <div class="card"><div class="eyebrow">Rehab sets</div><div class="stat-n">42</div><div class="tiny">this block</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">2.5<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">steady</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Reintroduced this week</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div class="lift-name">Goblet squat</div><div class="lift-val ac">new</div></div>
+      <div class="lift"><div class="lift-name">Single-arm row</div><div class="lift-val ac">new</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Rehab focus</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div class="lift-name">Pelvic floor breathing</div><div class="lift-val">10</div></div>
+      <div class="lift"><div class="lift-name">Deep core</div><div class="lift-val">8</div></div>
+      <div class="lift"><div class="lift-name">Glute bridges</div><div class="lift-val">12</div></div>
+    </div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 4 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 04</div>
+    <div class="meta-title">Rachel — perimenopause, PCOS, knee</div>
+    <div class="meta-profile">47 · perimenopause · PCOS · active knee injury (squat → goblet) · full gym · goal: maintain</div>
+    <div class="engine">
+      <strong>Engine:</strong> maintain base. <em>Perimenopause</em> → 12-week window, no weekly deltas. <em>PCOS</em> → bodyweight demoted to "More". <em>Knee injury</em> → back squat hidden, goblet annotated as substitute, no load-drop delta.
+      <div class="row">
+        <span class="pill show">12wk window</span>
+        <span class="pill show">pattern_balance</span>
+        <span class="pill show">mobility_log</span>
+        <span class="pill show">top_lifts(swapped)</span>
+        <span class="pill hide">back_squat</span>
+        <span class="pill hide">bodyweight(headline)</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Maintain · 12-week view</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Last 12 weeks</div>
+      <div class="stat-n">Holding steady</div>
+      <div class="tiny">through a hard hormonal window — that's real</div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Training</div><div class="tab">Body</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">Sessions</div><div class="stat-n">36</div><div class="tiny">in 12 weeks</div></div>
+      <div class="card"><div class="eyebrow">Mobility</div><div class="stat-n">18</div><div class="tiny">sessions</div></div>
+      <div class="card"><div class="eyebrow">This week</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 3</span></div><div class="tiny">done</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">2.5<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">steady</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Pattern balance</div>
+    <div class="card">
+      <div class="bar-row"><div class="lbl">Push</div><div class="bar"><i style="width:70%"></i></div><div class="n">even</div></div>
+      <div class="bar-row"><div class="lbl">Pull</div><div class="bar"><i style="width:65%"></i></div><div class="n">even</div></div>
+      <div class="bar-row" style="margin-bottom:0;"><div class="lbl">Legs</div><div class="bar"><i style="width:75%"></i></div><div class="n">even</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Top lifts</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div><div class="lift-name">Goblet squat</div><div class="lift-meta">swapped from back squat</div></div><div class="lift-val">24 kg</div></div>
+      <div class="lift"><div class="lift-name">RDL</div><div class="lift-val">55 kg</div></div>
+      <div class="lift"><div class="lift-name">Bench</div><div class="lift-val">35 kg</div></div>
+    </div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 5 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 05</div>
+    <div class="meta-title">Nina — advanced, peak phase</div>
+    <div class="meta-profile">29 · advanced · full gym · goal: perform_for_sport · cycle tracking on · no conditions</div>
+    <div class="engine">
+      <strong>Engine:</strong> perform_for_sport base + <em>advanced override</em>. phase_position promoted to hero, effort_control shown as observation, exercises_learned hidden. 6-week window. Cycle lens on.
+      <div class="row">
+        <span class="pill show">phase_position(hero)</span>
+        <span class="pill show">top_lifts(load)</span>
+        <span class="pill show">strength_trend</span>
+        <span class="pill show">effort_control</span>
+        <span class="pill hide">exercises_learned</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Peak phase · wk 2 of 3 · meet in 12 days</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Combined top weights</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <div class="stat-n up">↑ 6%</div>
+          <div class="tiny">vs. your 6-wk baseline · peaking on time</div>
+        </div>
+        <svg width="100" height="34" viewBox="0 0 100 34"><path d="M0,26 L12,22 L24,24 L36,18 L48,14 L60,11 L72,8 L84,5 L100,2" fill="none" stroke="#c49098" stroke-width="1.5"/><circle cx="100" cy="2" r="2.5" fill="#c49098"/></svg>
+      </div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Strength</div><div class="tab">Body</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">Phase</div><div style="font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;">Peak · 2/3</div><div class="tiny">12d to meet</div></div>
+      <div class="card"><div class="eyebrow">Sessions</div><div class="stat-n">4<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">this week</div></div>
+      <div class="card"><div class="eyebrow">PRs</div><div class="stat-n ac">3</div><div class="tiny">this phase</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">steady</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Top lifts · vs. own avg</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div><div class="lift-name">Back squat</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 7.5kg</div></div>
+      <div class="lift"><div><div class="lift-name">Deadlift</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 10kg</div></div>
+      <div class="lift"><div><div class="lift-name">Bench</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 5kg</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Effort &amp; tempo</div>
+    <div class="card muted" style="font-size:10px;">Tempo held on 94% of working sets · effort steady</div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 6 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 06</div>
+    <div class="meta-title">Kira — hypermobile, building strength</div>
+    <div class="meta-profile">31 · intermediate · hypermobility · home equipped · goal: build_strength</div>
+    <div class="engine">
+      <strong>Engine:</strong> build_strength base + <em>hypermobility override</em>. effort_control promoted over pr_feed. "↑ load" framing swapped for "control". Tempo adherence surfaced as observation, never a target.
+      <div class="row">
+        <span class="pill show">effort_control(hero)</span>
+        <span class="pill show">tempo_adherence</span>
+        <span class="pill show">top_lifts(controlled)</span>
+        <span class="pill hide">pr_feed(load)</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Strength · control-focused</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Control this block</div>
+      <div class="stat-n">Steady &amp; clean</div>
+      <div class="tiny">tempo held on 92% of reps · up from 84%</div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Strength</div><div class="tab">Body</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">Tempo</div><div class="stat-n">92%</div><div class="tiny">held</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">no spikes</div></div>
+      <div class="card"><div class="eyebrow">Sessions</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 3</span></div></div>
+      <div class="card"><div class="eyebrow">Balance</div><div style="font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;">Even</div><div class="tiny">all patterns</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Top controlled lifts</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div><div class="lift-name">Goblet squat</div><div class="lift-meta">3-1-3 tempo</div></div><div class="lift-val">24 kg</div></div>
+      <div class="lift"><div><div class="lift-name">Romanian deadlift</div><div class="lift-meta">slow eccentric</div></div><div class="lift-val">40 kg</div></div>
+      <div class="lift"><div><div class="lift-name">Push-up</div><div class="lift-meta">paused</div></div><div class="lift-val">12 reps</div></div>
+    </div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 7 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 07</div>
+    <div class="meta-title">Jess — first two sessions</div>
+    <div class="meta-profile">25 · session_count_total = 2 · goal: build_muscle · full gym</div>
+    <div class="engine">
+      <strong>Engine:</strong> <em>empty_state rule</em> fires (sessions &lt; 3). All trend / PR / delta cards hidden. Hero is welcome copy, grid is sparse, only history is real.
+      <div class="row">
+        <span class="pill hide">strength_trend</span>
+        <span class="pill hide">pr_feed</span>
+        <span class="pill hide">top_lifts(deltas)</span>
+        <span class="pill show">welcome</span>
+        <span class="pill show">history</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Just getting started · day 4</div>
+
+    <div class="card acc">
+      <div class="eyebrow">So far</div>
+      <div class="stat-n">2 sessions</div>
+      <div class="tiny">come back once you've got a few more — this page fills out as you train</div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Training</div><div class="tab">Body</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">This week</div><div class="stat-n">2<span class="muted" style="font-size:13px;"> / 3</span></div><div class="tiny">started</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">2<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">honest</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Your sessions</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div><div class="lift-name">Lower A</div><div class="lift-meta">yesterday</div></div><div class="lift-val tiny">→</div></div>
+      <div class="lift"><div><div class="lift-name">Upper A</div><div class="lift-meta">3 days ago</div></div><div class="lift-val tiny">→</div></div>
+    </div>
+
+    <div class="card ghost" style="margin-top:8px;">📷 Take a starting photo (optional — for you)</div>
+  </div></div></div>
+</div>
+
+<!-- ========================================= ARCHETYPE 8 ========================================= -->
+<div class="archetype">
+  <div class="meta-col">
+    <div class="meta-num">Archetype 08</div>
+    <div class="meta-title">Dani — 4 weeks post shoulder injury</div>
+    <div class="meta-profile">36 · intermediate · build_strength · active shoulder injury · weeks_since_injury = 4 · OHP &amp; bench contraindicated</div>
+    <div class="engine">
+      <strong>Engine:</strong> build_strength base + <em>injury override</em>. OHP and bench hidden from top_lifts (no load-drop deltas). rehab_work card added. effort_trend shown. Tabs become Strength / Rehab / History.
+      <div class="row">
+        <span class="pill show">strength_trend(lower)</span>
+        <span class="pill show">top_lifts(lower only)</span>
+        <span class="pill show">rehab_work</span>
+        <span class="pill show">effort_trend</span>
+        <span class="pill hide">overhead_press</span>
+        <span class="pill hide">bench_press</span>
+      </div>
+    </div>
+  </div>
+  <div class="phone-col"><div class="phone"><div class="pi">
+    <div class="h1">Progress</div>
+    <div class="lens">Strength · 6-week view · 4 wks since shoulder flare</div>
+
+    <div class="card acc">
+      <div class="eyebrow">Lower body</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <div class="stat-n up">↑ 4%</div>
+          <div class="tiny">holding · upper body on pause — the right call</div>
+        </div>
+        <svg width="100" height="34" viewBox="0 0 100 34"><path d="M0,24 L12,22 L24,21 L36,19 L48,17 L60,15 L72,13 L84,11 L100,9" fill="none" stroke="#c49098" stroke-width="1.5"/><circle cx="100" cy="9" r="2.5" fill="#c49098"/></svg>
+      </div>
+    </div>
+
+    <div class="tabs"><div class="tab on">Strength</div><div class="tab">Rehab</div><div class="tab">History</div></div>
+
+    <div class="grid2">
+      <div class="card"><div class="eyebrow">This week</div><div class="stat-n">3<span class="muted" style="font-size:13px;"> / 3</span></div><div class="tiny">done</div></div>
+      <div class="card"><div class="eyebrow">Sessions</div><div class="stat-n">18</div><div class="tiny">in 6 weeks</div></div>
+      <div class="card"><div class="eyebrow">Rehab sets</div><div class="stat-n ac">42</div><div class="tiny">this block</div></div>
+      <div class="card"><div class="eyebrow">Effort</div><div class="stat-n">2.8<span class="muted" style="font-size:13px;"> / 4</span></div><div class="tiny">steady</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:12px;">Top lifts · vs. own avg</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div><div class="lift-name">Back squat</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 5kg</div></div>
+      <div class="lift"><div><div class="lift-name">Romanian deadlift</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 7.5kg</div></div>
+      <div class="lift"><div><div class="lift-name">Hip thrust</div><div class="lift-meta">vs. 6-wk avg</div></div><div class="lift-val up">↑ 10kg</div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-top:10px;">Rehab work</div>
+    <div class="card" style="padding:2px 14px;">
+      <div class="lift"><div class="lift-name">Scap pull-downs</div><div class="lift-val">12</div></div>
+      <div class="lift"><div class="lift-name">Band external rotation</div><div class="lift-val">16</div></div>
+      <div class="lift"><div class="lift-name">Face pulls</div><div class="lift-val">14</div></div>
+    </div>
+  </div></div></div>
+</div>
+
+<div class="legend" style="margin-top: 60px;">
+  <strong>What to notice.</strong> Same hero+tabs+grid+depth skeleton in every phone — but the hero's verdict changes from "Stronger by 8%" to "12 sessions in" to "Holding steady" to "Lower body holding · upper on pause", the grid tiles swap content, the tabs adapt their labels (Strength/Body/History → Training/Rehab/History when there's active rehab work), and the depth cards reflect what actually matters for that profile. No user is ever told something was hidden. Every card is reachable via "What I want to see" if they go looking. <em>That's what principles #1, #2, #6 and #19 look like as a real screen.</em>
+</div>
+
+</body>
+</html>
