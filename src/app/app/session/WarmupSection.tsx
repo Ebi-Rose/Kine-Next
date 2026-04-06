@@ -18,6 +18,7 @@ interface WarmupData {
 
 export default function WarmupSection({ warmup }: { warmup: WarmupData }) {
   const [showWarmup, setShowWarmup] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const [showWarmupWarning, setShowWarmupWarning] = useState(false);
 
   if (!showWarmup) {
@@ -28,19 +29,38 @@ export default function WarmupSection({ warmup }: { warmup: WarmupData }) {
     );
   }
 
+  const drillCount = warmup.general.length + warmup.activation.length + (warmup.stabiliserExtra ? 1 : 0) + warmup.injuryItems.length + warmup.conditionItems.length;
+
   return (
     <>
       <div className="mb-6 rounded-xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
-            <p className="text-[10px] text-muted2 mt-0.5">~{warmup.totalMin} min</p>
-          </div>
-          <button onClick={() => setShowWarmupWarning(true)} className="text-[10px] text-muted2 hover:text-text">
-            Skip
+          <button onClick={() => setCollapsed(!collapsed)} className="flex items-center gap-2 text-left">
+            <span className="text-[9px] text-muted2">{collapsed ? "▸" : "▾"}</span>
+            <div>
+              <p className="text-xs tracking-wider text-muted uppercase">Warm up</p>
+              <p className="text-[10px] text-muted2 mt-0.5">~{warmup.totalMin} min · {drillCount} drills{collapsed ? "" : ""}</p>
+            </div>
           </button>
+          <div className="flex items-center gap-3">
+            {collapsed && (
+              <button onClick={() => setCollapsed(false)} className="text-[10px] text-accent/70 hover:text-accent transition-colors">
+                Show
+              </button>
+            )}
+            <button onClick={() => setShowWarmupWarning(true)} className="text-[10px] text-muted2 hover:text-text transition-colors">
+              Skip
+            </button>
+          </div>
         </div>
 
+        {collapsed && (
+          <p className="text-[10px] text-muted2 font-light">
+            {warmup.general.map(w => w.name).concat(warmup.activation.map(w => w.name)).slice(0, 3).join(" · ")}{drillCount > 3 ? ` +${drillCount - 3} more` : ""}
+          </p>
+        )}
+
+        {!collapsed && <>
         {/* General prep */}
         {warmup.general.length > 0 && (
           <div className="mb-2">
@@ -97,8 +117,10 @@ export default function WarmupSection({ warmup }: { warmup: WarmupData }) {
           </div>
         )}
 
+        </>}
+
         {/* Ramp-up sets */}
-        {warmup.rampSets.length > 0 && (
+        {!collapsed && warmup.rampSets.length > 0 && (
           <div className="mt-2 pt-2 border-t border-white/[0.04]">
             <p className="text-[8px] tracking-widest text-muted uppercase mb-1.5">Ramp-up sets · {warmup.firstExName}</p>
             <div className="flex flex-wrap gap-1.5">

@@ -8,6 +8,7 @@ const PRECACHE_URLS = [
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
+  "/offline.html",
 ];
 
 // Install: pre-cache static assets only
@@ -40,5 +41,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Everything else (pages, API, JS chunks): straight to network, no caching
+  // Pages: try network, fall back to offline page
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("/offline.html"))
+    );
+    return;
+  }
+
+  // Everything else (API, JS chunks): straight to network, no caching
 });

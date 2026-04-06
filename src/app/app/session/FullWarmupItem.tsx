@@ -8,6 +8,9 @@ export default function FullWarmupItem({ item }: { item: WarmupItem }) {
   const [expanded, setExpanded] = useState(false);
   const [showAlts, setShowAlts] = useState(false);
   const [current, setCurrent] = useState(item);
+  // Build a complete alternatives list that always includes the original item
+  const { alts: _origAlts, ...originalWithoutAlts } = item;
+  const allOptions = [originalWithoutAlts, ...(item.alts || [])];
 
   return (
     <div className={`rounded-lg transition-all ${checked ? "opacity-50" : ""}`}>
@@ -21,6 +24,11 @@ export default function FullWarmupItem({ item }: { item: WarmupItem }) {
         >
           {checked && <span className="text-[8px] text-bg">✓</span>}
         </button>
+
+        {/* Video thumbnail placeholder */}
+        <div className="shrink-0 w-10 h-10 rounded-lg bg-surface2/50 border border-white/[0.04] flex items-center justify-center overflow-hidden">
+          <span className="text-muted2 text-[10px]">&#9654;</span>
+        </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -44,17 +52,20 @@ export default function FullWarmupItem({ item }: { item: WarmupItem }) {
               )}
 
               {/* Alternatives */}
-              {current.alts && current.alts.length > 0 && (
+              {allOptions.length > 1 && (() => {
+                const swapOptions = allOptions.filter(alt => alt.name !== current.name);
+                if (swapOptions.length === 0) return null;
+                return (
                 <div className="mt-1.5">
                   <button onClick={() => setShowAlts(!showAlts)} className="text-[9px] text-muted hover:text-accent transition-colors">
-                    {showAlts ? "Hide options" : `${current.alts.length} alternatives`}
+                    {showAlts ? "Hide options" : `${swapOptions.length} alternative${swapOptions.length !== 1 ? "s" : ""}`}
                   </button>
                   {showAlts && (
                     <div className="mt-1 flex flex-col gap-1">
-                      {current.alts.map((alt, i) => (
+                      {swapOptions.map((alt, i) => (
                         <button
                           key={i}
-                          onClick={() => { setCurrent({ ...alt, alts: current.alts }); setShowAlts(false); }}
+                          onClick={() => { setCurrent({ ...alt, alts: item.alts }); setShowAlts(false); }}
                           className="text-left rounded-lg bg-surface2/30 px-2 py-1.5 text-[10px] hover:bg-surface2/50 transition-all"
                         >
                           <span className="text-text">{alt.name}</span>
@@ -65,7 +76,8 @@ export default function FullWarmupItem({ item }: { item: WarmupItem }) {
                     </div>
                   )}
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </div>

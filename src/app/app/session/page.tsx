@@ -98,6 +98,58 @@ export default function SessionPage() {
     setLogs(initial);
   }, [day, effectiveExercises.length]);
 
+  // ── Auto-save logs to localStorage every 30s to prevent data loss on crash ──
+  const AUTOSAVE_KEY = `kine_session_draft_${dayIdx}`;
+
+  // Restore draft on mount
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem(AUTOSAVE_KEY);
+      if (draft) {
+        const parsed = JSON.parse(draft) as Record<number, ExerciseLog>;
+        // Only restore if we have matching exercises and no data yet
+        const hasExistingData = Object.values(logs).some((l) => l.actual.some((s) => s.reps || s.weight));
+        if (!hasExistingData && Object.keys(parsed).length > 0) {
+          setLogs(parsed);
+          toast("Restored your previous session draft", "success");
+        }
+      }
+    } catch { /* ignore corrupt drafts */ }
+  }, [AUTOSAVE_KEY]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Periodic auto-save
+  useEffect(() => {
+    if (sessionStep !== "workout") return;
+    const interval = setInterval(() => {
+      try {
+        const hasData = Object.values(logs).some((l) => l.actual.some((s) => s.reps || s.weight));
+        if (hasData) localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(logs));
+      } catch { /* quota exceeded — silent */ }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [logs, sessionStep, AUTOSAVE_KEY]);
+
+  // Clear draft when session completes
+  useEffect(() => {
+    if (sessionStep === "feedback" || sessionStep === "results") {
+      try { localStorage.removeItem(AUTOSAVE_KEY); } catch { /* */ }
+    }
+  }, [sessionStep, AUTOSAVE_KEY]);
+
+  // ── Multi-tab detection ──
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const channel = new BroadcastChannel("kine_session");
+    channel.postMessage({ type: "session_active", dayIdx });
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "session_active") {
+        toast("Session is open in another tab — data may not sync correctly", "error");
+      }
+    };
+    channel.addEventListener("message", handler);
+    return () => { channel.removeEventListener("message", handler); channel.close(); };
+  }, [dayIdx]);
+
   const updateSet = useCallback(
     (exIdx: number, setIdx: number, field: "reps" | "weight", val: string) => {
       setLogs((prev) => {
@@ -326,6 +378,17 @@ export default function SessionPage() {
     setSessionStep("analysing");
     const result = await analyseSession(logs, day?.sessionTitle || "", effort, soreness);
     setAnalysis(result);
+
+    // Persist analysis changes to the saved session record
+    if (result?.changes?.length) {
+      const latestStore = useKineStore.getState();
+      const sessions = [...latestStore.progressDB.sessions] as import("@/store/useKineStore").SessionRecord[];
+      if (sessions.length > 0) {
+        sessions[sessions.length - 1] = { ...sessions[sessions.length - 1], changes: result.changes };
+        latestStore.setProgressDB({ ...latestStore.progressDB, sessions });
+      }
+    }
+
     setSessionStep("results");
   }
 

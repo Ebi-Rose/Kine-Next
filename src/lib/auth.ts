@@ -80,7 +80,7 @@ export async function getSubscriptionStatus() {
     console.warn("[Kinē] Subscription check: no user session");
     return { active: false };
   }
-  console.log("[Kinē] Checking subscription for user:", user.id);
+  // Verbose logging removed for production
 
   try {
     const { data, error } = await supabase
@@ -95,7 +95,7 @@ export async function getSubscriptionStatus() {
     }
 
     const isActive = data.status === "active" || data.status === "trialing";
-    console.log("[Kinē] Subscription status:", data.status, "active:", isActive);
+    // Verbose logging removed for production
     return {
       active: isActive,
       status: data.status as string,

@@ -79,6 +79,13 @@ export default function CalendarPage() {
       </button>
       <h1 className="font-display text-2xl tracking-wide text-accent">Calendar</h1>
 
+      {sessions.length === 0 && (
+        <div className="mt-6 rounded-[var(--radius-default)] border border-border bg-surface p-6 text-center">
+          <p className="text-sm text-text mb-1">No sessions yet</p>
+          <p className="text-xs text-muted2">Complete your first workout and it will appear here.</p>
+        </div>
+      )}
+
       {/* Month nav */}
       <div className="mt-4 flex items-center justify-between">
         <button onClick={prevMonth} className="text-muted2 hover:text-text px-3 py-1 rounded-lg hover:bg-surface2 transition-all">←</button>

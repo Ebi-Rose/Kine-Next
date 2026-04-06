@@ -474,9 +474,12 @@ function WeekView({
           Your Week
         </h1>
         {displayWeek._isFallback && (
-          <p className="mt-1 text-[10px] text-muted uppercase tracking-wider">
-            Standard programme — AI will personalise next time
-          </p>
+          <div className="mt-2 rounded-lg border border-[#c49098]/30 bg-[#c49098]/5 px-3 py-2">
+            <p className="text-[10px] text-[#c49098] font-display tracking-wider">USING STANDARD PROGRAMME</p>
+            <p className="text-[10px] text-muted2 mt-0.5">
+              AI personalisation wasn&apos;t available this time. You&apos;ve been given a solid programme based on your goals — it will personalise next week.
+            </p>
+          </div>
         )}
         <div className="mt-1 flex items-center gap-2">
           <span className="rounded-full bg-surface2 px-2 py-0.5 text-[10px] text-muted2">
@@ -597,6 +600,57 @@ function WeekView({
             return null;
           })()}
 
+          {/* Week complete celebration — Today tab only */}
+          {(() => {
+            const weekSessions = (progressDB.sessions as { date?: string }[])
+              .filter((s) => isInCurrentWeek(s.date));
+            const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
+            if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+              const WEEK_COMPLETE_MESSAGES = [
+                "Consistency beats intensity. You showed up.",
+                "Another week in the book. That's how progress works.",
+                "You did the work. Let recovery do the rest.",
+                "Week done. Strength isn't built in a day — it's built in weeks like this.",
+              ];
+              const msg = WEEK_COMPLETE_MESSAGES[(progressDB.currentWeek - 1) % WEEK_COMPLETE_MESSAGES.length];
+              return (
+                <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
+                  <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {progressDB.currentWeek} complete</p>
+                  <p className="font-display text-xl tracking-wide text-text">
+                    {weekSessions.length} sessions done
+                  </p>
+                  <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
+                    {msg}
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Last session's changes — Today tab */}
+          {(() => {
+            const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+            const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+            if (!lastSession?.changes?.length) return null;
+            return (
+              <div className="mb-4 rounded-[14px] border border-white/[0.06] bg-surface/50 p-4">
+                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">From your last session</p>
+                <div className="flex flex-col gap-1.5">
+                  {lastSession.changes.map((c, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-xs shrink-0 mt-0.5">{c.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-text">{c.title}</p>
+                        <p className="text-[10px] text-muted2 font-light">{c.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Rest day OR today's session */}
           {displayWeek.days[todayIdx]?.isRest ? (
             <RestDayHome week={displayWeek} todayIdx={todayIdx} />
@@ -641,7 +695,7 @@ function WeekView({
             </div>
           )}
 
-          {/* Session completion summary — current week only */}
+          {/* Session completion summary — current week only, compact on Week tab */}
           {!isViewingPast && (() => {
             const weekSessions = (progressDB.sessions as { date?: string }[])
               .filter((s) => isInCurrentWeek(s.date));
@@ -654,23 +708,10 @@ function WeekView({
               );
             }
             if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
-              const WEEK_COMPLETE_MESSAGES = [
-                "Consistency beats intensity. You showed up.",
-                "Another week in the book. That's how progress works.",
-                "You did the work. Let recovery do the rest.",
-                "Week done. Strength isn't built in a day — it's built in weeks like this.",
-              ];
-              const msg = WEEK_COMPLETE_MESSAGES[(progressDB.currentWeek - 1) % WEEK_COMPLETE_MESSAGES.length];
               return (
-                <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
-                  <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {progressDB.currentWeek} complete</p>
-                  <p className="font-display text-xl tracking-wide text-text">
-                    {weekSessions.length} sessions done
-                  </p>
-                  <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
-                    {msg}
-                  </p>
-                </div>
+                <p className="mb-3 text-xs text-accent/70">
+                  All {weekSessions.length} sessions complete this week
+                </p>
               );
             }
             return null;
@@ -682,6 +723,11 @@ function WeekView({
           {/* All 7 day cards */}
           {(() => {
             const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
+            // Calculate Monday of current week for date labels
+            const today = appNow();
+            const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - dayOfWeek);
             return (
               <div className="flex flex-col gap-2">
                 {displayWeek.days.map((day, i) => {
@@ -691,6 +737,9 @@ function WeekView({
                     : (progressDB.sessions as { date?: string; dayIdx?: number }[])
                         .some((s) => isInCurrentWeek(s.date) && s.dayIdx === i);
                   const isCompleted = hasSession && (isViewingPast || i <= todayIdx);
+                  const dayDate = new Date(monday);
+                  dayDate.setDate(monday.getDate() + i);
+                  const dateLabel = dayDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
@@ -699,6 +748,7 @@ function WeekView({
                       isPast={isViewingPast || i < todayIdx}
                       expanded={false}
                       readOnly={isViewingPast}
+                      dateStr={dateLabel}
                     />
                   );
                 })}
@@ -854,8 +904,8 @@ function getRestMessage(dayIdx: number): string {
   return REST_DAY_MESSAGES[dayIdx % REST_DAY_MESSAGES.length];
 }
 
-function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false }: {
-  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean;
+function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false, dateStr }: {
+  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean; dateStr?: string;
 }) {
   const router = useRouter();
   const { progressDB, setProgressDB } = useKineStore();
@@ -879,7 +929,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted2">{dayLabel}</span>
+            <span className="text-xs font-medium text-muted2">{dayLabel}{dateStr && <span className="text-muted font-light ml-1">{dateStr}</span>}</span>
             {isToday && (
               <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] text-accent">
                 Today
@@ -913,7 +963,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
     return (
       <div className="rounded-[14px] border border-border/30 bg-surface/30 opacity-60 px-[18px] py-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-muted2">{dayLabel}</span>
+          <span className="text-xs font-medium text-muted2">{dayLabel}{dateStr && <span className="text-muted font-light ml-1">{dateStr}</span>}</span>
           <span className="text-xs text-muted">No session logged</span>
         </div>
       </div>
@@ -932,7 +982,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
       {/* Day header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted2">{dayLabel}</span>
+          <span className="text-xs font-medium text-muted2">{dayLabel}{dateStr && <span className="text-muted font-light ml-1">{dateStr}</span>}</span>
           {isToday && (
             <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[10px] font-medium text-accent tracking-wide">
               Today
@@ -1011,7 +1061,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             ) : (
               <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
                 onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
-                {isToday ? "Start session" : "View session"}
+                {isToday ? "Start session" : isPast ? "Start session" : "Preview & edit"}
               </Button>
             )}
           </div>

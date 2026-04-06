@@ -86,6 +86,7 @@ export interface SessionRecord {
   dayIdx?: number;
   logs?: Record<string, unknown>;
   prs?: { name: string; weight: number; reps: number }[];
+  changes?: { icon: string; title: string; detail: string }[];
 }
 
 interface KineState {
@@ -346,7 +347,17 @@ export const useKineStore = create<KineState>()(
         setItem: async (name: string, value: unknown) => {
           const json = JSON.stringify(value);
           const encrypted = await encrypt(json);
-          localStorage.setItem(name, encrypted);
+          try {
+            localStorage.setItem(name, encrypted);
+          } catch {
+            // Quota exceeded — clear old caches and retry once
+            try {
+              Object.keys(localStorage).filter((k) => k.startsWith("kine_session_draft_")).forEach((k) => localStorage.removeItem(k));
+              localStorage.setItem(name, encrypted);
+            } catch {
+              console.error("[Kinē] localStorage quota exceeded — data not persisted");
+            }
+          }
         },
         removeItem: (name: string) => localStorage.removeItem(name),
       } satisfies StateStorage,

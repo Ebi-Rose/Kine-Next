@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
-import { appTimestamp } from "@/lib/dev-time";
+import { appNow, appTimestamp } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
@@ -83,6 +83,11 @@ export default function PreSessionPage() {
   }, [mounted, week, day, router]);
 
   const exercises = day?.exercises || [];
+
+  // Is this a future day that hasn't arrived yet?
+  const now = appNow();
+  const todayIdx = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0..Sun=6
+  const isFuture = dayIdx > todayIdx;
 
   // ── Derived data ──
   const estimatedDuration = estimateSessionTime(exercises);
@@ -390,6 +395,29 @@ export default function PreSessionPage() {
         {/* Subtle glow */}
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
       </div>
+
+      {/* ── Last session's changes ── */}
+      {(() => {
+        const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+        const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+        if (!lastSession?.changes?.length) return null;
+        return (
+          <div className="mb-4 rounded-xl border border-white/[0.06] bg-surface/50 p-4">
+            <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">From last session</p>
+            <div className="flex flex-col gap-1.5">
+              {lastSession.changes.map((c, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-xs shrink-0 mt-0.5">{c.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-text">{c.title}</p>
+                    <p className="text-[10px] text-muted2 font-light">{c.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Section 0: Your notes ── */}
       <CollapsibleSection title="Your notes" description={contextDesc}>
@@ -952,19 +980,30 @@ export default function PreSessionPage() {
             </div>
           )}
 
-          <button
-            onClick={handleStart}
-            className="w-full bg-accent text-bg rounded-xl py-3.5 px-4 font-semibold text-[15px] tracking-[0.3px] transition-all hover:opacity-90 active:scale-[0.97] active:opacity-85"
-          >
-            Start session
-          </button>
+          {isFuture ? (
+            <div className="rounded-xl border border-border bg-surface p-4 text-center">
+              <p className="text-xs text-text mb-1">This session hasn&apos;t arrived yet</p>
+              <p className="text-[10px] text-muted2 font-light leading-relaxed">
+                You can review and edit exercises above, but you&apos;ll need to wait until the day arrives to start training.
+              </p>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={handleStart}
+                className="w-full bg-accent text-bg rounded-xl py-3.5 px-4 font-semibold text-[15px] tracking-[0.3px] transition-all hover:opacity-90 active:scale-[0.97] active:opacity-85"
+              >
+                Start session
+              </button>
 
-          <button
-            onClick={() => router.back()}
-            className="w-full py-2 text-xs text-muted mt-1"
-          >
-            Skip this session
-          </button>
+              <button
+                onClick={() => router.back()}
+                className="w-full py-2 text-xs text-muted mt-1"
+              >
+                Skip this session
+              </button>
+            </>
+          )}
         </div>
       </div>
 
