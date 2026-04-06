@@ -341,7 +341,7 @@ export const useKineStore = create<KineState>()(
     }),
     {
       name: "kine_v2",
-      version: 3,
+      version: 4,
       storage: {
         getItem: async (name: string) => {
           const raw = localStorage.getItem(name);
@@ -400,6 +400,16 @@ export const useKineStore = create<KineState>()(
         }
         // Backfill checkinFields for all versions
         state.checkinFields ??= ["photos", "weight", "mood", "notes"];
+        // v3 → v4: drop empty archived weeks left over from the old setWeekData
+        // archive bug (snapshots were taken before exercises were populated)
+        if (version < 4) {
+          const history = state.weekHistory as Array<{ days?: Array<{ exercises?: unknown[] }> }> | undefined;
+          if (Array.isArray(history)) {
+            state.weekHistory = history.filter((w) =>
+              w?.days?.some((d) => Array.isArray(d.exercises) && d.exercises.length > 0)
+            );
+          }
+        }
         return state as unknown as KineState;
       },
       onRehydrateStorage: () => () => {
