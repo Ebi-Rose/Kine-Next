@@ -728,8 +728,9 @@ function WeekView({
             const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
             const monday = new Date(today);
             monday.setDate(today.getDate() - dayOfWeek);
-            if (isViewingPast) {
-              const weeksBack = (progressDB.currentWeek || 1) - displayWeekNum;
+            if (isViewingPast && viewingPastIdx !== null) {
+              // weekHistory is chronological — distance from end = weeks back from current
+              const weeksBack = weekHistory.length - viewingPastIdx;
               monday.setDate(monday.getDate() - weeksBack * 7);
             }
             return (
