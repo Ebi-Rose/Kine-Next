@@ -5,6 +5,7 @@
 // for muscle-group categorization.
 
 import { findExercise, type MuscleGroup } from "@/data/exercise-library";
+import { INJURY_SWAPS } from "@/data/injury-swaps";
 import { getCurrentPhaseInfo } from "@/lib/periodisation";
 import type { LiftEntry, SessionRecord, WeekFeedback } from "@/store/useKineStore";
 import type {
@@ -228,6 +229,86 @@ function computeRecentPRs(sessions: SessionRecord[], limit = 6): RecentPR[] {
   return out;
 }
 
+/**
+ * Lifts that should be hidden from top_lifts / PR feed because the user
+ * has an active injury that contraindicates them. The canonical list lives
+ * in INJURY_SWAPS — any lift that is a *key* of a swap for one of the
+ * user's active injuries is contraindicated and should be silently dropped.
+ */
+function computeInjuryHiddenLifts(injuries: string[]): string[] {
+  const hidden = new Set<string>();
+  for (const injury of injuries) {
+    const swaps = INJURY_SWAPS[injury];
+    if (!swaps) continue;
+    for (const liftName of Object.keys(swaps)) hidden.add(liftName);
+  }
+  return Array.from(hidden);
+}
+
+/**
+ * Lifts that were reintroduced recently — their first entry is within the
+ * last 14 days AND there was a prior training gap of 4+ weeks before that
+ * entry. Used by the post-return archetypes (3, 8) to celebrate comeback work.
+ */
+function computeReintroducedLifts(lifts: Record<string, LiftEntry[]>): string[] {
+  const now = Date.now();
+  const recentCutoff = now - 14 * 24 * 60 * 60 * 1000;
+  const gapThreshold = 4 * 7 * 24 * 60 * 60 * 1000;
+  const out: string[] = [];
+
+  for (const [name, entries] of Object.entries(lifts)) {
+    if (!entries || entries.length === 0) continue;
+    const sorted = [...entries].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    const first = new Date(sorted[0].date).getTime();
+    if (Number.isNaN(first)) continue;
+    // Only surface if the lift first appears in the recent window.
+    if (first < recentCutoff) continue;
+    // And only if there was a training gap before it — heuristic: no entries
+    // in the 4 weeks prior to the first entry. A brand-new user will match
+    // this too, which is fine — we gate by "return" context in the engine.
+    const priorCutoff = first - gapThreshold;
+    const hasPrior = sorted.some((e) => {
+      const t = new Date(e.date).getTime();
+      return !Number.isNaN(t) && t < first && t >= priorCutoff;
+    });
+    if (!hasPrior) out.push(name);
+  }
+  return out;
+}
+
+/**
+ * Rehab sets logged in the current block, counted from session exercise
+ * tags. "Activation", "Stability", "Isometric" tags all count as rehab
+ * work for the purposes of the rehab card. Uses exercise-library metadata.
+ */
+function computeRehabSetsThisBlock(
+  sessions: SessionRecord[],
+  currentWeek: number
+): number {
+  const blockStart = Math.max(1, currentWeek - 2); // current 3-week block
+  let sets = 0;
+  for (const s of sessions) {
+    if (typeof s.weekNum !== "number" || s.weekNum < blockStart) continue;
+    const logs = s.logs ? Object.values(s.logs) : [];
+    for (const raw of logs) {
+      const ex = raw as { name?: string; actual?: { reps?: string; weight?: string }[] };
+      if (!ex?.name) continue;
+      const meta = findExercise(ex.name);
+      if (!meta) continue;
+      const tags = meta.tags ?? [];
+      const isRehab = tags.some((t) =>
+        t === "Activation" || t === "Stability" || t === "Isometric"
+      );
+      if (!isRehab) continue;
+      const done = (ex.actual ?? []).filter((set) => Number(set?.reps ?? 0) > 0).length;
+      sets += done;
+    }
+  }
+  return sets;
+}
+
 function detectReturnToTraining(
   sessions: SessionRecord[],
   injuries: string[]
@@ -309,9 +390,12 @@ export function deriveEngineHistory(
 
   const weeksSinceReturn = detectReturnToTraining(sessions, injuries);
 
-  // For now we don't track rehab/mobility/tempo/reintroduced/injury-hidden
-  // server-side — these stay 0/[] until session-tagging exists. The engine
-  // still uses the fields, so we surface them as honest empties.
+  const injuryHiddenLifts = computeInjuryHiddenLifts(injuries);
+  const reintroducedLifts = computeReintroducedLifts(lifts);
+  const rehabSetsThisBlock = computeRehabSetsThisBlock(sessions, progressDB.currentWeek ?? 1);
+
+  // Mobility and tempo adherence need their own session tagging that
+  // doesn't exist yet — surfaced as honest zeros until then.
   return {
     sessionCountTotal,
     sessionsThisWeek,
@@ -328,9 +412,9 @@ export function deriveEngineHistory(
     combinedStrengthDeltaPct,
     avgEffort,
     symptomDays,
-    injuryHiddenLifts: [],
-    reintroducedLifts: [],
-    rehabSetsThisBlock: 0,
+    injuryHiddenLifts,
+    reintroducedLifts,
+    rehabSetsThisBlock,
     mobilitySessionsThisBlock: 0,
     tempoAdherence: null,
   };
