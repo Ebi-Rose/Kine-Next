@@ -977,6 +977,18 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
     );
   }
 
+  // Read-only past view: if the day has no exercises (stale archived data), collapse it
+  if (readOnly && !day.isRest && (!day.exercises || day.exercises.length === 0)) {
+    return (
+      <div className="rounded-[14px] border border-border/30 bg-surface/30 opacity-60 px-[18px] py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted2">{dayLabel}{dateStr && <span className="text-muted font-light ml-1">{dateStr}</span>}</span>
+          <span className="text-xs text-muted">{isCompleted ? "Session logged" : "No session logged"}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`rounded-[14px] border p-[18px] transition-all active:scale-[0.98] ${
