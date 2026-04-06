@@ -295,14 +295,21 @@ export const useKineStore = create<KineState>()(
       }),
       setCurrency: (currency) => set({ currency, _lastModifiedAt: new Date().toISOString() }),
       setWeekData: (data) => set((state) => {
-        // Archive current week before replacing (if it has data)
+        // Archive current week only when replaced by a *different* week (new week built).
+        // In-session updates (logging sets, rearranging) reuse the same _weekNum and
+        // should not trigger archival, otherwise an early/partial snapshot gets stuck
+        // in history and never updated.
         const history = [...state.weekHistory];
-        if (state.weekData && data !== null) {
+        const isWeekChange =
+          state.weekData &&
+          data !== null &&
+          data._weekNum !== state.weekData._weekNum;
+        if (isWeekChange) {
           const alreadyArchived = history.some(
             (h) => h._weekNum === state.weekData?._weekNum
           );
           if (!alreadyArchived) {
-            history.push(state.weekData);
+            history.push(state.weekData!);
           }
         }
         // Cap at 26 weeks (6 months) to prevent localStorage bloat
