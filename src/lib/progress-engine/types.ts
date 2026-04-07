@@ -145,8 +145,6 @@ export interface EngineHistory {
   rehabSetsThisBlock: number;
   /** Mobility sessions count this block. */
   mobilitySessionsThisBlock: number;
-  /** Tempo adherence as a 0..1 fraction (controlled-tempo lifters). */
-  tempoAdherence: number | null;
 }
 
 /**

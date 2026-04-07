@@ -58,7 +58,6 @@ function history(overrides: Partial<EngineHistory> = {}): EngineHistory {
     reintroducedLifts: [],
     rehabSetsThisBlock: 0,
     mobilitySessionsThisBlock: 0,
-    tempoAdherence: null,
     ...overrides,
   };
 }

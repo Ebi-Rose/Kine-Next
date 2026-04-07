@@ -11,7 +11,6 @@ export type StatTileId =
   | "recent_prs"
   | "phase"
   | "effort"
-  | "tempo"
   | "mobility_count"
   | "rehab_sets"
   | "reintroduced_count"
@@ -74,16 +73,6 @@ function Tile({ id, history }: { id: StatTileId; history: EngineHistory }) {
             <span className="text-muted2 text-sm font-light"> / 4</span>
           </StatNumber>
           <Tiny>steady</Tiny>
-        </div>
-      );
-    case "tempo":
-      return (
-        <div className={wrap}>
-          <Eyebrow>Tempo</Eyebrow>
-          <StatNumber size="md">
-            {history.tempoAdherence !== null ? `${Math.round(history.tempoAdherence * 100)}%` : "—"}
-          </StatNumber>
-          <Tiny>held</Tiny>
         </div>
       );
     case "mobility_count":

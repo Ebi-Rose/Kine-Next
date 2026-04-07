@@ -47,24 +47,18 @@ export function EffortObservationCard({ history }: { history: EngineHistory }) {
 }
 
 export function EffortControlCard({ history }: { history: EngineHistory }) {
-  // Promoted for hypermobility / advanced. Surface effort + tempo if we have either.
-  const showEffort = history.avgEffort !== null;
-  const showTempo = history.tempoAdherence !== null;
-  if (!showEffort && !showTempo) return null;
+  // Promoted for hypermobility / advanced. Surfaces effort observation only —
+  // never grades, never targets. Principle #14 (No Scores, No Streaks) means
+  // we don't display "% of reps where you held tempo" or any similar metric
+  // that turns self-report into a pass/fail.
+  if (history.avgEffort === null) return null;
   return (
     <>
       <Eyebrow>Control this block</Eyebrow>
       <Card>
-        {showEffort && (
-          <p className="text-xs text-muted2">
-            Effort steady — <span className="text-text">{history.avgEffort!.toFixed(1)} of 4</span>, no spikes
-          </p>
-        )}
-        {showTempo && (
-          <p className="text-xs text-muted2 mt-1">
-            Tempo held on <span className="text-text">{Math.round(history.tempoAdherence! * 100)}%</span> of working sets
-          </p>
-        )}
+        <p className="text-xs text-muted2">
+          Effort steady — <span className="text-text">{history.avgEffort.toFixed(1)} of 4</span>, no spikes
+        </p>
       </Card>
     </>
   );

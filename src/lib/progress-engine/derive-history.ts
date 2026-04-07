@@ -425,8 +425,6 @@ export function deriveEngineHistory(
     progressDB.currentWeek ?? 1
   );
 
-  // Tempo adherence still needs a per-set tempo target field on session
-  // logs that doesn't exist yet — surfaced as null until then.
   return {
     sessionCountTotal,
     sessionsThisWeek,
@@ -447,6 +445,5 @@ export function deriveEngineHistory(
     reintroducedLifts,
     rehabSetsThisBlock,
     mobilitySessionsThisBlock,
-    tempoAdherence: null,
   };
 }

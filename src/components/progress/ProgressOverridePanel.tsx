@@ -77,7 +77,7 @@ const ALL_CARDS: { id: CardId; label: string; description: string }[] = [
   { id: "pattern_balance", label: "Pattern balance", description: "Push / pull / legs distribution" },
   { id: "phase_position", label: "Phase position", description: "Where you are in the program block" },
   { id: "effort_observation", label: "Effort", description: "Average effort across the block" },
-  { id: "effort_control", label: "Control & tempo", description: "Effort steadiness + tempo adherence" },
+  { id: "effort_control", label: "Effort control", description: "Whether your effort is steady across the block" },
   { id: "rehab_work", label: "Rehab work", description: "Rehab-tagged exercises and reintroductions" },
   { id: "exercises_learned", label: "Exercises practiced", description: "New movements you're learning" },
   { id: "mobility_log", label: "Mobility log", description: "Mobility sessions logged" },
