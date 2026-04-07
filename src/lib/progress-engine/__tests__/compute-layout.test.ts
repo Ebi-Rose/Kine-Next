@@ -285,6 +285,54 @@ describe("Spec invariants", () => {
     expect(layout.window).toBe("4wk");
   });
 
+  it("records postpartum hidden cards with the postpartum<16w reason", () => {
+    const layout = computeProgressLayout(
+      profile({ lifeStage: "postpartum", injuries: ["postpartum"] }),
+      history({ weeksSinceReturn: 4 })
+    );
+    const hidden = layout.hiddenCards.find((h) => h.id === "pr_feed");
+    expect(hidden).toBeTruthy();
+    expect(hidden!.reason).toBe("lifeStage:postpartum<16w");
+  });
+
+  it("records beginner override hiding strength_trend with the beginner reason", () => {
+    const layout = computeProgressLayout(
+      profile({ rawGoal: "muscle", experience: "new" }),
+      history({ sessionCountTotal: 12, weeksTraining: 4, recentPRCount: 6 })
+    );
+    const hidden = layout.hiddenCards.find((h) => h.id === "strength_trend");
+    expect(hidden?.reason).toBe("experience:beginner");
+  });
+
+  it("records hypermobility hiding pr_feed with the hypermobility reason", () => {
+    const layout = computeProgressLayout(
+      profile({ conditions: ["hypermobility"] }),
+      history()
+    );
+    const hidden = layout.hiddenCards.find((h) => h.id === "pr_feed");
+    expect(hidden?.reason).toBe("condition:hypermobility");
+  });
+
+  it("records empty-state cards with empty_state reason", () => {
+    const layout = computeProgressLayout(profile(), history({ sessionCountTotal: 1 }));
+    const hidden = layout.hiddenCards.map((h) => h.reason);
+    // At least the strength cards from the build_strength base layout
+    // should be marked empty_state.
+    expect(hidden).toContain("empty_state");
+  });
+
+  it("clears the hidden entry when a later rule re-adds the same card", () => {
+    // Hypermobility removes pr_feed; if a user override force_shows it back,
+    // the hidden entry should be cleared.
+    const layout = computeProgressLayout(
+      profile({ conditions: ["hypermobility"] }),
+      history(),
+      { overrides: { pr_feed: "force_show" }, timeWindowOverride: null }
+    );
+    expect(layout.strengthCards.find((c) => c.id === "pr_feed")).toBeTruthy();
+    expect(layout.hiddenCards.find((h) => h.id === "pr_feed")).toBeFalsy();
+  });
+
   it("bodyweight-only equipment swaps load PR variants for rep variants", () => {
     const layout = computeProgressLayout(
       profile({ equipment: ["bodyweight"] }),

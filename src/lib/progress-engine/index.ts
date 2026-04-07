@@ -17,6 +17,7 @@ export type {
   EngineHistory,
   EngineProfile,
   ExperienceLevel,
+  HiddenCard,
   LayoutCard,
   LifeStage,
   PatternBalance,

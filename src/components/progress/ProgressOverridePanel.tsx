@@ -21,6 +21,55 @@ import BottomSheet from "@/components/BottomSheet";
 import { useKineStore } from "@/store/useKineStore";
 import type { CardId, ProgressLayout, TimeWindow } from "@/lib/progress-engine";
 
+/**
+ * Translate the engine's machine-readable rule reason into a short
+ * human-readable label, surfaced when the user opens the override panel
+ * to override a default-hidden card. This is the *only* place in the app
+ * where the engine's silent personalization is explained — by design,
+ * principle #6 (Body Intelligence Is Subtle) says we don't volunteer
+ * these explanations on the page itself, but the override panel is
+ * opt-in (the user has to tap "customize"), so showing reasons here
+ * is appropriate. They asked, we tell them.
+ */
+function humanizeReason(reason: string): string {
+  // Life stage
+  if (reason === "lifeStage:pregnancy") return "Pregnancy framing — load PRs and body comparisons paused";
+  if (reason === "lifeStage:postpartum<16w") return "Post-partum recovery — under 16 weeks since return";
+  if (reason === "lifeStage:perimenopause") return "Perimenopause — using a 12-week trend window";
+  if (reason === "lifeStage:post_menopause") return "Post-menopause — pattern balance and mobility leading";
+
+  // Conditions
+  if (reason === "condition:pcos") return "PCOS — bodyweight is noisy, demoted in favour of strength signals";
+  if (reason === "condition:hypermobility") return "Hypermobility — control framing leads, load deltas demoted";
+  if (reason === "condition:endometriosis" || reason === "condition:pmdd")
+    return "Symptom-aware framing — dips on pain days are expected";
+  if (reason === "condition:fatigue") return "Energy-sensitive — using a 12-week trend window";
+  if (reason === "condition:pelvic_floor") return "Pelvic floor — photo prompts kept opt-in only";
+
+  // Experience
+  if (reason === "experience:beginner")
+    return "Beginner phase — week-over-week trends are too noisy during neural adaptation";
+  if (reason === "experience:advanced") return "Advanced — phase position and effort control take priority";
+
+  // Goal-driven
+  if (reason.startsWith("goal:return_to_training"))
+    return "Returning to training — load PRs paused while you rebuild";
+  if (reason.startsWith("goal:maintain")) return "Maintain phase — consistency matters more than deltas";
+  if (reason.startsWith("goal:perform_for_sport")) return "Performance focus — phase position is the headline";
+
+  // Empty state
+  if (reason === "empty_state") return "Not enough sessions yet — this card needs more data to be useful";
+
+  // Injury (generic, no specific reason yet but reserved)
+  if (reason.startsWith("injury")) return "Active injury — affected lifts paused while you recover";
+
+  // User overrides
+  if (reason === "user_override") return "You turned this off";
+
+  // Fallback — better to surface the raw reason than nothing
+  return reason;
+}
+
 const ALL_CARDS: { id: CardId; label: string; description: string }[] = [
   { id: "strength_trend", label: "Strength trend", description: "Combined strength vs. your baseline" },
   { id: "top_lifts", label: "Top lifts", description: "Per-lift change vs. your average" },
@@ -66,6 +115,13 @@ export default function ProgressOverridePanel({
     ids.add(layout.hero.id);
     return ids;
   }, [layout]);
+
+  // Index hidden cards by id so we can show "hidden because…" inline.
+  const hiddenReasonById = useMemo(() => {
+    const m = new Map<CardId, string>();
+    for (const h of layout.hiddenCards) m.set(h.id, h.reason);
+    return m;
+  }, [layout.hiddenCards]);
 
   const currentWindow = progressPreferences.timeWindowOverride ?? "default";
   const hasOverrides =
@@ -126,11 +182,19 @@ export default function ProgressOverridePanel({
                   ? false
                   : engineVisible;
 
+            // Show the engine's reason only when:
+            //   1. The card is currently hidden (effective === false)
+            //   2. The user hasn't manually overridden it (no force_hide)
+            //   3. We have a recorded reason from the rule chain
+            const engineReason = hiddenReasonById.get(card.id);
+            const showReason = !effective && override !== "force_hide" && engineReason !== undefined;
+
             return (
               <CardRow
                 key={card.id}
                 label={card.label}
                 description={card.description}
+                hiddenReason={showReason ? humanizeReason(engineReason!) : null}
                 isOn={effective}
                 isOverridden={override !== undefined}
                 onToggle={() => {
@@ -172,12 +236,14 @@ export default function ProgressOverridePanel({
 function CardRow({
   label,
   description,
+  hiddenReason,
   isOn,
   isOverridden,
   onToggle,
 }: {
   label: string;
   description: string;
+  hiddenReason: string | null;
   isOn: boolean;
   isOverridden: boolean;
   onToggle: () => void;
@@ -190,6 +256,11 @@ function CardRow({
       <div className="flex-1 min-w-0">
         <div className="text-xs text-text">{label}</div>
         <div className="text-[10px] text-muted font-light mt-0.5">{description}</div>
+        {hiddenReason && (
+          <div className="text-[10px] text-accent font-light mt-1.5 leading-snug">
+            <span className="opacity-70">Hidden because:</span> {hiddenReason}
+          </div>
+        )}
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
         <span

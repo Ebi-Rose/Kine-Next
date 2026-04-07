@@ -151,11 +151,22 @@ export interface EngineHistory {
 
 /**
  * Card with its chosen variant and the rule that placed it.
- * `reason` is for debugging — never user-visible.
+ * `reason` is a machine-readable code; the override panel translates it
+ * to a human-readable label when explaining why a card is currently hidden.
  */
 export interface LayoutCard {
   id: CardId;
   variant: CardVariant;
+  reason: string;
+}
+
+/**
+ * A card the engine deliberately removed from the default layout, with the
+ * rule that did the removing. Surfaced in the override panel so the user
+ * can see *why* a card is hidden before they choose to force-show it.
+ */
+export interface HiddenCard {
+  id: CardId;
   reason: string;
 }
 
@@ -175,6 +186,13 @@ export interface ProgressLayout {
   strengthCards: LayoutCard[];
   /** Body-tab cards in order. */
   bodyCards: LayoutCard[];
+  /**
+   * Cards the engine deliberately removed from the default layout. Each
+   * carries the rule that removed it so the override panel can explain
+   * "Hidden because: postpartum < 16 weeks". Empty for users where the
+   * default layout is the full set.
+   */
+  hiddenCards: HiddenCard[];
   /** True if cycle phase annotations are on for the strength chart. */
   cycleLensOn: boolean;
   /** True if engine produced an empty-state layout (less-than-3 sessions). */

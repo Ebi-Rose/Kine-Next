@@ -13,6 +13,7 @@ import type {
   EngineHistory,
   EngineProfile,
   ExperienceLevel,
+  HiddenCard,
   LayoutCard,
   LifeStage,
   ProgressLayout,
@@ -80,19 +81,47 @@ interface Draft {
   tabs: TabConfig[];
   gridTiles: Array<{ id: string; reason: string }>;
   bodyCards: LayoutCard[];
+  /**
+   * Cards the rule chain has removed from the default layout. Each entry
+   * carries the rule that removed it. Later rules can re-add a card; if
+   * they do, the matching hidden entry is dropped (the card is no longer
+   * "hidden because…" since something else put it back).
+   */
+  hidden: HiddenCard[];
   cycleLensOn: boolean;
   isEmptyState: boolean;
   derivedGoal: EngineGoal;
 }
 
-function removeCards(draft: Draft, ids: CardId[]): void {
-  draft.cards = draft.cards.filter((c) => !ids.includes(c.id));
+/**
+ * Remove cards from the draft and record *why*. The reason is the rule
+ * id (e.g. "lifeStage:postpartum<16w") so the override panel can render
+ * a human-readable label later.
+ *
+ * We always record the hidden entry — even if the card wasn't currently
+ * in the visible list — because the rule's *intent* was to suppress it.
+ * This matters for cards that live in the hero (strength_trend) or that
+ * a different base layout would show. The override panel uses the
+ * hidden entry to explain "this is hidden because…" regardless of which
+ * base layout the engine chose.
+ */
+function removeCards(draft: Draft, ids: CardId[], reason: string): void {
+  for (const id of ids) {
+    draft.cards = draft.cards.filter((c) => c.id !== id);
+    // Replace any earlier hidden entry for this card with the latest reason
+    // (later rules win — that's the rule chain semantics).
+    draft.hidden = draft.hidden.filter((h) => h.id !== id);
+    draft.hidden.push({ id, reason });
+  }
 }
 
 function ensureCard(draft: Draft, card: LayoutCard, position: "start" | "end" = "end"): void {
   if (draft.cards.some((c) => c.id === card.id)) return;
   if (position === "start") draft.cards.unshift(card);
   else draft.cards.push(card);
+  // A later rule has put this card back — drop any earlier "hidden because"
+  // entry; the user will see it as visible by default.
+  draft.hidden = draft.hidden.filter((h) => h.id !== card.id);
 }
 
 function setHero(draft: Draft, id: CardId, variant: string, reason: string): void {
@@ -112,6 +141,7 @@ function baseLayout(goal: EngineGoal, profile: EngineProfile): Draft {
     ],
     gridTiles: [],
     bodyCards: [],
+    hidden: [],
     cycleLensOn: false,
     isEmptyState: false,
     derivedGoal: goal,
@@ -243,13 +273,11 @@ function baseLayout(goal: EngineGoal, profile: EngineProfile): Draft {
 
 function applyLifeStage(draft: Draft, lifeStage: LifeStage, history: EngineHistory): void {
   if (lifeStage === "pregnancy") {
-    removeCards(draft, [
-      "strength_trend",
-      "pr_feed",
-      "top_lifts",
-      "photos",
-      "bodyweight",
-    ]);
+    removeCards(
+      draft,
+      ["strength_trend", "pr_feed", "top_lifts", "photos", "bodyweight"],
+      "lifeStage:pregnancy"
+    );
     draft.bodyCards = draft.bodyCards.filter(
       (c) => c.id !== "photos" && c.id !== "bodyweight"
     );
@@ -276,7 +304,11 @@ function applyLifeStage(draft: Draft, lifeStage: LifeStage, history: EngineHisto
     history.weeksSinceReturn !== null &&
     history.weeksSinceReturn < 16
   ) {
-    removeCards(draft, ["pr_feed", "top_lifts", "strength_trend"]);
+    removeCards(
+      draft,
+      ["pr_feed", "top_lifts", "strength_trend"],
+      "lifeStage:postpartum<16w"
+    );
     draft.bodyCards = draft.bodyCards.filter((c) => c.id !== "bodyweight");
     // Photos: opt-in prompt only — never auto-shown.
     draft.bodyCards = draft.bodyCards.map((c) =>
@@ -349,7 +381,7 @@ function applyConditions(draft: Draft, conditions: string[]): void {
 
   if (conditions.includes("hypermobility")) {
     // Promote effort_control over pr_feed.
-    removeCards(draft, ["pr_feed"]);
+    removeCards(draft, ["pr_feed"], "condition:hypermobility");
     ensureCard(
       draft,
       withReason("effort_control", "shown", "condition:hypermobility"),
@@ -408,7 +440,7 @@ function applyInjuries(draft: Draft, injuries: string[]): void {
 
 function applyExperience(draft: Draft, experience: ExperienceLevel, history: EngineHistory): void {
   if (experience === "beginner") {
-    removeCards(draft, ["strength_trend"]);
+    removeCards(draft, ["strength_trend"], "experience:beginner");
     setHero(draft, "sessions_completed", "first_weeks", "experience:beginner");
     // Replace top_lifts(load_delta) with top_lifts(absolute) — beginners
     // see their actual current weights, not deltas.
@@ -437,7 +469,7 @@ function applyExperience(draft: Draft, experience: ExperienceLevel, history: Eng
       withReason("effort_control", "shown", "experience:advanced"),
       "end"
     );
-    removeCards(draft, ["exercises_learned"]);
+    removeCards(draft, ["exercises_learned"], "experience:advanced");
   }
 
   // Pure-history side: if there's no recent PR or trend data, demote them.
@@ -466,7 +498,13 @@ function applyCycleLens(draft: Draft, profile: EngineProfile): void {
 
 function applyEmptyState(draft: Draft, history: EngineHistory): void {
   if (history.sessionCountTotal >= 3) return;
-  // Wipe everything down to a welcome.
+  // Wipe everything down to a welcome — but record what we wiped so the
+  // override panel can explain "Hidden because: not enough sessions yet".
+  for (const card of draft.cards) {
+    if (!draft.hidden.some((h) => h.id === card.id)) {
+      draft.hidden.push({ id: card.id, reason: "empty_state" });
+    }
+  }
   draft.cards = [];
   draft.bodyCards = draft.bodyCards.filter((c) => c.id === "photos");
   draft.bodyCards = draft.bodyCards.map((c) =>
@@ -488,7 +526,7 @@ function applyUserOverrides(draft: Draft, prefs?: ProgressPreferences): void {
   if (!prefs) return;
   for (const [id, action] of Object.entries(prefs.overrides)) {
     if (action === "force_hide") {
-      removeCards(draft, [id as CardId]);
+      removeCards(draft, [id as CardId], "user_override");
     } else if (action === "force_show") {
       ensureCard(
         draft,
@@ -560,6 +598,7 @@ export function computeProgressLayout(
     gridTiles: draft.gridTiles,
     strengthCards: draft.cards,
     bodyCards: draft.bodyCards,
+    hiddenCards: draft.hidden,
     cycleLensOn: draft.cycleLensOn,
     isEmptyState: draft.isEmptyState,
     derivedGoal: goal,
