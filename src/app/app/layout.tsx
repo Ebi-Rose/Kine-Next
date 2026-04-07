@@ -8,8 +8,6 @@ import ToastContainer from "@/components/Toast";
 import SyncProvider from "@/components/SyncProvider";
 import GuideButton from "@/components/GuideButton";
 import GuideDrawer from "@/components/GuideDrawer";
-import FeedbackButton from "@/components/FeedbackButton";
-import FeedbackSheet from "@/components/FeedbackSheet";
 import InactivityGuard from "@/components/InactivityGuard";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import DevOverlay from "@/components/DevOverlay";
@@ -18,7 +16,6 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [guideOpen, setGuideOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const pathname = usePathname();
 
   return (
@@ -41,8 +38,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <InactivityGuard />
         <GuideButton onClick={() => setGuideOpen(true)} />
         <GuideDrawer open={guideOpen} onClose={() => setGuideOpen(false)} route={pathname} />
-        <FeedbackButton onClick={() => setFeedbackOpen(true)} />
-        <FeedbackSheet open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
         <DevOverlay />
         <PwaHead />
         <ServiceWorkerRegistrar />
