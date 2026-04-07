@@ -4,6 +4,29 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getSession, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
+import { syncFromSupabase } from "@/lib/sync";
+
+/**
+ * Wait until Zustand has finished rehydrating from localStorage. Uses the
+ * existing `_hasHydrated` flag (set in onRehydrateStorage). Times out after
+ * 2s as a safety net so we never hang the splash forever.
+ */
+async function waitForLocalHydration(timeoutMs = 2000): Promise<void> {
+  const start = Date.now();
+  const isHydrated = () =>
+    (useKineStore.getState() as { _hasHydrated?: boolean })._hasHydrated === true;
+  if (isHydrated()) return;
+  return new Promise((resolve) => {
+    const tick = () => {
+      if (isHydrated() || Date.now() - start > timeoutMs) {
+        resolve();
+        return;
+      }
+      setTimeout(tick, 30);
+    };
+    tick();
+  });
+}
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = useState(false);
@@ -81,11 +104,29 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             return;
           }
         } else {
-          // Brief wait for store hydration from localStorage
-          await new Promise((r) => setTimeout(r, 300));
-          const { progressDB, goal } = useKineStore.getState();
+          // 1. Wait for Zustand to rehydrate from localStorage (existing
+          //    device — fast path, no network).
+          await waitForLocalHydration();
+          if (cancelled) return;
 
-          // Onboarding not complete unless both goal and programStartDate are set
+          // 2. If local store has no onboarding signal, fall back to
+          //    Supabase. New device / fresh browser / cleared storage —
+          //    the cloud is the source of truth for "have I onboarded".
+          //    Without this await, AuthGuard would race the redirect
+          //    against SyncProvider's fire-and-forget restore and lose.
+          let { progressDB, goal } = useKineStore.getState();
+          if (!progressDB.programStartDate || !goal) {
+            try {
+              await syncFromSupabase();
+            } catch (e) {
+              console.warn("[AuthGuard] cloud restore failed:", e);
+            }
+            if (cancelled) return;
+            ({ progressDB, goal } = useKineStore.getState());
+          }
+
+          // 3. Only redirect if BOTH local and cloud are empty for this
+          //    user — i.e. they genuinely have not onboarded yet.
           if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
             router.replace("/app/onboarding");
             return;
