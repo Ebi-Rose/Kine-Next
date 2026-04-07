@@ -112,19 +112,23 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
   },
   "/app/progress": {
     label: "Progress",
-    intro: "Every session you log builds the picture. The trend matters more than any single day.",
+    intro: "What you see here is shaped by you. Your goal, your conditions, where you are in life — Kinē shows what's most likely to mean progress for you right now.",
     sections: [
       {
-        title: "Lift history",
-        body: "Tap any exercise to see your progression over time.",
+        title: "Strength tab",
+        body: "Your top lifts, recent PRs, pattern balance, and effort — compared to your own baseline, never to anyone else.",
       },
       {
-        title: "Personal records",
-        body: "PRs are tracked automatically. You'll see them celebrated during your session.",
+        title: "Body tab",
+        body: "Progress photos lead, because strength shows up in your body before it shows up on the scale. Photos are private to you and never required.",
       },
       {
-        title: "Past sessions",
-        body: "Scroll down for your session history — what you did and how it felt.",
+        title: "History tab",
+        body: "Past sessions and the 1RM calculator. Tap any session to see what you did and how it felt.",
+      },
+      {
+        title: "Customize",
+        body: "Anything Kinē decides to show or hide can be changed. Tap 'customize' under the title to take control — every card has a toggle, and you can ask why something was hidden.",
       },
     ],
   },
