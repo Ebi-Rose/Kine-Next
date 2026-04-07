@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import { appNow, appTodayISO } from "@/lib/dev-time";
-import type { Goal, Experience, CycleType, Duration } from "@/store/useKineStore";
+import type { Goal, Experience, CycleType, Duration, LifeStage } from "@/store/useKineStore";
 import Button from "@/components/Button";
 import Tile from "@/components/Tile";
 import {
@@ -19,11 +19,21 @@ import {
   CYCLE_OPTIONS,
   INJURY_OPTIONS,
   CONDITION_OPTIONS,
+  LIFE_STAGE_OPTIONS,
 } from "@/data/constants";
 import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
 import { detectLocale } from "@/lib/format";
 
-type Step = "welcome" | "name" | "goal" | "experience" | "equipment" | "schedule" | "injuries" | "summary";
+type Step =
+  | "welcome"
+  | "name"
+  | "goal"
+  | "experience"
+  | "equipment"
+  | "schedule"
+  | "injuries"
+  | "lifeStage"
+  | "summary";
 
 const STEP_ORDER: Step[] = [
   "welcome",
@@ -33,6 +43,7 @@ const STEP_ORDER: Step[] = [
   "equipment",
   "schedule",
   "injuries",
+  "lifeStage",
   "summary",
 ];
 
@@ -113,7 +124,8 @@ export default function OnboardingPage() {
             numberedStep={numberedStep}
           />
         )}
-        {step === "injuries" && <InjuriesStep onNext={() => goToStep("summary")} />}
+        {step === "injuries" && <InjuriesStep onNext={() => goToStep("lifeStage")} />}
+        {step === "lifeStage" && <LifeStageStep onNext={() => goToStep("summary")} />}
         {step === "summary" && <SummaryStep onFinish={finishOnboarding} />}
       </div>
     </div>
@@ -722,20 +734,79 @@ function InjuriesStep({ onNext }: { onNext: () => void }) {
 
       <div className="mt-8 flex flex-col gap-3">
         <Button onClick={onNext} className="w-full">
-          Build my program →
+          Continue →
         </Button>
         <button
           onClick={onNext}
           className="text-xs text-muted2 hover:text-text transition-colors"
         >
-          No limitations — build my program
+          No limitations — continue
         </button>
       </div>
     </div>
   );
 }
 
-// ── Step 6: Summary ──
+// ── Step 7: Life stage ──
+//
+// Optional self-identification that drives the Progress page personalization
+// engine. Spec: docs/specs/progress-personalization-engine.md §4.2.
+// Skippable per principle #20 — defaults to "general" if skipped.
+
+function LifeStageStep({ onNext }: { onNext: () => void }) {
+  const { personalProfile, setLifeStage } = useKineStore();
+  const current = personalProfile?.lifeStage;
+
+  function selectStage(value: NonNullable<LifeStage>) {
+    setLifeStage(value);
+    onNext();
+  }
+
+  return (
+    <div className="animate-fade-up">
+      <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
+        Where you are
+      </p>
+      <h2 className="font-display tracking-wide text-text" style={{ fontSize: 'clamp(20px, 6vw, 28px)', lineHeight: 1.1 }}>
+        Anything we should know about your life stage?
+      </h2>
+      <p className="mt-2 text-[13px] text-muted2 font-light leading-relaxed">
+        Optional. This shapes how Kinē shows your progress — never how it talks to you. You can change this anytime in your profile.
+      </p>
+
+      <div className="mt-6 flex flex-col gap-2">
+        {LIFE_STAGE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => selectStage(opt.value)}
+            aria-pressed={current === opt.value}
+            className={`rounded-[var(--radius-default)] border px-4 py-3 text-left transition-all ${
+              current === opt.value
+                ? "border-accent bg-accent-dim text-text"
+                : "border-border bg-surface text-muted2 hover:border-border-active"
+            }`}
+          >
+            <div className="text-sm">{opt.label}</div>
+            <div className="text-[11px] text-muted font-light mt-0.5 leading-snug">
+              {opt.description}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8 flex flex-col gap-3">
+        <button
+          onClick={onNext}
+          className="text-xs text-muted2 hover:text-text transition-colors"
+        >
+          Prefer not to say — continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 8: Summary ──
 
 function SummaryStep({ onFinish }: { onFinish: () => void }) {
   const store = useKineStore();
