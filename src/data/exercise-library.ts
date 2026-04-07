@@ -196,6 +196,22 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Scapular Pull-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Activation","Calisthenics","Skill"],logType:"bodyweight"},
   {name:"Toes-to-Bar",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"developing"},
   {name:"Typewriter Pull-Up",muscle:"calisthenics",equip:["bodyweight"],tags:["Compound","Calisthenics","Skill"],logType:"bodyweight",minExp:"intermediate"},
+  // ── MOBILITY ──
+  // Joint-friendly stretching, range-of-motion, and recovery work. The
+  // Progress page surfaces a count of mobility-tagged sessions per block
+  // for users on goals (maintain, post_menopause, perimenopause) where
+  // mobility work is part of the picture. These exercises are also
+  // available to the program builder via the standard tag system.
+  {name:"90/90 Hip Stretch",muscle:"legs",equip:["bodyweight"],tags:["Mobility","Stability"],logType:"timed"},
+  {name:"Cat-Cow",muscle:"core",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
+  {name:"World's Greatest Stretch",muscle:"legs",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
+  {name:"Thoracic Spine Rotation",muscle:"core",equip:["bodyweight"],tags:["Mobility","Activation"],logType:"timed"},
+  {name:"Hip Flexor Stretch",muscle:"legs",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
+  {name:"Pigeon Stretch",muscle:"legs",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
+  {name:"Couch Stretch",muscle:"legs",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
+  {name:"Doorway Pec Stretch",muscle:"push",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
+  {name:"Wall Slide",muscle:"push",equip:["bodyweight"],tags:["Mobility","Activation"],logType:"timed"},
+  {name:"Ankle Mobility Drill",muscle:"legs",equip:["bodyweight"],tags:["Mobility"],logType:"timed"},
   // WEIGHTED CALISTHENICS
   {name:"Weighted Chin-Up",muscle:"pull",equip:["belt","plates"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},
   {name:"Weighted Dips",muscle:"push",equip:["belt","plates"],tags:["Compound","Calisthenics"],logType:"weighted",minExp:"developing"},

@@ -279,6 +279,33 @@ function computeReintroducedLifts(lifts: Record<string, LiftEntry[]>): string[] 
 }
 
 /**
+ * Distinct sessions in the current block where any logged exercise carries
+ * the Mobility tag from the exercise library. The Progress page surfaces
+ * this count on the mobility_log card for users on maintain / post-menopause
+ * / perimenopause goals where mobility work is part of the picture.
+ */
+function computeMobilitySessionsThisBlock(
+  sessions: SessionRecord[],
+  currentWeek: number
+): number {
+  const blockStart = Math.max(1, currentWeek - 2);
+  const datesWithMobility = new Set<string>();
+  for (const s of sessions) {
+    if (typeof s.weekNum !== "number" || s.weekNum < blockStart) continue;
+    if (!s.date) continue;
+    const logs = s.logs ? Object.values(s.logs) : [];
+    const hasMobility = logs.some((raw) => {
+      const ex = raw as { name?: string };
+      if (!ex?.name) return false;
+      const meta = findExercise(ex.name);
+      return meta?.tags?.includes("Mobility");
+    });
+    if (hasMobility) datesWithMobility.add(s.date);
+  }
+  return datesWithMobility.size;
+}
+
+/**
  * Rehab sets logged in the current block, counted from session exercise
  * tags. "Activation", "Stability", "Isometric" tags all count as rehab
  * work for the purposes of the rehab card. Uses exercise-library metadata.
@@ -393,9 +420,13 @@ export function deriveEngineHistory(
   const injuryHiddenLifts = computeInjuryHiddenLifts(injuries);
   const reintroducedLifts = computeReintroducedLifts(lifts);
   const rehabSetsThisBlock = computeRehabSetsThisBlock(sessions, progressDB.currentWeek ?? 1);
+  const mobilitySessionsThisBlock = computeMobilitySessionsThisBlock(
+    sessions,
+    progressDB.currentWeek ?? 1
+  );
 
-  // Mobility and tempo adherence need their own session tagging that
-  // doesn't exist yet — surfaced as honest zeros until then.
+  // Tempo adherence still needs a per-set tempo target field on session
+  // logs that doesn't exist yet — surfaced as null until then.
   return {
     sessionCountTotal,
     sessionsThisWeek,
@@ -415,7 +446,7 @@ export function deriveEngineHistory(
     injuryHiddenLifts,
     reintroducedLifts,
     rehabSetsThisBlock,
-    mobilitySessionsThisBlock: 0,
+    mobilitySessionsThisBlock,
     tempoAdherence: null,
   };
 }

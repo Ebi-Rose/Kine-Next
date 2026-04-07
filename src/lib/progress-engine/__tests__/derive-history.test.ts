@@ -26,6 +26,8 @@ jest.mock("@/data/exercise-library", () => ({
       "Dead Bug": { muscle: "core", tags: ["Stability"] },
       "Glute Bridge": { muscle: "legs", tags: ["Activation"] },
       "Plank": { muscle: "core", tags: ["Isometric"] },
+      "Cat-Cow": { muscle: "core", tags: ["Mobility"] },
+      "Pigeon Stretch": { muscle: "legs", tags: ["Mobility"] },
     };
     return lib[name] ?? null;
   },
@@ -290,6 +292,64 @@ describe("deriveEngineHistory", () => {
       },
     };
     expect(deriveEngineHistory(db).reintroducedLifts).toContain("Bird Dog");
+  });
+
+  it("counts mobility sessions as distinct dates with Mobility-tagged work", () => {
+    const db = {
+      ...emptyDB(),
+      currentWeek: 5,
+      sessions: [
+        {
+          weekNum: 5,
+          date: isoDaysAgo(1),
+          logs: {
+            0: { name: "Cat-Cow", actual: [{ reps: "10", weight: "0" }] },
+            1: { name: "Back Squat", actual: [{ reps: "5", weight: "60" }] },
+          },
+        },
+        {
+          weekNum: 5,
+          date: isoDaysAgo(3),
+          logs: {
+            0: { name: "Pigeon Stretch", actual: [{ reps: "5", weight: "0" }] },
+          },
+        },
+        {
+          // Strength-only session — should NOT count
+          weekNum: 5,
+          date: isoDaysAgo(5),
+          logs: {
+            0: { name: "Bench Press", actual: [{ reps: "8", weight: "30" }] },
+          },
+        },
+        {
+          // Out-of-block session — should not count
+          weekNum: 1,
+          date: isoDaysAgo(40),
+          logs: {
+            0: { name: "Cat-Cow", actual: [{ reps: "10", weight: "0" }] },
+          },
+        },
+      ],
+    };
+    expect(deriveEngineHistory(db).mobilitySessionsThisBlock).toBe(2);
+  });
+
+  it("returns 0 mobility sessions when no exercises carry the Mobility tag", () => {
+    const db = {
+      ...emptyDB(),
+      currentWeek: 5,
+      sessions: [
+        {
+          weekNum: 5,
+          date: isoDaysAgo(1),
+          logs: {
+            0: { name: "Back Squat", actual: [{ reps: "5", weight: "60" }] },
+          },
+        },
+      ],
+    };
+    expect(deriveEngineHistory(db).mobilitySessionsThisBlock).toBe(0);
   });
 
   it("counts rehab sets from exercise tags in the current block", () => {
