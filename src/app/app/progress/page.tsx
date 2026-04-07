@@ -32,6 +32,7 @@ import {
   ProgressTabs,
   StatGrid,
   TopLiftsCard,
+  ProgressOverridePanel,
   RecentPRsStrip,
   PatternBalanceCard,
   RehabWorkCard,
@@ -80,6 +81,7 @@ export default function ProgressPage() {
   const [ormWeight, setOrmWeight] = useState("");
   const [ormReps, setOrmReps] = useState("");
   const [replaySession, setReplaySession] = useState<SessionRecord | null>(null);
+  const [showOverridePanel, setShowOverridePanel] = useState(false);
 
   const profile = useMemo(() => buildEngineProfile(store), [store]);
   const history = useMemo(
@@ -109,7 +111,13 @@ export default function ProgressPage() {
   return (
     <div>
       <h1 className="font-display text-3xl tracking-wide text-accent">Progress</h1>
-      <p className="text-[11px] text-muted2 font-light mt-0.5">{layout.headerLabel}</p>
+      <button
+        onClick={() => setShowOverridePanel(true)}
+        className="text-[11px] text-muted2 font-light mt-0.5 hover:text-accent transition-colors text-left"
+        aria-label="Customize what you see"
+      >
+        {layout.headerLabel} <span className="text-muted">·</span> <span className="text-muted">customize ▸</span>
+      </button>
 
       <div className="mt-4">
         <HeroRenderer layout={layout} sparklinePoints={sparklinePoints} historyData={history} />
@@ -178,6 +186,13 @@ export default function ProgressPage() {
       >
         {replaySession && <SessionReplay session={replaySession} system={system} />}
       </BottomSheet>
+
+      {/* Override panel — principle #20 */}
+      <ProgressOverridePanel
+        open={showOverridePanel}
+        onClose={() => setShowOverridePanel(false)}
+        layout={layout}
+      />
     </div>
   );
 }

@@ -28,3 +28,4 @@ export {
   BodyWeightDemoteCard,
   MeasurementsOptInTile,
 } from "./BodyCards";
+export { default as ProgressOverridePanel } from "./ProgressOverridePanel";
