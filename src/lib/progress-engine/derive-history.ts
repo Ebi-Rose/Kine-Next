@@ -386,15 +386,25 @@ export function deriveEngineHistory(
 
   const weeksTraining = countWeeks(sessionDates);
 
-  const phaseInfo = sessionCountTotal > 0
-    ? getCurrentPhaseInfo(progressDB.currentWeek, progressDB.phaseOffset ?? 0)
+  // Phase position only carries useful signal once the user has actually
+  // started a periodised program (currentWeek >= 2). For week 1 of a new
+  // program — including users who started today and binge-logged a dozen
+  // sessions — "P1 · wk 1/3" reads as a meaningless timestamp. Show the
+  // weeks-trained count instead so the tile says something honest.
+  const programWeek = progressDB.currentWeek ?? 1;
+  const phaseInfo = sessionCountTotal > 0 && programWeek >= 2
+    ? getCurrentPhaseInfo(programWeek, progressDB.phaseOffset ?? 0)
     : null;
   const currentPhaseLabel = phaseInfo
     ? `Phase ${phaseInfo.blockNum} · ${phaseInfo.phase.name} · wk ${phaseInfo.blockWeek}`
-    : "";
+    : sessionCountTotal > 0
+      ? `Week ${weeksTraining || 1}`
+      : "";
   const currentPhaseShort = phaseInfo
     ? `P${phaseInfo.blockNum} · wk ${phaseInfo.blockWeek}/3`
-    : "";
+    : sessionCountTotal > 0
+      ? `Week ${weeksTraining || 1}`
+      : "";
 
   const recentPRs = computeRecentPRs(sessions);
   const recentPRCount = sessions.reduce((sum, s) => sum + (s.prs?.length ?? 0), 0);

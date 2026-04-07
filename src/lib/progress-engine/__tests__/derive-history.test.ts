@@ -372,7 +372,7 @@ describe("deriveEngineHistory", () => {
     expect(h.rehabSetsThisBlock).toBe(3); // 2 + 1, squat excluded
   });
 
-  it("populates currentPhaseShort once any sessions exist", () => {
+  it("populates currentPhaseShort with periodisation labels once past program week 1", () => {
     const db = {
       ...emptyDB(),
       currentWeek: 5,
@@ -381,5 +381,28 @@ describe("deriveEngineHistory", () => {
     const h = deriveEngineHistory(db);
     expect(h.currentPhaseShort).toMatch(/^P\d · wk \d\/3$/);
     expect(h.currentPhaseName).toBe("Intensification");
+  });
+
+  it("shows weeks-trained instead of P1·wk 1/3 for users still in program week 1", () => {
+    // A user in week 1 of a brand new program who has binge-logged shouldn't
+    // see "P1 · wk 1/3" as their phase — that's a meaningless timestamp.
+    // The phase tile should show the calendar weeks they've trained.
+    const db = {
+      ...emptyDB(),
+      currentWeek: 1,
+      sessions: [
+        { date: isoDaysAgo(20), weekNum: 1 },
+        { date: isoDaysAgo(15), weekNum: 1 },
+        { date: isoDaysAgo(8), weekNum: 1 },
+        { date: isoDaysAgo(1), weekNum: 1 },
+      ],
+    };
+    const h = deriveEngineHistory(db);
+    expect(h.currentPhaseShort).toMatch(/^Week \d+$/);
+    expect(h.currentPhaseName).toBeNull();
+  });
+
+  it("returns empty phase strings when no sessions logged at all", () => {
+    expect(deriveEngineHistory(emptyDB()).currentPhaseShort).toBe("");
   });
 });
