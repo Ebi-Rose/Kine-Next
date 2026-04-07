@@ -7,6 +7,7 @@ import { hapticLight } from "@/lib/haptics";
 const NAV_ITEMS = [
   { href: "/app", label: "Home", icon: "⬡" },
   { href: "/app/progress", label: "Progress", icon: "↗" },
+  { href: "/app/education", label: "Learn", icon: "✦" },
   { href: "/app/profile", label: "Profile", icon: "◯" },
 ] as const;
 
