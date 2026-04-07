@@ -20,6 +20,7 @@ import type { MuscleGroup } from "@/data/exercise-library";
 import AdaptationCard from "@/components/AdaptationCard";
 import RestDayHome from "@/components/RestDayHome";
 import StreakMilestone from "@/components/StreakMilestone";
+import ForYouEducationStrip from "@/components/ForYouEducationStrip";
 import Link from "next/link";
 
 const CATEGORY_COLORS: Record<MuscleGroup, string> = {
@@ -684,6 +685,9 @@ function WeekView({
           )}
         </div>
       )}
+
+      {/* For-you Education strip — appears on Today view, not while viewing past weeks */}
+      {viewTab === "today" && !isViewingPast && <ForYouEducationStrip />}
 
       {/* ── WEEK TAB (or past week view) ── */}
       {(viewTab === "week" || isViewingPast) && (
