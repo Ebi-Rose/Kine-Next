@@ -61,6 +61,36 @@ async function doSync(retryCount = 0) {
 
   const store = useKineStore.getState();
 
+  // ── Refuse to upload an unhydrated or empty store ─────────────────────
+  // The bug this guards against:
+  //   1. User logs in on a fresh device.
+  //   2. localStorage is empty, store starts at defaults (goal=null,
+  //      progressDB.programStartDate=null, no _lastModifiedAt).
+  //   3. SyncProvider's subscriber fires on the first store change,
+  //      doSync() runs, the empty default state gets written to
+  //      training_data — overwriting the user's real cloud row.
+  // Three checks:
+  //   - hydration must have happened (or be n/a — server-side hydration
+  //     finishes synchronously before any subscriber fires)
+  //   - the store must contain at least one onboarding-completion signal
+  //   - we must have a real local timestamp; otherwise we have no basis
+  //     to claim our copy is "newer" than anyone else's
+  const hydrated = (store as { _hasHydrated?: boolean })._hasHydrated;
+  if (hydrated === false) {
+    console.info("[sync] Skipping upload — store has not finished hydrating");
+    return;
+  }
+  const hasOnboardingSignal =
+    store.goal !== null || store.progressDB?.programStartDate;
+  if (!hasOnboardingSignal) {
+    console.info("[sync] Skipping upload — local store is empty (no goal / programStartDate)");
+    return;
+  }
+  if (!store._lastModifiedAt) {
+    console.info("[sync] Skipping upload — no _lastModifiedAt on local store");
+    return;
+  }
+
   try {
     // Check health data consent — strip sensitive fields if not granted
     const healthConsent = store.consents?.find((c: { type: string; granted: boolean }) => c.type === "health_data");
@@ -113,8 +143,11 @@ async function doSync(retryCount = 0) {
     if (existing?.updated_at) {
       const cloudTime = new Date(existing.updated_at).getTime();
       const localTime = new Date(store._lastModifiedAt).getTime();
-      if (cloudTime > localTime) {
-        console.info("[sync] Cloud data is newer — skipping upload to avoid overwrite");
+      // NaN-safe: if local time is invalid, treat as definitely-older and
+      // skip. The previous check ("cloudTime > localTime") returned false
+      // for NaN, which let an empty fresh-device store overwrite cloud.
+      if (!Number.isFinite(localTime) || cloudTime > localTime) {
+        console.info("[sync] Cloud data is newer or local is unstamped — skipping upload");
         return;
       }
     }
