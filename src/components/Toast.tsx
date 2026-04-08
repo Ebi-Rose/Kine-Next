@@ -45,9 +45,9 @@ export default function ToastContainer() {
           aria-live={t.type === "error" ? "assertive" : "polite"}
           className={`pointer-events-auto rounded-xl px-4 py-2.5 text-[13px] font-light shadow-lg backdrop-blur-md animate-slide-down ${
             t.type === "error"
-              ? "bg-red-950/80 text-red-200 border border-red-800/30"
+              ? "bg-danger/20 text-danger border border-danger/30"
               : t.type === "success"
-                ? "bg-green-950/80 text-green-200 border border-green-800/30"
+                ? "bg-success/20 text-success border border-success/30"
                 : "bg-surface2/90 text-text border border-border/50"
           }`}
         >

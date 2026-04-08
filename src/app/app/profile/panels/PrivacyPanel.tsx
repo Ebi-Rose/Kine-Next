@@ -60,7 +60,7 @@ export default function PrivacyPanel({ onBack }: { onBack: () => void }) {
                 <p className="text-[10px] text-muted2">Cycle, conditions, injuries</p>
               </div>
               <div className="text-right">
-                <span className={`text-xs ${healthGranted ? "text-green-400" : "text-red-400"}`}>
+                <span className={`text-xs ${healthGranted ? "text-success" : "text-danger"}`}>
                   {healthGranted ? "Granted" : "Withdrawn"}
                 </span>
                 <p className="text-[10px] text-muted2">{formatConsentDate(healthConsent?.timestamp)}</p>
@@ -69,7 +69,7 @@ export default function PrivacyPanel({ onBack }: { onBack: () => void }) {
             <div className="flex items-center justify-between">
               <p className="text-xs text-text">Terms of service</p>
               <div className="text-right">
-                <span className={`text-xs ${termsConsent?.granted ? "text-green-400" : "text-muted2"}`}>
+                <span className={`text-xs ${termsConsent?.granted ? "text-success" : "text-muted2"}`}>
                   {termsConsent?.granted ? "Accepted" : "Not accepted"}
                 </span>
                 <p className="text-[10px] text-muted2">{formatConsentDate(termsConsent?.timestamp)}</p>
@@ -78,7 +78,7 @@ export default function PrivacyPanel({ onBack }: { onBack: () => void }) {
             <div className="flex items-center justify-between">
               <p className="text-xs text-text">Privacy policy</p>
               <div className="text-right">
-                <span className={`text-xs ${privacyConsent?.granted ? "text-green-400" : "text-muted2"}`}>
+                <span className={`text-xs ${privacyConsent?.granted ? "text-success" : "text-muted2"}`}>
                   {privacyConsent?.granted ? "Accepted" : "Not accepted"}
                 </span>
                 <p className="text-[10px] text-muted2">{formatConsentDate(privacyConsent?.timestamp)}</p>
@@ -112,22 +112,22 @@ export default function PrivacyPanel({ onBack }: { onBack: () => void }) {
           </div>
 
           {showWithdrawWarning && (
-            <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3">
-              <p className="text-xs text-red-400 font-medium">Withdraw health data consent?</p>
+            <div className="mt-3 rounded-xl border border-danger/30 bg-danger/10 p-3">
+              <p className="text-xs text-danger font-medium">Withdraw health data consent?</p>
               <p className="mt-1.5 text-[10px] text-muted2 leading-relaxed">
                 Without health data consent, Kine will no longer be able to:
               </p>
               <ul className="mt-1.5 flex flex-col gap-1">
                 <li className="text-[10px] text-muted2 flex items-start gap-2">
-                  <span className="text-red-400 mt-0.5">•</span>
+                  <span className="text-danger mt-0.5">•</span>
                   <span><strong className="text-text">Adapt to your cycle</strong> — no phase-aware programming</span>
                 </li>
                 <li className="text-[10px] text-muted2 flex items-start gap-2">
-                  <span className="text-red-400 mt-0.5">•</span>
+                  <span className="text-danger mt-0.5">•</span>
                   <span><strong className="text-text">Filter for conditions</strong> — comfort flags won&apos;t apply</span>
                 </li>
                 <li className="text-[10px] text-muted2 flex items-start gap-2">
-                  <span className="text-red-400 mt-0.5">•</span>
+                  <span className="text-danger mt-0.5">•</span>
                   <span><strong className="text-text">Personalise warmups</strong> — injury-specific mods removed</span>
                 </li>
               </ul>

@@ -376,7 +376,7 @@ export default function DevOverlay() {
                 {JSON.stringify(store, null, 2).slice(0, 3000)}
               </pre>
             )}
-            <button onClick={resetAll} className="mt-2 rounded-lg border border-red-500/30 px-2 py-1.5 text-[10px] text-red-400 hover:bg-red-500/10 transition-all">
+            <button onClick={resetAll} className="mt-2 rounded-lg border border-danger/30 px-2 py-1.5 text-[10px] text-danger hover:bg-danger/10 transition-all">
               Reset all data
             </button>
           </div>

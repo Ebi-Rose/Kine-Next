@@ -335,7 +335,7 @@ export default function CheckInsPage() {
             <span className="text-xs text-muted2">{formatDateShortLocale(detail.date)}</span>
             <button
               onClick={() => handleDelete(detail.id)}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              className="text-xs text-danger hover:text-danger transition-colors"
             >
               Delete
             </button>

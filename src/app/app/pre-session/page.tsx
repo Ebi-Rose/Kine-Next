@@ -682,7 +682,7 @@ export default function PreSessionPage() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted line-through truncate flex-1">{ex.name}</span>
-                    <span className="text-[9px] tracking-wider text-red-400/80 font-display shrink-0">REMOVED</span>
+                    <span className="text-[9px] tracking-wider text-danger/80 font-display shrink-0">REMOVED</span>
                     <button
                       onClick={() => setDuration(null)}
                       className="text-[10px] text-accent bg-accent/10 border border-accent/40 rounded px-1.5 py-0.5 shrink-0"
@@ -934,7 +934,7 @@ export default function PreSessionPage() {
               {trimmedNames.size > 0 && (
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1">
                   <span className="text-xs shrink-0">✕</span>
-                  <span>Cut for time: <span className="text-red-400/80">{[...trimmedNames].join(", ")}</span></span>
+                  <span>Cut for time: <span className="text-danger/80">{[...trimmedNames].join(", ")}</span></span>
                 </div>
               )}
               {skipped.size > 0 && (
@@ -1022,8 +1022,8 @@ export default function PreSessionPage() {
             <div className="text-left mb-5">
               {trimmedNames.size > 0 && (
                 <div className="flex items-center gap-2 text-xs text-muted2 font-light py-1.5 border-b border-border">
-                  <span className="text-red-400/80">✕</span>
-                  <span>Cut for time: <span className="text-red-400/80">{[...trimmedNames].join(", ")}</span></span>
+                  <span className="text-danger/80">✕</span>
+                  <span>Cut for time: <span className="text-danger/80">{[...trimmedNames].join(", ")}</span></span>
                 </div>
               )}
               {skipped.size > 0 && (

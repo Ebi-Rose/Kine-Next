@@ -35,7 +35,7 @@ export default function SessionSummarySheet({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[10px] text-amber-400">No sets logged</p>
+                  <p className="text-[10px] text-warning">No sets logged</p>
                 )}
               </div>
             );

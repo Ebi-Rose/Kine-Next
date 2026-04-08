@@ -200,18 +200,18 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
       </button>
 
       {/* Danger zone */}
-      <div className="mt-6 rounded-[10px] border border-red-500/20 p-4">
-        <p className="text-[10px] tracking-[0.15em] uppercase text-red-400 mb-3">Danger zone</p>
+      <div className="mt-6 rounded-[10px] border border-danger/20 p-4">
+        <p className="text-[10px] tracking-[0.15em] uppercase text-danger mb-3">Danger zone</p>
 
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs text-text font-light">Reset all data</p>
             <p className="text-[9px] text-muted">Clears everything. Restarts onboarding.</p>
           </div>
-          <button onClick={handleReset} className="text-[10px] text-red-400 hover:underline">Reset</button>
+          <button onClick={handleReset} className="text-[10px] text-danger hover:underline">Reset</button>
         </div>
 
-        <div className="h-px bg-red-500/10" />
+        <div className="h-px bg-danger/10" />
 
         {deleteStep === "idle" && (
           <div className="flex items-center justify-between mt-3">
@@ -219,19 +219,19 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
               <p className="text-xs text-text font-light">Delete account</p>
               <p className="text-[9px] text-muted">Permanent. Removes all data and subscription.</p>
             </div>
-            <button onClick={() => setDeleteStep("confirm")} className="text-[10px] text-red-400 hover:underline">Delete</button>
+            <button onClick={() => setDeleteStep("confirm")} className="text-[10px] text-danger hover:underline">Delete</button>
           </div>
         )}
         {deleteStep === "confirm" && (
-          <div className="mt-3 rounded-lg bg-red-500/10 p-3">
-            <p className="text-xs text-red-400 font-medium">Are you sure?</p>
+          <div className="mt-3 rounded-lg bg-danger/10 p-3">
+            <p className="text-xs text-danger font-medium">Are you sure?</p>
             <p className="mt-1 text-[10px] text-muted2">
               This permanently deletes your account, training history, and subscription. This cannot be undone.
             </p>
             <div className="mt-3 flex gap-2">
               <Button size="sm" variant="ghost" onClick={() => setDeleteStep("idle")}>Cancel</Button>
               <button onClick={handleDeleteAccount}
-                className="rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white transition-all hover:bg-red-600">
+                className="rounded-lg bg-danger px-4 py-2 text-xs font-medium text-white transition-all hover:bg-danger/80">
                 Yes, delete everything
               </button>
             </div>
@@ -239,7 +239,7 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
         )}
         {deleteStep === "deleting" && (
           <div className="mt-3 flex items-center gap-2 text-xs text-muted2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-danger border-t-transparent" />
             Deleting account...
           </div>
         )}

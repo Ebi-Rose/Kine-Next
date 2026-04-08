@@ -164,7 +164,7 @@ export default function ExerciseCard({
             {progression && logType.startsWith("weighted") && (
               <div className={`mb-3 rounded-lg border px-3 py-2 ${
                 progression.confidence === "ready" ? "border-accent/30 bg-accent-dim/20"
-                : progression.confidence === "deload" ? "border-amber-500/30 bg-amber-500/5"
+                : progression.confidence === "deload" ? "border-warning/30 bg-warning/5"
                 : "border-border/50 bg-surface2/30"
               }`}>
                 <div className="flex items-center justify-between">
@@ -211,7 +211,7 @@ export default function ExerciseCard({
                           onUpdateSet(index, setIdx, "weight", String(progression.suggestedWeight));
                         });
                       }}
-                      className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-400 hover:bg-amber-500/25 transition-colors"
+                      className="rounded bg-warning/15 px-2 py-0.5 text-[10px] text-warning hover:bg-warning/25 transition-colors"
                     >
                       Start at {progression.suggestedWeight}{progression.unit}
                     </button>
@@ -406,7 +406,7 @@ export default function ExerciseCard({
                 {skillPath.hint && <p className="text-[10px] text-muted2 mb-1.5">{skillPath.hint}</p>}
                 <div className="flex gap-3 text-[10px]">
                   {skillPath.easier.length > 0 && (
-                    <span className="text-green-400">← Easier: {skillPath.easier.slice(-1)[0]}</span>
+                    <span className="text-success">← Easier: {skillPath.easier.slice(-1)[0]}</span>
                   )}
                   {skillPath.harder.length > 0 && (
                     <span className="text-accent">Harder: {skillPath.harder[0]} →</span>

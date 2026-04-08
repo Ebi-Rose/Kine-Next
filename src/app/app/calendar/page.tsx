@@ -243,7 +243,7 @@ export default function CalendarPage() {
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-medium text-text">{selectedLift}</p>
                   <div className="flex items-center gap-1.5">
-                    {trend > 0 && <span className="text-[10px] text-green-400">↑</span>}
+                    {trend > 0 && <span className="text-[10px] text-success">↑</span>}
                     {trend < 0 && <span className="text-[10px] text-accent">↓</span>}
                     <span className="text-[10px] text-muted2">{byDate.size} session{byDate.size !== 1 ? "s" : ""}</span>
                   </div>

@@ -417,8 +417,8 @@ function ScheduleStep({
       {/* Schedule feedback */}
       {scheduleFeedback && (
         <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${
-          scheduleFeedback.type === "warning" ? "bg-red-900/20 text-red-300 [html.light_&]:bg-red-100 [html.light_&]:text-red-800"
-          : scheduleFeedback.type === "positive" ? "bg-green-900/20 text-green-300 [html.light_&]:bg-green-100 [html.light_&]:text-green-800"
+          scheduleFeedback.type === "warning" ? "bg-danger/15 text-danger"
+          : scheduleFeedback.type === "positive" ? "bg-success/15 text-success"
           : "bg-surface2 text-muted2"
         }`}>
           {scheduleFeedback.message}
@@ -443,7 +443,7 @@ function ScheduleStep({
       {/* Duration feedback */}
       {durationFeedback && (
         <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${
-          durationFeedback.type === "warning" ? "bg-red-900/20 text-red-300"
+          durationFeedback.type === "warning" ? "bg-danger/15 text-danger"
           : "bg-surface2 text-muted2"
         }`}>
           {durationFeedback.message}

@@ -13,6 +13,11 @@
   --color-muted: #8a847d;
   --color-muted2: #a09a93;
 
+  /* Semantic status colors — work in both themes via opacity modifiers */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
   /* Category accents */
   --color-cat-push: #c49098;
   --color-cat-pull: #7b8fa8;
@@ -49,6 +54,11 @@ html.light {
   --color-cat-hinge: #8a6f2e;
   --color-cat-core: #4f6b4f;
   --color-cat-cardio: #7a4d85;
+
+  /* Darker semantic colors for AA contrast on cream bg */
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
 }
 
 /* ── Base ── */

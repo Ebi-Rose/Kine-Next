@@ -10,9 +10,9 @@ export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysi
   const { progressDB, measurementSystem } = useKineStore();
   const unit = weightUnit(measurementSystem || "metric");
   const verdictColors: Record<string, string> = {
-    strong: "text-green-400",
+    strong: "text-success",
     solid: "text-muted2",
-    building: "text-yellow-400",
+    building: "text-warning",
     adjust: "text-accent",
   };
 

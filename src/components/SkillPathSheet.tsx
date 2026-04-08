@@ -52,7 +52,7 @@ export default function SkillPathSheet({ open, onClose, exerciseName, onSelect }
                     <p className="text-[10px] text-muted">{SKILL_HINTS[name]}</p>
                   )}
                 </div>
-                <span className="text-[10px] text-green-400">easier</span>
+                <span className="text-[10px] text-success">easier</span>
               </button>
             ))}
           </div>

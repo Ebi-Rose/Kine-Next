@@ -112,16 +112,16 @@ export default function SubscriptionPanel({ onBack }: { onBack: () => void }) {
             </div>
 
             {isCancelling && (
-              <div className="mt-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-                <p className="text-xs text-amber-400">
+              <div className="mt-3 rounded-lg bg-warning/10 border border-warning/20 px-3 py-2">
+                <p className="text-xs text-warning">
                   Your subscription will end on {formatDateShortLocale(status.currentPeriodEnd!)}. You can reactivate from the portal below.
                 </p>
               </div>
             )}
 
             {isPastDue && (
-              <div className="mt-3 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
-                <p className="text-xs text-red-400">
+              <div className="mt-3 rounded-lg bg-danger/10 border border-danger/20 px-3 py-2">
+                <p className="text-xs text-danger">
                   Your last payment failed. Update your payment method to keep access.
                 </p>
               </div>

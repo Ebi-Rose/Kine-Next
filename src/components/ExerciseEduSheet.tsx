@@ -170,7 +170,7 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
             <div className="flex gap-4 text-[10px]">
               {skillPath.easier.length > 0 && (
                 <div>
-                  <span className="text-green-400">← Easier</span>
+                  <span className="text-success">← Easier</span>
                   <p className="text-muted font-light mt-0.5">{skillPath.easier.slice(-2).join(", ")}</p>
                 </div>
               )}

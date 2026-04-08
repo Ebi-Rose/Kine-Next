@@ -155,7 +155,7 @@ export default function StrengthTrend() {
         </h2>
         <span
           className={`text-[10px] font-medium ${
-            trendUp ? "text-green-400" : "text-muted2"
+            trendUp ? "text-success" : "text-muted2"
           }`}
         >
           {trendUp ? "+" : ""}

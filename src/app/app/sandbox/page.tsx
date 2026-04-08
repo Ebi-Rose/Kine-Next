@@ -459,7 +459,7 @@ export default function SandboxPage() {
                             <span className="text-xs text-text truncate">{name}</span>
                             <span className="text-[9px] text-muted2 shrink-0">{rx.sets}×{rx.reps}</span>
                           </div>
-                          <button onClick={() => removeExercise(i, name)} className="text-[10px] text-muted2 hover:text-red-400 shrink-0 ml-2">✕</button>
+                          <button onClick={() => removeExercise(i, name)} className="text-[10px] text-muted2 hover:text-danger shrink-0 ml-2">✕</button>
                         </div>
                       );
                     })}
@@ -506,7 +506,7 @@ export default function SandboxPage() {
             </button>
             <button
               onClick={resetWeek}
-              className="text-[10px] text-muted2 hover:text-red-400 transition-colors"
+              className="text-[10px] text-muted2 hover:text-danger transition-colors"
             >
               Reset week
             </button>
@@ -666,7 +666,7 @@ function SandboxAssessment({ onPass, onBack }: { onPass: () => void; onBack: () 
         <button onClick={onBack} className="mb-6 text-xs text-muted2 hover:text-text transition-colors self-start">
           ← Back
         </button>
-        <div className={`inline-flex h-16 w-16 items-center justify-center rounded-full text-2xl ${passed ? "bg-green-900/30" : "bg-red-900/30"}`}>
+        <div className={`inline-flex h-16 w-16 items-center justify-center rounded-full text-2xl ${passed ? "bg-success/20" : "bg-danger/20"}`}>
           {passed ? "✓" : "✗"}
         </div>
         <h2 className="mt-4 font-display text-xl tracking-wide text-text">
@@ -729,9 +729,9 @@ function SandboxAssessment({ onPass, onBack }: { onPass: () => void; onBack: () 
             let style = "border-border bg-surface text-muted2 hover:border-border-active";
             if (showExplanation) {
               if (opt.correct) {
-                style = "border-green-500/50 bg-green-900/20 text-green-300";
+                style = "border-success/50 bg-success/15 text-success";
               } else if (i === selectedIdx && !opt.correct) {
-                style = "border-red-500/50 bg-red-900/20 text-red-300";
+                style = "border-danger/50 bg-danger/15 text-danger";
               } else {
                 style = "border-border/50 bg-surface/50 text-muted";
               }

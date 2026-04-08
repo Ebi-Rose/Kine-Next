@@ -348,7 +348,7 @@ export default function CustomBuilderPage() {
                     <span className="text-xs text-text">{i + 1}. {name}</span>
                     <span className="ml-2 text-[10px] text-muted">{rx.sets}×{rx.reps} · {rx.rest}</span>
                   </div>
-                  <button onClick={() => removeExercise(name)} className="text-xs text-muted2 hover:text-red-400">✕</button>
+                  <button onClick={() => removeExercise(name)} className="text-xs text-muted2 hover:text-danger">✕</button>
                 </div>
               );
             })}

@@ -272,7 +272,7 @@ export default function DevPanel() {
           <Button variant="secondary" size="sm" className="w-full" onClick={resetEduFlags}>
             Reset education flags
           </Button>
-          <Button variant="ghost" size="sm" className="w-full mt-2 text-red-400" onClick={resetAll}>
+          <Button variant="ghost" size="sm" className="w-full mt-2 text-danger" onClick={resetAll}>
             Reset all data
           </Button>
         </Section>

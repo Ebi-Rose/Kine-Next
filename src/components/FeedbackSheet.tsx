@@ -266,7 +266,7 @@ export default function FeedbackSheet({ open, onClose }: Props) {
               {recording && (
                 <>
                   <div className="flex items-center gap-2 text-[11px] text-accent">
-                    <span className="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                    <span className="inline-block w-2 h-2 rounded-full bg-danger animate-pulse" />
                     Listening…
                   </div>
                   <div className="text-[12px] text-text leading-snug min-h-[2.5em]">
@@ -334,7 +334,7 @@ export default function FeedbackSheet({ open, onClose }: Props) {
                 </button>
               )}
               {voiceError && (
-                <div className="mt-1 text-[11px] text-red-300">{voiceError}</div>
+                <div className="mt-1 text-[11px] text-danger">{voiceError}</div>
               )}
             </div>
           )}
@@ -390,7 +390,7 @@ export default function FeedbackSheet({ open, onClose }: Props) {
           </div>
 
           {status === "error" && (
-            <div className="text-[12px] text-red-300 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2">
+            <div className="text-[12px] text-danger bg-danger/5 border border-danger/20 rounded-lg px-3 py-2">
               {errorMsg}
             </div>
           )}

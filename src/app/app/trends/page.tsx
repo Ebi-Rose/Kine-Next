@@ -160,7 +160,7 @@ function ORMTrendPanel() {
           </h3>
           <span
             className={`text-[11px] font-medium ${
-              ormDelta > 0 ? "text-green-400" : ormDelta < 0 ? "text-accent" : "text-muted2"
+              ormDelta > 0 ? "text-success" : ormDelta < 0 ? "text-accent" : "text-muted2"
             }`}
           >
             {ormDelta > 0 ? "+" : ""}
@@ -354,7 +354,7 @@ function ORMMilestones({
               <span className="text-text">
                 {kgToDisplay(m.orm, system)}{unit}
               </span>
-              <span className="text-green-400 text-[10px]">
+              <span className="text-success text-[10px]">
                 +{m.delta.toFixed(0)}%
               </span>
             </div>
@@ -430,7 +430,7 @@ function VolumeTrendPanel() {
           </h3>
           <span
             className={`text-[11px] font-medium ${
-              volDelta > 0 ? "text-green-400" : volDelta < -10 ? "text-accent" : "text-muted2"
+              volDelta > 0 ? "text-success" : volDelta < -10 ? "text-accent" : "text-muted2"
             }`}
           >
             {volDelta > 0 ? "+" : ""}
@@ -997,7 +997,7 @@ function EffortRecoveryPanel() {
                     {scheduleLabel && (
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] border ${
                         fb.scheduleFeeling === "about_right"
-                          ? "bg-green-400/10 border-green-400/10 text-green-400"
+                          ? "bg-success/10 border-success/10 text-success"
                           : fb.scheduleFeeling === "too_much"
                             ? "bg-accent/10 border-accent/10 text-accent"
                             : "bg-muted/10 border-muted/10 text-muted2"

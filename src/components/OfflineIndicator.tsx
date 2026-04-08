@@ -25,7 +25,7 @@ export default function OfflineIndicator() {
       aria-live="polite"
       className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center gap-2 bg-surface2 border-b border-border py-1.5 text-xs text-muted2 animate-slide-down"
     >
-      <span className="inline-block h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />
+      <span className="inline-block h-2 w-2 rounded-full bg-warning" aria-hidden="true" />
       You&apos;re offline — changes saved locally
     </div>
   );

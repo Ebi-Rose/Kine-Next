@@ -871,8 +871,8 @@ function DevTools({ onRebuild, loading }: { onRebuild: () => void; loading: bool
         {open ? "▾ Hide dev tools" : "▸ Dev tools"}
       </button>
       {open && (
-        <div className="mt-3 rounded-xl border border-amber-400/20 bg-surface/50 p-4 flex flex-col gap-2">
-          <p className="text-[9px] text-amber-400 tracking-wider uppercase mb-1">Testing only — remove before launch</p>
+        <div className="mt-3 rounded-xl border border-warning/20 bg-surface/50 p-4 flex flex-col gap-2">
+          <p className="text-[9px] text-warning tracking-wider uppercase mb-1">Testing only — remove before launch</p>
           <div className="text-[10px] text-muted2 mb-2">
             Week {store.progressDB.currentWeek} · {store.progressDB.sessions.length} sessions logged
           </div>
@@ -890,7 +890,7 @@ function DevTools({ onRebuild, loading }: { onRebuild: () => void; loading: bool
             {loading ? "Building…" : `⚡ Skip to Week ${store.progressDB.currentWeek + 1} & build`}
           </button>
           <button onClick={resetAll}
-            className="w-full rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-400 hover:bg-red-400/10 transition-all">
+            className="w-full rounded-lg border border-danger/20 px-3 py-2 text-xs text-danger hover:bg-danger/10 transition-all">
             Reset all data
           </button>
         </div>
