@@ -21,9 +21,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
+  const pathname = usePathname();
   useEffect(() => { installFeedbackContext(); }, []);
   useEffect(() => { trackRoute(pathname); }, [pathname]);
-  const pathname = usePathname();
 
   return (
     <AuthGuard>
