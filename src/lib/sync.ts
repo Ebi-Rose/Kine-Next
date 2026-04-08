@@ -210,11 +210,16 @@ export async function syncFromSupabase(): Promise<boolean> {
     const cloud = data.data as Record<string, unknown>;
     const store = useKineStore.getState();
 
-    // Conflict resolution: only hydrate if cloud is newer than local
+    // Conflict resolution: only hydrate if cloud is newer than local.
+    // BUT: the "newer local" guard must only trigger when local actually
+    // contains onboarding data. Otherwise a fresh browser with a stamped
+    // default store blocks cloud restore forever and the user is stuck
+    // on "Loading your programme…".
+    const localHasOnboardingData = !!store.goal || !!store.progressDB?.programStartDate;
     const cloudModified = (cloud._lastModifiedAt as string) || data.updated_at;
     const localModified = store._lastModifiedAt;
 
-    if (localModified && cloudModified) {
+    if (localHasOnboardingData && localModified && cloudModified) {
       const cloudTime = new Date(cloudModified).getTime();
       const localTime = new Date(localModified).getTime();
       if (localTime > cloudTime) {

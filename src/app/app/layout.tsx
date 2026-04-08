@@ -46,7 +46,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SyncProvider />
         <OfflineIndicator />
         <InactivityGuard />
-        <GuideButton onClick={() => setGuideOpen(true)} />
         <GuideDrawer open={guideOpen} onClose={() => setGuideOpen(false)} route={pathname} />
         <FeedbackButton onClick={() => setFeedbackOpen(true)} />
         <FeedbackSheet open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
