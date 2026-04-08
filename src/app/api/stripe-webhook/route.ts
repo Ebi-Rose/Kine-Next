@@ -33,7 +33,17 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  logAudit({ event: "webhook_received", ip: getRequestIp(request.headers), metadata: { type: event.type } });
+  // Best-effort user_id extraction from common Stripe event shapes.
+  const eventUserId = (() => {
+    const obj = event.data.object as Record<string, unknown>;
+    const meta = (obj.metadata as Record<string, string> | undefined) || undefined;
+    if (meta?.supabase_user_id) return meta.supabase_user_id;
+    // For invoice events, fall through to subscription metadata if present
+    const subMeta = (obj.subscription_details as { metadata?: Record<string, string> } | undefined)?.metadata;
+    return subMeta?.supabase_user_id || null;
+  })();
+
+  logAudit({ event: "webhook_received", user_id: eventUserId, ip: getRequestIp(request.headers), metadata: { type: event.type } });
 
   // Idempotency: skip if we've already processed this event
   const { data: existing } = await supabase
@@ -46,7 +56,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ received: true, duplicate: true });
   }
 
-  logAudit({ event: "webhook_processing", ip: getRequestIp(request.headers), metadata: { type: event.type, stripe_event_id: event.id } });
+  logAudit({ event: "webhook_processing", user_id: eventUserId, ip: getRequestIp(request.headers), metadata: { type: event.type, stripe_event_id: event.id } });
 
   try {
     switch (event.type) {
