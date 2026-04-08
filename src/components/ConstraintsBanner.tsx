@@ -37,36 +37,30 @@ export default function ConstraintsBanner({
 
   const hasActiveConstraints = injuries.length > 0 || conditions.length > 0;
 
-  // Empty state — no conditions OR no swaps applied to this session
-  if (!hasActiveConstraints || swappedIndexes.length === 0) {
-    if (!hasActiveConstraints) return null;
-    return (
-      <div className="mb-4 rounded-[var(--radius-default)] border border-dashed border-border px-4 py-3">
-        <p className="text-[10px] text-muted text-center tracking-wide">
-          Standard programme — no adaptations active for this session.
-        </p>
-      </div>
-    );
-  }
+  // No constraints at all — nothing to show
+  if (!hasActiveConstraints) return null;
 
   const chips = [
     ...injuries.map((v) => reasonLabel(v)),
     ...conditions.map((v) => reasonLabel(v)),
   ];
+  const noSwaps = swappedIndexes.length === 0;
 
   return (
     <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] tracking-[0.18em] uppercase text-muted">
-          Adapted for you
+          {noSwaps ? "Your context" : "Adapted for you"}
         </span>
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="text-[11px] text-accent hover:underline"
-          aria-expanded={open}
-        >
-          {open ? "hide details ↑" : "show details ↓"}
-        </button>
+        {!noSwaps && (
+          <button
+            onClick={() => setOpen((o) => !o)}
+            className="text-[11px] text-accent hover:underline"
+            aria-expanded={open}
+          >
+            {open ? "hide details ↑" : "show details ↓"}
+          </button>
+        )}
       </div>
 
       <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -82,11 +76,17 @@ export default function ConstraintsBanner({
       </div>
 
       <p className="mt-2.5 text-[10px] text-muted leading-relaxed">
-        <span className="text-accent font-medium">{swappedIndexes.length}</span>
-        {swappedIndexes.length === 1 ? " exercise was" : " exercises were"} adapted for this session.
+        {noSwaps ? (
+          <>Today&apos;s exercises are already suitable — no adaptations needed.</>
+        ) : (
+          <>
+            <span className="text-accent font-medium">{swappedIndexes.length}</span>
+            {swappedIndexes.length === 1 ? " exercise was" : " exercises were"} adapted for this session.
+          </>
+        )}
       </p>
 
-      {open && (
+      {open && !noSwaps && (
         <div className="mt-3.5 pt-3.5 border-t border-border flex flex-col gap-2.5">
           {swappedIndexes.map(({ ex, i }) => {
             const reverted = ex.useOriginal === true;

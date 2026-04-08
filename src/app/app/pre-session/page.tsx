@@ -12,6 +12,12 @@ import { trimSessionToTime, estimateSessionTime, estimateSessionTimeWithRest } f
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
 import ConstraintsBanner from "@/components/ConstraintsBanner";
+import { INJURY_OPTIONS, CONDITION_OPTIONS } from "@/data/constants";
+
+const INJURY_LABEL_MAP = Object.fromEntries(INJURY_OPTIONS.map((o) => [o.value, o.label])) as Record<string, string>;
+const CONDITION_LABEL_MAP = Object.fromEntries(CONDITION_OPTIONS.map((o) => [o.value, o.label])) as Record<string, string>;
+const injuryLabel = (v: string) => INJURY_LABEL_MAP[v] ?? v;
+const conditionLabel = (v: string) => CONDITION_LABEL_MAP[v] ?? v;
 
 // ── Phase coaching notes ──
 const PHASE_NOTES: Record<string, Record<CyclePhase, { body: string }>> = {
@@ -172,7 +178,7 @@ export default function PreSessionPage() {
     }
     if (phaseInfo) parts.push(phaseInfo.phase.charAt(0).toUpperCase() + phaseInfo.phase.slice(1) + " phase");
     if (conditions.length) parts.push(conditions.length + " condition" + (conditions.length > 1 ? "s" : ""));
-    if (injuries.length || injuryNotes) parts.push(injuries.join(", ") || "injury note");
+    if (injuries.length || injuryNotes) parts.push(injuries.map(injuryLabel).join(", ") || "injury note");
     if (daysSinceLastSession !== null) parts.push(`${daysSinceLastSession} day${daysSinceLastSession !== 1 ? "s" : ""} rest`);
     return parts.length ? parts.join(" · ") : "Tap to check in";
   }, [energy, phaseInfo, conditions, injuries, injuryNotes, daysSinceLastSession]);
@@ -509,7 +515,7 @@ export default function PreSessionPage() {
           <div className="flex items-start gap-2 py-2 border-t border-border">
             <span className="text-xs shrink-0 mt-px">⚠</span>
             <div className="text-xs text-muted2 font-light leading-snug">
-              <strong className="text-text font-medium">{injuries.join(", ") || "Note"}</strong>
+              <strong className="text-text font-medium">{injuries.map(injuryLabel).join(", ") || "Note"}</strong>
               {injuryNotes && <span> — {injuryNotes}</span>}
             </div>
           </div>
