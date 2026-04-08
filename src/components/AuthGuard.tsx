@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getSession, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
 import { syncFromSupabase } from "@/lib/sync";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Wait until Zustand has finished rehydrating from localStorage. Uses the
@@ -104,33 +105,51 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             return;
           }
         } else {
-          // 1. Wait for Zustand to rehydrate from localStorage (existing
-          //    device — fast path, no network).
-          await waitForLocalHydration();
-          if (cancelled) return;
+          // ── Sticky onboarding check ──
+          // Source of truth: `onboarded_at` in Supabase auth user metadata.
+          // Set once on onboarding completion; never unset. If present, we
+          // NEVER send the user back to onboarding — regardless of local
+          // storage state or cloud sync status. This prevents the historic
+          // bug where a fresh browser or failed sync would re-trigger
+          // onboarding and overwrite existing data.
+          const onboardedAt = session?.user?.user_metadata?.onboarded_at as string | undefined;
 
-          // 2. If local store has no onboarding signal, fall back to
-          //    Supabase. New device / fresh browser / cleared storage —
-          //    the cloud is the source of truth for "have I onboarded".
-          //    Without this await, AuthGuard would race the redirect
-          //    against SyncProvider's fire-and-forget restore and lose.
-          let { progressDB, goal } = useKineStore.getState();
-          if (!progressDB.programStartDate || !goal) {
-            try {
-              await syncFromSupabase();
-            } catch (e) {
-              console.warn("[AuthGuard] cloud restore failed:", e);
-            }
+          if (!onboardedAt) {
+            // Back-compat path for users who completed onboarding before
+            // the sticky flag existed: check local + cloud training_data.
+            await waitForLocalHydration();
             if (cancelled) return;
-            ({ progressDB, goal } = useKineStore.getState());
-          }
 
-          // 3. Only redirect if BOTH local and cloud are empty for this
-          //    user — i.e. they genuinely have not onboarded yet.
-          if ((!progressDB.programStartDate || !goal) && pathname !== "/app/onboarding") {
-            router.replace("/app/onboarding");
-            return;
+            let { progressDB, goal } = useKineStore.getState();
+            if (!progressDB.programStartDate || !goal) {
+              try {
+                await syncFromSupabase();
+              } catch (e) {
+                console.warn("[AuthGuard] cloud restore failed:", e);
+              }
+              if (cancelled) return;
+              ({ progressDB, goal } = useKineStore.getState());
+            }
+
+            const looksOnboarded = !!progressDB.programStartDate && !!goal;
+
+            if (looksOnboarded) {
+              // Backfill the sticky flag so we never have to check again.
+              try {
+                await supabase.auth.updateUser({
+                  data: { onboarded_at: new Date().toISOString() },
+                });
+              } catch (e) {
+                console.warn("[AuthGuard] failed to backfill onboarded_at:", e);
+              }
+            } else if (pathname !== "/app/onboarding") {
+              router.replace("/app/onboarding");
+              return;
+            }
           }
+          // If onboardedAt is set, fall through — user is allowed, no
+          // redirect, no sync required. SyncProvider will restore state
+          // asynchronously in the background.
         }
 
         setAllowed(true);

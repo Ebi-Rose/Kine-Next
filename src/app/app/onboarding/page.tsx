@@ -73,7 +73,7 @@ export default function OnboardingPage() {
     setStep(s);
   }
 
-  function finishOnboarding() {
+  async function finishOnboarding() {
     // programStartDate is already set by SummaryStep.handleFinish()
     // Only set currentWeek if not already set
     if (!store.progressDB.currentWeek) {
@@ -81,6 +81,17 @@ export default function OnboardingPage() {
         ...store.progressDB,
         currentWeek: 1,
       });
+    }
+    // Mark user as permanently onboarded in their auth metadata.
+    // Once this flag is set, AuthGuard never sends them back to onboarding,
+    // regardless of local storage state or cloud sync failures.
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      await supabase.auth.updateUser({
+        data: { onboarded_at: new Date().toISOString() },
+      });
+    } catch (e) {
+      console.warn("[onboarding] failed to persist onboarded_at:", e);
     }
     router.push("/app");
   }
