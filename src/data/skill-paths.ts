@@ -42,7 +42,8 @@ export const SKILL_PATHS: SkillPath[] = [
 
   // LEGS
   { id: "squat-bw", muscle: "legs", pattern: "squat-bw",
-    chain: ["Bodyweight Squat", "Cossack Squat", ["Pistol Squat", "Shrimp Squat"]] },
+    chain: ["Bodyweight Squat", "Split Squat", "Reverse Lunge", "Bulgarian Split Squat",
+            "Cossack Squat", "Shrimp Squat", "Pistol Squat"] },
   { id: "squat-weighted", muscle: "legs", pattern: "squat-weighted", weighted: true,
     chain: ["Goblet Squat", "Barbell Back Squat"] },
   { id: "squat-front", muscle: "legs", pattern: "squat-front", weighted: true,
@@ -82,7 +83,10 @@ export const SKILL_HINTS: Record<string, string> = {
   "Hanging Knee Raise": "Control the swing — abs initiate",
   "Hanging Leg Raise": "Straight legs — much harder than knees",
   "Bodyweight Squat": "Master depth and balance first",
-  "Cossack Squat": "Lateral mobility and single-leg strength",
+  "Split Squat": "Static split stance — builds unilateral base",
+  "Reverse Lunge": "Step back and sink — knee-friendly unilateral",
+  "Bulgarian Split Squat": "Rear foot elevated — high single-leg demand",
+  "Cossack Squat": "Lateral mobility and deep single-leg range",
   "Goblet Squat": "Counterbalance helps depth — great teaching tool",
   "Barbell Back Squat": "The standard for lower body strength",
   "Front Squat": "Upright torso — quad emphasis",
