@@ -13,6 +13,19 @@ let EXERCISE_VIDEOS: Record<string, string> = {};
 let loaded = false;
 let loadingPromise: Promise<void> | null = null;
 
+// ── Subscribers (so React components re-render when the cache lands) ──
+const subscribers = new Set<() => void>();
+function notify() { subscribers.forEach((fn) => fn()); }
+
+export function subscribeVideos(fn: () => void): () => void {
+  subscribers.add(fn);
+  return () => { subscribers.delete(fn); };
+}
+
+export function getVideosSnapshot(): boolean {
+  return loaded;
+}
+
 /**
  * Fetch all video rows from Supabase and populate the in-memory cache.
  * Safe to call multiple times — will only hit the network once per session.
@@ -33,6 +46,7 @@ export function loadExerciseVideos(): Promise<void> {
       }
       EXERCISE_VIDEOS = next;
       loaded = true;
+      notify();
     } catch (e) {
       console.warn("[exercise-videos] load failed", e);
     } finally {

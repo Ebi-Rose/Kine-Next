@@ -63,11 +63,14 @@ export default function ExerciseSwapSheet({
       .filter((ex) => {
         if (ex.name === currentExercise) return false;
         if (sessionExercises.includes(ex.name)) return false;
-        if (!ex.equip.some((e) => equip.includes(e))) return false;
-        if (ex.minExp === "developing" && exp === "new") return false;
-        if (ex.minExp === "intermediate" && (exp === "new" || exp === "developing")) return false;
-        if (mode === "like" && currentEx && ex.muscle !== currentEx.muscle) return false;
-        if (mode === "all" && currentEx && ex.muscle === currentEx.muscle) return false;
+        // "All exercises" mode shows the entire library — no equipment or
+        // experience gating. "Like for like" still respects both.
+        if (mode === "like") {
+          if (!ex.equip.some((e) => equip.includes(e))) return false;
+          if (ex.minExp === "developing" && exp === "new") return false;
+          if (ex.minExp === "intermediate" && (exp === "new" || exp === "developing")) return false;
+          if (currentEx && ex.muscle !== currentEx.muscle) return false;
+        }
         if (search && !ex.name.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       })

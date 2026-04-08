@@ -1,6 +1,7 @@
 "use client";
 
 import { getVideoUrl, getVideoThumb, hasVideo } from "@/data/exercise-videos";
+import { useExerciseVideosReady } from "@/hooks/useExerciseVideosReady";
 import BottomSheet from "@/components/BottomSheet";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function VideoSheet({ open, onClose, exerciseName }: Props) {
+  useExerciseVideosReady();
   const videoUrl = getVideoUrl(exerciseName);
 
   if (!videoUrl) return null;

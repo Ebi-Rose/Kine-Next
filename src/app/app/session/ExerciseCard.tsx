@@ -5,6 +5,7 @@ import { findExercise } from "@/data/exercise-library";
 import { getBreathingCue, getMuscleTags, getConditionCue, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
 import { getSkillPath, hasSkillPath } from "@/data/skill-paths";
 import { getVideoThumb, hasVideo, getVideoUrl } from "@/data/exercise-videos";
+import { useExerciseVideosReady } from "@/hooks/useExerciseVideosReady";
 import { getProgressionSuggestion, getIncrement } from "@/lib/progression";
 import { getExerciseStallWeeks } from "@/lib/programme-age";
 import { useKineStore } from "@/store/useKineStore";
@@ -37,6 +38,8 @@ export default function ExerciseCard({
   const system = useKineStore((s) => s.measurementSystem) || "metric";
   const unit = weightUnit(system);
   const unitPerSide = weightUnitPerSide(system);
+  // Subscribe so this card re-renders when the Supabase video cache lands.
+  useExerciseVideosReady();
 
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
