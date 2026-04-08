@@ -33,6 +33,14 @@ describe("getConditionContext", () => {
     expect(result).toContain("Valsalva");
   });
 
+  it("returns context for hypermobility", () => {
+    const result = getConditionContext(["hypermobility"]);
+    expect(result).toContain("Hypermobility");
+    expect(result).toContain("range of motion");
+    expect(result).toContain("isometric");
+    expect(result).toContain("ballistic");
+  });
+
   it("combines multiple conditions with semicolons", () => {
     const result = getConditionContext(["pcos", "endometriosis"]);
     expect(result).toContain("PCOS");

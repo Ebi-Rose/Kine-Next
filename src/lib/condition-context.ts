@@ -7,6 +7,7 @@ const CONDITION_CONTEXT: Record<string, string> = {
   fibroids: "Fibroids — low-impact alternatives preferred. Avoid excessive intra-abdominal pressure during heavy loading. Flag high-impact exercises for swap.",
   endometriosis: "Endometriosis — low-impact alternatives on symptomatic days. Anti-inflammatory movement beneficial. Flag high-impact exercises. Late-luteal may need auto-scaling.",
   pelvic_floor: "Pelvic floor — no max-effort Valsalva loading. Exhale-on-exertion, not breath-holding. Pelvic floor-friendly alternatives for high-impact movements.",
+  hypermobility: "Hypermobility / EDS — cap deep range of motion (no end-range loading, no locked-out joints). Prefer tempo (3–4s eccentric) and isometric holds. Strictly avoid ballistic and plyometric movements (no jumps, no bounding, no bouncing reps). Dampen weekly volume by ~10–15%. Prioritise joint stability and control over mobility and depth. Longer rest between sets.",
 };
 
 /**

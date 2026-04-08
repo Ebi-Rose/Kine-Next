@@ -1,4 +1,19 @@
 import type { Goal, Experience, CycleType, Duration, LifeStage } from "@/store/useKineStore";
+import type { MuscleGroup } from "@/data/exercise-library";
+
+/**
+ * Colour token per exercise muscle-group category.
+ * Used by home, rest-day, pre-session, swap sheet, and session card.
+ */
+export const CATEGORY_COLORS: Record<MuscleGroup, string> = {
+  push: "var(--color-cat-push)",
+  pull: "var(--color-cat-pull)",
+  legs: "var(--color-cat-legs)",
+  hinge: "var(--color-cat-hinge)",
+  core: "var(--color-cat-core)",
+  cardio: "var(--color-cat-cardio)",
+  calisthenics: "var(--color-cat-core)",
+};
 
 /**
  * Life stage drives the Progress page personalization engine.

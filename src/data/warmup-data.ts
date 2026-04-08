@@ -267,6 +267,12 @@ export const WARMUP_CONDITION_MODS: Record<string, WarmupItem[]> = {
     { name: "Gentle hip circles", detail: "10 each direction - slow and controlled.", duration: "30s",
       _why: "Low-impact mobilisation to warm up without high intra-abdominal pressure.", _injuryProtective: true, replaces: null },
   ],
+  hypermobility: [
+    { name: "Joint stability activation", detail: "Scapular push-ups x10, glute bridges with 3s hold x8. Slow and controlled.", duration: "60s",
+      _why: "Primes stabiliser muscles before loading. Control comes before range.", _injuryProtective: true, replaces: null },
+    { name: "Mid-range isometric holds", detail: "Wall sit 20s, plank 20s. Stay mid-range, don't lock out.", duration: "45s",
+      _why: "Builds joint position sense at the ranges you'll train in — not end-range.", _injuryProtective: true, replaces: null },
+  ],
 };
 
 // ── Cooldown breathwork ──

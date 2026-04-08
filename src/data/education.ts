@@ -277,6 +277,14 @@ export const CONDITION_EDUCATION: Record<string, { tag: string; cue: (exerciseNa
       return null;
     },
   },
+  hypermobility: {
+    tag: "Hypermobility",
+    cue: (name) => {
+      if (/jump|plyo|snatch|clean/i.test(name)) return "Swapped to a controlled tempo variant. Ballistic movement is higher risk when connective tissue is lax.";
+      if (isCompound(name)) return "Control the range — stop just short of lockout. Stability before depth. Feel the muscles working, not the joints stretching.";
+      return null;
+    },
+  },
 };
 
 /** Get first matching condition education cue for an exercise (max 1) */

@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { findExercise } from "@/data/exercise-library";
-import { CATEGORY_COLORS } from "@/data/constants";
-import { DAY_LABELS } from "@/data/constants";
+import { CATEGORY_COLORS, DAY_LABELS } from "@/data/constants";
 import { appNow } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 

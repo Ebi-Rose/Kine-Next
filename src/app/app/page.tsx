@@ -6,7 +6,7 @@ import { useKineStore } from "@/store/useKineStore";
 import { appNow, appTodayISO, appTimestamp } from "@/lib/dev-time";
 import { buildWeek } from "@/lib/week-builder";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
-import { DAY_LABELS } from "@/data/constants";
+import { DAY_LABELS, CATEGORY_COLORS } from "@/data/constants";
 import { getCurrentPhase } from "@/lib/cycle";
 import { getCurrentPhaseInfo } from "@/lib/periodisation";
 import { isProgrammeStarted } from "@/lib/date-utils";
@@ -15,22 +15,12 @@ import BottomSheet from "@/components/BottomSheet";
 import SessionRearrange from "@/components/SessionRearrange";
 import { findExercise } from "@/data/exercise-library";
 import { weightUnit, formatDateShortLocale, detectLocale } from "@/lib/format";
-import type { MuscleGroup } from "@/data/exercise-library";
 import AdaptationCard from "@/components/AdaptationCard";
 import RestDayHome from "@/components/RestDayHome";
 import StreakMilestone from "@/components/StreakMilestone";
 import ForYouEducationStrip from "@/components/ForYouEducationStrip";
 import Link from "next/link";
-
-const CATEGORY_COLORS: Record<MuscleGroup, string> = {
-  push: "var(--color-cat-push)",
-  pull: "var(--color-cat-pull)",
-  legs: "var(--color-cat-legs)",
-  hinge: "var(--color-cat-hinge)",
-  core: "var(--color-cat-core)",
-  cardio: "var(--color-cat-cardio)",
-  calisthenics: "var(--color-cat-core)",
-};
+import { toast } from "@/components/Toast";
 
 function getCategoryColor(exerciseName: string): string {
   const ex = findExercise(exerciseName);

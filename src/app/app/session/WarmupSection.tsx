@@ -43,11 +43,9 @@ export default function WarmupSection({ warmup }: { warmup: WarmupData }) {
             </div>
           </button>
           <div className="flex items-center gap-3">
-            {collapsed && (
-              <button onClick={() => setCollapsed(false)} className="text-[10px] text-accent/70 hover:text-accent transition-colors">
-                Show
-              </button>
-            )}
+            <button onClick={() => setCollapsed((c) => !c)} className="text-[10px] text-accent/70 hover:text-accent transition-colors">
+              {collapsed ? "Show" : "Hide"}
+            </button>
             <button onClick={() => setShowWarmupWarning(true)} className="text-[10px] text-muted2 hover:text-text transition-colors">
               Skip
             </button>

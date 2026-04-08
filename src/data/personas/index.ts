@@ -3,8 +3,9 @@ import { loadPriya } from "./priya";
 import { loadAisha } from "./aisha";
 import { loadEmma } from "./emma";
 import { loadDiane } from "./diane";
+import { loadIris } from "./iris";
 
-export { loadMia, loadPriya, loadAisha, loadEmma, loadDiane };
+export { loadMia, loadPriya, loadAisha, loadEmma, loadDiane, loadIris };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Loader = (store: any) => void;
@@ -16,4 +17,5 @@ export const PERSONA_LOADERS: Record<string, Loader> = {
   aisha: (s) => loadAisha(s),
   emma: (s) => loadEmma(s),
   diane: (s) => loadDiane(s),
+  iris: (s) => loadIris(s),
 };

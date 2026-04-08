@@ -16,7 +16,7 @@ import { getPhaseContext } from "./periodisation";
 import { getConditionContext } from "./condition-context";
 import { validateWeek } from "./week-validation";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
-import { INJURY_SWAPS, CONDITION_SWAPS, applyInjurySwaps, applyConditionSwaps } from "@/data/injury-swaps";
+import { INJURY_SWAPS, CONDITION_SWAPS, applyInjurySwaps, applyConditionSwaps, type SwappedExercise } from "@/data/injury-swaps";
 import { WEEKLY_SPLITS } from "@/data/weekly-splits";
 import { SKILL_PATHS } from "@/data/skill-paths";
 import { loadRulesForSystem, weightUnit, kgToDisplay, type MeasurementSystem } from "./format";
@@ -29,6 +29,12 @@ export interface Exercise {
   reps: string;
   rest: string;
   load?: string;
+  /** Original exercise name before injury/condition adaptation. */
+  swappedFrom?: string;
+  /** Raw key (e.g. "knees", "pregnancy") explaining the adaptation. */
+  swappedReason?: string;
+  /** True when the user has chosen to revert to the original exercise. */
+  useOriginal?: boolean;
 }
 
 export interface WeekDay {
@@ -399,14 +405,19 @@ function buildFallbackWeek(): WeekData {
       const sessionIdx = dayIdx % split.sessions.length;
       const template = split.sessions[sessionIdx];
 
-      const swappedNames = applyEquipmentSwaps(
+      const swappedExercises = applyEquipmentSwaps(
         applyConditionSwaps(applyInjurySwaps(template.exercises, injuries), conditions),
         equip,
       );
 
-      const exercises = swappedNames.slice(0, exCount).map((name) =>
-        buildFallbackPrescription(name, goalKey),
-      );
+      const exercises = swappedExercises.slice(0, exCount).map((sx) => {
+        const base = buildFallbackPrescription(sx.name, goalKey);
+        if (sx.swappedFrom) {
+          base.swappedFrom = sx.swappedFrom;
+          base.swappedReason = sx.swappedReason;
+        }
+        return base;
+      });
 
       days.push({
         dayNumber: i + 1,
@@ -447,19 +458,26 @@ function buildFallbackWeek(): WeekData {
 }
 
 /** Swap exercises that require equipment the user doesn't have */
-function applyEquipmentSwaps(exercises: string[], userEquip: string[]): string[] {
-  return exercises.map((name) => {
-    const libEx = EXERCISE_LIBRARY.find((e) => e.name === name);
-    if (!libEx) return name;
-    if (libEx.equip.some((e) => userEquip.includes(e))) return name;
+function applyEquipmentSwaps(exercises: SwappedExercise[], userEquip: string[]): SwappedExercise[] {
+  return exercises.map((ex) => {
+    const libEx = EXERCISE_LIBRARY.find((e) => e.name === ex.name);
+    if (!libEx) return ex;
+    if (libEx.equip.some((e) => userEquip.includes(e))) return ex;
 
     const alt = EXERCISE_LIBRARY.find(
       (e) =>
         e.muscle === libEx.muscle &&
-        e.name !== name &&
+        e.name !== ex.name &&
         e.equip.some((eq) => userEquip.includes(eq)),
     );
-    return alt ? alt.name : name;
+    if (!alt) return ex;
+    // Equipment swap — only mark as adapted if not already attributed to an
+    // injury or condition (those are higher-priority reasons to surface).
+    return {
+      name: alt.name,
+      swappedFrom: ex.swappedFrom ?? ex.name,
+      swappedReason: ex.swappedReason ?? "equipment",
+    };
   });
 }
 

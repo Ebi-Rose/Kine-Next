@@ -123,40 +123,72 @@ export const CONDITION_SWAPS: Record<string, Record<string, string>> = {
     "Hanging Leg Raise": "Dead Bug",
   },
   pcos: {}, // No swaps — PCOS uses compound-priority via AI context
+  hypermobility: {
+    "Box Jumps": "Step-Ups",
+    "Jump Squat": "Goblet Squat (3s tempo)",
+    "Burpees": "Squat to Press (controlled)",
+    "Jump Rope": "Incline Walk",
+    "Mountain Climbers": "Dead Bug",
+    "Plyo Push-Up": "Push-Up (3s tempo)",
+    "Kettlebell Swing": "Romanian Deadlift (tempo)",
+    "Snatch": "Romanian Deadlift",
+    "Power Clean": "Trap Bar Deadlift",
+    "Overhead Squat": "Front Squat",
+    "Deep Squat": "Box Squat",
+    "Jefferson Curl": "Romanian Deadlift",
+    "Ab Wheel Rollout": "Bird Dog",
+    "V-Up": "Dead Bug",
+  },
 };
 
-/** Apply injury swaps to a list of exercise names */
+/**
+ * Result of applying swaps. Each exercise can carry the original name and
+ * the reason it was swapped, so the UI can display "adapted from X" and
+ * offer a one-tap revert.
+ */
+export interface SwappedExercise {
+  name: string;
+  swappedFrom?: string;
+  swappedReason?: string; // raw key, e.g. "knees" / "pregnancy"
+}
+
+/** Apply injury swaps to a list of exercise names. */
 export function applyInjurySwaps(
   exercises: string[],
   injuries: string[]
-): string[] {
-  if (injuries.length === 0) return exercises;
+): SwappedExercise[] {
+  if (injuries.length === 0) return exercises.map((name) => ({ name }));
 
   return exercises.map((name) => {
     for (const injury of injuries) {
       const swaps = INJURY_SWAPS[injury];
       if (swaps && swaps[name]) {
-        return swaps[name];
+        return { name: swaps[name], swappedFrom: name, swappedReason: injury };
       }
     }
-    return name;
+    return { name };
   });
 }
 
-/** Apply condition swaps to a list of exercise names */
+/** Apply condition swaps on top of an already-swapped list. */
 export function applyConditionSwaps(
-  exercises: string[],
+  exercises: SwappedExercise[],
   conditions: string[]
-): string[] {
+): SwappedExercise[] {
   if (conditions.length === 0) return exercises;
 
-  return exercises.map((name) => {
+  return exercises.map((ex) => {
     for (const condition of conditions) {
       const swaps = CONDITION_SWAPS[condition];
-      if (swaps && swaps[name]) {
-        return swaps[name];
+      if (swaps && swaps[ex.name]) {
+        // Preserve the earliest original (injury swap wins as the source of truth).
+        return {
+          name: swaps[ex.name],
+          swappedFrom: ex.swappedFrom ?? ex.name,
+          swappedReason: ex.swappedReason ?? condition,
+        };
       }
     }
-    return name;
+    return ex;
   });
 }
