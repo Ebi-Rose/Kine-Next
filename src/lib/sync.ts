@@ -166,6 +166,20 @@ async function doSync(retryCount = 0) {
       if (retryCount < 2) {
         setTimeout(() => doSync(retryCount + 1), 2000 * (retryCount + 1));
       }
+      return;
+    }
+
+    // Mirror name to profiles.name for greetings, analytics, RLS-friendly reads.
+    // Best-effort: a failure here must not block the training_data sync above.
+    const personalName = (store.personalProfile as { name?: string } | undefined)?.name?.trim();
+    if (personalName) {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ name: personalName, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+      if (profileError) {
+        console.warn("[sync] profiles.name update failed:", profileError.message);
+      }
     }
   } catch (e) {
     console.warn("Cloud sync error:", e);

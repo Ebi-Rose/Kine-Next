@@ -152,7 +152,8 @@ function PreStartView({
   loadingMsg: number;
 }) {
   const router = useRouter();
-  const { trainingDays, weekData, setWeekData } = useKineStore();
+  const { trainingDays, weekData, setWeekData, personalProfile } = useKineStore();
+  const firstName = (personalProfile?.name || "").trim().split(/\s+/)[0];
   const [activeView, setActiveView] = useState<"this-week" | "next-week">("this-week");
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const now = appNow();
@@ -173,7 +174,7 @@ function PreStartView({
           This week · {weekStart}
         </p>
         <h1 className="mt-1 font-display text-2xl tracking-wide text-text">
-          Your Week
+          {firstName ? `Hi ${firstName}` : "Your Week"}
         </h1>
       </div>
 
@@ -396,7 +397,8 @@ function WeekView({
   onRebuild: () => void;
   loading: boolean;
 }) {
-  const { cycleType, cycle, setCycle, progressDB, weekHistory, exp } = useKineStore();
+  const { cycleType, cycle, setCycle, progressDB, weekHistory, exp, personalProfile } = useKineStore();
+  const firstName = (personalProfile?.name || "").trim().split(/\s+/)[0];
   const [showRearrange, setShowRearrange] = useState(false);
   const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
   const [viewTab, setViewTab] = useState<"today" | "week">("today");
@@ -472,7 +474,7 @@ function WeekView({
           </Link>
         </div>
         <h1 className="mt-1 font-display text-2xl tracking-wide text-text">
-          Your Week
+          {firstName ? `Hi ${firstName}` : "Your Week"}
         </h1>
         {displayWeek._isFallback && (
           <div className="mt-2 rounded-lg border border-[#c49098]/30 bg-[#c49098]/5 px-3 py-2">
@@ -815,86 +817,6 @@ function WeekView({
         Consult your doctor before starting any exercise programme.
       </p>
 
-      {/* Dev tools — inline, remove before production launch */}
-      <DevTools onRebuild={onRebuild} loading={loading} />
-    </div>
-  );
-}
-
-// ── Dev Tools (inline) ──
-
-function DevTools({ onRebuild, loading }: { onRebuild: () => void; loading: boolean }) {
-  const [open, setOpen] = useState(false);
-  const store = useKineStore();
-
-  function advanceWeek() {
-    store.setProgressDB({
-      ...store.progressDB,
-      currentWeek: store.progressDB.currentWeek + 1,
-    });
-    store.setWeekData(null);
-    toast(`Advanced to Week ${store.progressDB.currentWeek + 1}`, "success");
-  }
-
-  function simulatePerfectWeek() {
-    const planned = parseInt(store.days || "3");
-    const sessions = [...store.progressDB.sessions];
-    for (let i = 0; i < planned; i++) {
-      sessions.push({
-        dayIdx: i,
-        date: appTodayISO(),
-        weekNum: store.progressDB.currentWeek,
-        title: `Session ${i + 1}`,
-        logs: {},
-        effort: 2,
-        soreness: 1,
-        prs: [],
-      });
-    }
-    store.setProgressDB({ ...store.progressDB, sessions });
-    toast("Perfect week simulated", "success");
-  }
-
-  function resetAll() {
-    if (confirm("Reset ALL data?")) {
-      localStorage.removeItem("kine_v2");
-      window.location.href = "/app/onboarding";
-    }
-  }
-
-  return (
-    <div className="mt-10 border-t border-border/30 pt-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full text-center text-[10px] text-muted hover:text-muted2 transition-colors"
-      >
-        {open ? "▾ Hide dev tools" : "▸ Dev tools"}
-      </button>
-      {open && (
-        <div className="mt-3 rounded-xl border border-warning/20 bg-surface/50 p-4 flex flex-col gap-2">
-          <p className="text-[9px] text-warning tracking-wider uppercase mb-1">Testing only — remove before launch</p>
-          <div className="text-[10px] text-muted2 mb-2">
-            Week {store.progressDB.currentWeek} · {store.progressDB.sessions.length} sessions logged
-          </div>
-          <button onClick={advanceWeek}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs text-text hover:border-accent transition-all">
-            Advance to Week {store.progressDB.currentWeek + 1}
-          </button>
-          <button onClick={simulatePerfectWeek}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-xs text-text hover:border-accent transition-all">
-            Simulate perfect week
-          </button>
-          <button onClick={() => { advanceWeek(); setTimeout(onRebuild, 100); }}
-            className="w-full rounded-lg border border-accent/30 bg-accent-dim px-3 py-2 text-xs text-accent hover:bg-accent/20 transition-all"
-            disabled={loading}>
-            {loading ? "Building…" : `⚡ Skip to Week ${store.progressDB.currentWeek + 1} & build`}
-          </button>
-          <button onClick={resetAll}
-            className="w-full rounded-lg border border-danger/20 px-3 py-2 text-xs text-danger hover:bg-danger/10 transition-all">
-            Reset all data
-          </button>
-        </div>
-      )}
     </div>
   );
 }

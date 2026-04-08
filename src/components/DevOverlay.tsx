@@ -209,7 +209,7 @@ export default function DevOverlay() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 z-[999] flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg/90 backdrop-blur-sm px-3 py-1.5 shadow-lg transition-all hover:border-accent hover:scale-105 active:scale-95"
+        className="fixed bottom-[140px] right-4 z-[999] flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg/90 backdrop-blur-sm px-3 py-1.5 shadow-lg transition-all hover:border-accent hover:scale-105 active:scale-95"
         style={{ paddingRight: 'max(12px, env(safe-area-inset-right))' }}
       >
         <span className="text-[10px] font-medium text-accent">DEV</span>
@@ -223,7 +223,7 @@ export default function DevOverlay() {
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-[999] w-72 rounded-2xl border border-border bg-bg/95 backdrop-blur-md shadow-2xl overflow-hidden" style={{ marginRight: 'max(0px, calc(env(safe-area-inset-right) - 16px))' }}>
+    <div className="fixed bottom-[140px] right-4 z-[999] w-72 rounded-2xl border border-border bg-bg/95 backdrop-blur-md shadow-2xl overflow-hidden" style={{ marginRight: 'max(0px, calc(env(safe-area-inset-right) - 16px))' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
         <div className="flex items-center gap-2">
