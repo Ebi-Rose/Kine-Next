@@ -15,7 +15,7 @@ export default function ExerciseCard({
   index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [],
 }: {
   index: number;
-  exercise: { name: string; sets: string; reps: string; rest: string };
+  exercise: { name: string; sets: string; reps: string; rest: string; swappedFrom?: string; swappedReason?: string; useOriginal?: boolean };
   log: ExerciseLog | undefined;
   expanded: boolean;
   onToggle: () => void;
