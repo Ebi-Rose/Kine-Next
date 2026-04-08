@@ -547,6 +547,36 @@ export default function SessionPage() {
             onSkip={skipExercise}
             onUnskip={unskipExercise}
             onSwap={(idx) => setSwapSheetIdx(idx)}
+            onQuickSwap={(idx, newName) => {
+              // Direct swap from the "Easier/Harder" skill-path buttons.
+              // Mirrors the full ExerciseSwapSheet onSwap handler below.
+              const store = useKineStore.getState();
+              const updatedWeek = { ...week! };
+              const updatedDays = [...updatedWeek.days];
+              const updatedDay = { ...updatedDays[dayIdx] };
+              const updatedExercises = [...updatedDay.exercises];
+              const targetName = effectiveExercises[idx]?.name;
+              const origIdx = updatedExercises.findIndex((e) => e.name === targetName);
+              if (origIdx >= 0) {
+                const previous = updatedExercises[origIdx];
+                updatedExercises[origIdx] = {
+                  ...previous,
+                  name: newName,
+                  swappedFrom: previous.swappedFrom ?? previous.name,
+                  swappedReason: previous.swappedReason ?? "user",
+                  useOriginal: false,
+                };
+              }
+              updatedDay.exercises = updatedExercises;
+              updatedDays[dayIdx] = updatedDay;
+              updatedWeek.days = updatedDays;
+              store.setWeekData(updatedWeek);
+              setLogs((prev) => ({
+                ...prev,
+                [idx]: { ...prev[idx], name: newName, saved: false, actual: prev[idx].actual.map(() => ({ reps: "", weight: "" })) },
+              }));
+              toast(`Swapped to ${newName}`, "success");
+            }}
             swapLoading={false}
             onVideoPlay={(url) => setVideoUrl(url)}
             onVideoSheet={(name) => setVideoSheetEx(name)}

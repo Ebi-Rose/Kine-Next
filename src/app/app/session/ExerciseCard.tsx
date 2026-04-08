@@ -14,7 +14,7 @@ import { weightUnit, weightUnitPerSide } from "@/lib/format";
 import Button from "@/components/Button";
 
 export default function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [],
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, onQuickSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [],
 }: {
   index: number;
   exercise: { name: string; sets: string; reps: string; rest: string; swappedFrom?: string; swappedReason?: string; useOriginal?: boolean };
@@ -27,6 +27,7 @@ export default function ExerciseCard({
   onSkip: (exIdx: number) => void;
   onUnskip: (exIdx: number) => void;
   onSwap: (exIdx: number) => void;
+  onQuickSwap?: (exIdx: number, newName: string) => void;
   swapLoading: boolean;
   onVideoPlay?: (url: string) => void;
   onVideoSheet?: (name: string) => void;
@@ -155,7 +156,15 @@ export default function ExerciseCard({
       </button>
 
       {showVideoInline && vidUrl && (
-        <div className="mx-4 mb-3 rounded-lg overflow-hidden border border-border bg-black">
+        <div className="mx-4 mb-3 rounded-lg overflow-hidden border border-border bg-black relative">
+          <button
+            type="button"
+            onClick={() => setShowVideoInline(false)}
+            aria-label="Close video"
+            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80"
+          >
+            ✕
+          </button>
           <video
             src={vidUrl}
             autoPlay
@@ -378,25 +387,17 @@ export default function ExerciseCard({
               <Button size="sm" className="flex-1" onClick={() => onSave(index)}>Save</Button>
             </div>
 
-            {/* #14: Video + #15: Skill path action buttons */}
-            <div className="mt-3 flex gap-2">
-              {hasVideo(exercise.name) && onVideoSheet && (
-                <button
-                  onClick={() => onVideoSheet(exercise.name)}
-                  className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
-                >
-                  <span>▶</span> Watch form
-                </button>
-              )}
-              {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && onSkillPath && (
+            {/* Skill path action — video is already playable from the header thumbnail */}
+            {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && onSkillPath && (
+              <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => onSkillPath(exercise.name)}
                   className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
                 >
                   ↕ Adjust difficulty
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* #17: Exercise stall detection */}
             {(() => {
@@ -446,17 +447,31 @@ export default function ExerciseCard({
             )}
             </>)}
 
-            {/* Skill path hint (inline preview) */}
+            {/* Skill path hint (inline preview) — tap to auto-swap */}
             {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
               <div className="mt-3 rounded-lg bg-surface2/50 px-3 py-2">
                 <p className="text-[9px] tracking-wider text-muted uppercase mb-1">Difficulty</p>
                 {skillPath.hint && <p className="text-[10px] text-muted2 mb-1.5">{skillPath.hint}</p>}
-                <div className="flex gap-3 text-[10px]">
+                <div className="flex flex-wrap gap-2 text-[10px]">
                   {skillPath.easier.length > 0 && (
-                    <span className="text-success">← Easier: {skillPath.easier.slice(-1)[0]}</span>
+                    <button
+                      type="button"
+                      onClick={() => onQuickSwap?.(index, skillPath.easier.slice(-1)[0])}
+                      disabled={!onQuickSwap}
+                      className="text-success underline underline-offset-2 decoration-success/30 hover:decoration-success transition-colors disabled:no-underline disabled:cursor-default"
+                    >
+                      ← Easier: {skillPath.easier.slice(-1)[0]}
+                    </button>
                   )}
                   {skillPath.harder.length > 0 && (
-                    <span className="text-accent">Harder: {skillPath.harder[0]} →</span>
+                    <button
+                      type="button"
+                      onClick={() => onQuickSwap?.(index, skillPath.harder[0])}
+                      disabled={!onQuickSwap}
+                      className="text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors disabled:no-underline disabled:cursor-default"
+                    >
+                      Harder: {skillPath.harder[0]} →
+                    </button>
                   )}
                 </div>
               </div>
