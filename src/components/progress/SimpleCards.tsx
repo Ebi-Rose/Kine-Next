@@ -134,7 +134,7 @@ export function EmptyStateCard() {
         Once you&apos;ve logged a few sessions, this page fills out with your strength trends, top lifts, and PRs.
       </p>
       <div className="mt-3">
-        <Link href="/app/today" className="text-[11px] text-accent hover:underline">
+        <Link href="/app" className="text-[11px] text-accent hover:underline">
           Start today&apos;s session →
         </Link>
       </div>
