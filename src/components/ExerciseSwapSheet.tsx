@@ -6,13 +6,20 @@ import { EXERCISE_LIBRARY, findExercise } from "@/data/exercise-library";
 import { getSessionMuscles } from "@/data/session-muscle-focus";
 import BottomSheet from "@/components/BottomSheet";
 
+export interface SwapMeta {
+  /** Free-form reason the user gave for swapping (may be empty). */
+  note?: string;
+  /** True if the user wants this swap remembered for future sessions of the original exercise. */
+  remember?: boolean;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
   currentExercise: string;
   sessionTitle: string;
   sessionExercises: string[];
-  onSwap: (newExerciseName: string) => void;
+  onSwap: (newExerciseName: string, meta?: SwapMeta) => void;
 }
 
 type SwapMode = "like" | "all";
@@ -34,6 +41,19 @@ export default function ExerciseSwapSheet({
   const { equip, exp } = useKineStore();
   const [mode, setMode] = useState<SwapMode>("like");
   const [search, setSearch] = useState("");
+  // Step 2: after picking a candidate, optionally collect a reason + scope.
+  const [pendingPick, setPendingPick] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [remember, setRemember] = useState(false);
+
+  function commitSwap(newName: string, meta?: SwapMeta) {
+    onSwap(newName, meta);
+    // Reset and close
+    setPendingPick(null);
+    setNote("");
+    setRemember(false);
+    onClose();
+  }
 
   const currentEx = findExercise(currentExercise);
   const sessionMuscles = getSessionMuscles(sessionTitle);
@@ -88,6 +108,72 @@ export default function ExerciseSwapSheet({
     return groups;
   }, [candidates, mode]);
 
+  // ── Step 2 view: reason + scope ──
+  if (pendingPick) {
+    return (
+      <BottomSheet open={open} onClose={onClose} title="Why this swap?">
+        <div className="mb-4 rounded-[10px] border border-border bg-surface px-3 py-2.5">
+          <div className="text-[10px] tracking-wider uppercase text-muted mb-1">Swapping</div>
+          <div className="text-[12px] text-text">
+            <span className="text-muted line-through">{currentExercise}</span>
+            <span className="text-muted mx-1.5">→</span>
+            <span className="font-medium">{pendingPick}</span>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-muted2 leading-relaxed mb-3">
+          Optional — telling Kinē <em>why</em> helps it learn what works for your body. Skip if you&apos;d rather just get on with it.
+        </p>
+
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={3}
+          maxLength={240}
+          placeholder="e.g. left knee twinges on squats today"
+          aria-label="Swap reason"
+          className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none mb-3"
+        />
+
+        <label className="flex items-start gap-2.5 mb-4 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="mt-0.5 accent-accent"
+          />
+          <span className="text-[11px] text-muted2 leading-snug">
+            <span className="text-text font-medium">Remember this for future sessions.</span>
+            <br />
+            Next time {currentExercise} comes up, Kinē will use {pendingPick} again.
+          </span>
+        </label>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => commitSwap(pendingPick)}
+            className="flex-1 rounded-full border border-border bg-surface px-4 py-2.5 text-[12px] text-muted2 hover:text-text hover:border-border-active transition-colors"
+          >
+            Skip — just swap
+          </button>
+          <button
+            onClick={() => commitSwap(pendingPick, { note: note.trim() || undefined, remember })}
+            className="flex-1 rounded-full bg-accent text-bg px-4 py-2.5 text-[12px] font-medium hover:bg-accent/90 transition-colors"
+          >
+            Save reason
+          </button>
+        </div>
+
+        <button
+          onClick={() => setPendingPick(null)}
+          className="mt-3 w-full text-center text-[10px] text-muted hover:text-accent transition-colors"
+        >
+          ← back to alternatives
+        </button>
+      </BottomSheet>
+    );
+  }
+
   return (
     <BottomSheet open={open} onClose={onClose} title={`Replace ${currentExercise}`}>
       {/* Current exercise context */}
@@ -133,7 +219,7 @@ export default function ExerciseSwapSheet({
               {group.items.slice(0, 15).map((ex) => (
                 <button
                   key={ex.name}
-                  onClick={() => { onSwap(ex.name); onClose(); }}
+                  onClick={() => setPendingPick(ex.name)}
                   className={`flex items-center gap-2.5 rounded-lg border-l-[3px] ${MUSCLE_COLORS[ex.muscle] || "border-l-muted"} bg-surface px-3 py-2.5 text-left hover:bg-surface2 transition-all`}
                 >
                   <div className="flex-1 min-w-0">

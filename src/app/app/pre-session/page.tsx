@@ -210,12 +210,23 @@ export default function PreSessionPage() {
     });
   }, []);
 
-  const handleSwap = useCallback((newName: string) => {
+  const handleSwap = useCallback((newName: string, meta?: { note?: string; remember?: boolean }) => {
     if (swapIdx === null || !week?.days?.[dayIdx]) return;
     const updated = { ...week };
     const updatedDay = { ...updated.days[dayIdx] };
     const updatedExercises = [...updatedDay.exercises];
-    updatedExercises[swapIdx] = { ...updatedExercises[swapIdx], name: newName };
+    const previous = updatedExercises[swapIdx];
+    updatedExercises[swapIdx] = {
+      ...previous,
+      name: newName,
+      // Track the manual swap so the constraints banner / future engine
+      // can surface "you swapped this" with the user-provided context.
+      swappedFrom: previous.swappedFrom ?? previous.name,
+      swappedReason: meta?.note ? "user" : (previous.swappedReason ?? "user"),
+      useOriginal: false,
+      swapNote: meta?.note,
+      swapRemember: meta?.remember,
+    };
     updatedDay.exercises = updatedExercises;
     updated.days[dayIdx] = updatedDay;
     useKineStore.getState().setWeekData(updated);

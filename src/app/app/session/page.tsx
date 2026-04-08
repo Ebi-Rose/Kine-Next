@@ -638,7 +638,7 @@ export default function SessionPage() {
           currentExercise={effectiveExercises[swapSheetIdx].name}
           sessionTitle={day.sessionTitle}
           sessionExercises={effectiveExercises.map((e) => e.name)}
-          onSwap={(newName) => {
+          onSwap={(newName, meta) => {
             const store = useKineStore.getState();
             const updatedWeek = { ...week! };
             const updatedDays = [...updatedWeek.days];
@@ -646,7 +646,16 @@ export default function SessionPage() {
             const updatedExercises = [...updatedDay.exercises];
             const origIdx = updatedExercises.findIndex(e => e.name === effectiveExercises[swapSheetIdx].name);
             if (origIdx >= 0) {
-              updatedExercises[origIdx] = { ...updatedExercises[origIdx], name: newName };
+              const previous = updatedExercises[origIdx];
+              updatedExercises[origIdx] = {
+                ...previous,
+                name: newName,
+                swappedFrom: previous.swappedFrom ?? previous.name,
+                swappedReason: meta?.note ? "user" : (previous.swappedReason ?? "user"),
+                useOriginal: false,
+                swapNote: meta?.note,
+                swapRemember: meta?.remember,
+              };
             }
             updatedDay.exercises = updatedExercises;
             updatedDays[dayIdx] = updatedDay;

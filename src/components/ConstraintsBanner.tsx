@@ -8,6 +8,7 @@ const REASON_LABELS: Record<string, string> = {
   ...Object.fromEntries(INJURY_OPTIONS.map((o) => [o.value, o.label])),
   ...Object.fromEntries(CONDITION_OPTIONS.map((o) => [o.value, o.label])),
   equipment: "Available equipment",
+  user: "Your choice",
 };
 
 function reasonLabel(key: string | undefined): string {
@@ -107,6 +108,7 @@ export default function ConstraintsBanner({
                   </div>
                   <div className="mt-0.5 text-[9px] text-muted">
                     {reasonLabel(ex.swappedReason)}
+                    {ex.swapNote && <span className="text-muted2"> · &ldquo;{ex.swapNote}&rdquo;</span>}
                   </div>
                 </div>
                 <button

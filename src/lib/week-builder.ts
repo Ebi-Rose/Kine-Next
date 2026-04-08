@@ -35,6 +35,10 @@ export interface Exercise {
   swappedReason?: string;
   /** True when the user has chosen to revert to the original exercise. */
   useOriginal?: boolean;
+  /** Free-text reason the user gave when manually swapping this exercise. */
+  swapNote?: string;
+  /** True if the user asked to remember this swap for future sessions. */
+  swapRemember?: boolean;
 }
 
 export interface WeekDay {
