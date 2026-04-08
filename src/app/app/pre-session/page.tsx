@@ -1055,7 +1055,7 @@ export default function PreSessionPage() {
           onClick={() => setConfirmOpen(false)}
         >
           <div
-            className="bg-[#1a1a1a] border border-border rounded-2xl p-6 max-w-[380px] w-full text-center"
+            className="bg-surface text-text border border-border rounded-2xl p-6 max-w-[380px] w-full text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold -tracking-[0.2px] mb-4">Ready to go?</h3>
