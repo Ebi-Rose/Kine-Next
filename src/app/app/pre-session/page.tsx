@@ -430,6 +430,19 @@ export default function PreSessionPage() {
             </span>
           </div>
         )}
+
+        {/* Why this session — surfaced prominently, not buried */}
+        {(day.sessionWhy || day.sessionContext) && (
+          <div className="mt-3 border-l-2 border-accent/60 pl-3">
+            <div className="text-[9px] tracking-[0.15em] uppercase text-accent/80 font-medium mb-1">
+              Why this session
+            </div>
+            <p className="text-[12px] text-muted2 font-light leading-relaxed italic">
+              {day.sessionWhy || day.sessionContext}
+            </p>
+          </div>
+        )}
+
         {/* Subtle glow */}
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
       </div>
@@ -573,13 +586,6 @@ export default function PreSessionPage() {
             </span>
           </div>
         </div>
-
-        {/* Why */}
-        {(day.sessionWhy || day.sessionContext) && (
-          <div className="border-l-2 border-accent/30 pl-3 my-2 text-xs text-muted2 font-light leading-relaxed">
-            {day.sessionWhy || day.sessionContext}
-          </div>
-        )}
 
         {/* Muscle tags */}
         <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -781,34 +787,54 @@ export default function PreSessionPage() {
             return (
               <div
                 key={i}
-                className={`flex items-center gap-3 py-2.5 px-3 mb-1.5 rounded-lg border-l-[3px] ${borderColor} ${bgColor}`}
+                className={`py-2.5 px-3 mb-1.5 rounded-lg border-l-[3px] ${borderColor} ${bgColor}`}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-medium truncate text-text">
-                    {ex.useOriginal && ex.swappedFrom ? ex.swappedFrom : ex.name}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium truncate text-text">
+                      {ex.useOriginal && ex.swappedFrom ? ex.swappedFrom : ex.name}
+                    </div>
+                    <div className={`text-[9px] tracking-wider uppercase font-light ${labelColor}`}>
+                      {muscle.toUpperCase()} · {lib?.tags.includes("Compound") ? "Compound" : "Isolation"}
+                      {ex.swappedFrom && (
+                        <span className="text-accent/80 normal-case tracking-normal ml-1">· adapted</span>
+                      )}
+                    </div>
                   </div>
-                  <div className={`text-[9px] tracking-wider uppercase font-light ${labelColor}`}>
-                    {muscle.toUpperCase()} · {lib?.tags.includes("Compound") ? "Compound" : "Isolation"}
-                    {ex.swappedFrom && (
-                      <span className="text-accent/80 normal-case tracking-normal ml-1">· adapted</span>
-                    )}
-                  </div>
+                  <span className="font-display text-[13px] tracking-wider text-muted2 shrink-0">
+                    {ex.sets}×{ex.reps}
+                  </span>
+                  <button
+                    onClick={() => setSwapIdx(i)}
+                    className="text-[11px] text-muted underline underline-offset-2 decoration-muted/30 hover:text-accent hover:decoration-accent transition-colors shrink-0"
+                  >
+                    Swap
+                  </button>
+                  <button
+                    onClick={() => toggleSkip(i)}
+                    className="text-[10px] text-muted opacity-50 hover:opacity-100 hover:text-text transition-all shrink-0 px-1"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <span className="font-display text-[13px] tracking-wider text-muted2 shrink-0">
-                  {ex.sets}×{ex.reps}
-                </span>
-                <button
-                  onClick={() => setSwapIdx(i)}
-                  className="text-[11px] text-muted underline underline-offset-2 decoration-muted/30 hover:text-accent hover:decoration-accent transition-colors shrink-0"
-                >
-                  Swap
-                </button>
-                <button
-                  onClick={() => toggleSkip(i)}
-                  className="text-[10px] text-muted opacity-50 hover:opacity-100 hover:text-text transition-all shrink-0 px-1"
-                >
-                  ✕
-                </button>
+                {/* Inline rationale — populated by the indication pipeline */}
+                {ex.whyForYou && (
+                  <p className="mt-1.5 text-[11px] text-muted2 font-light italic leading-snug">
+                    &ldquo;{ex.whyForYou}&rdquo;
+                  </p>
+                )}
+                {ex.scoringFactors && ex.scoringFactors.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {ex.scoringFactors.slice(0, 3).map((f) => (
+                      <span
+                        key={f}
+                        className="text-[9px] text-muted2 bg-surface2/70 rounded-full px-1.5 py-0.5"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

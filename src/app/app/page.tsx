@@ -969,6 +969,16 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
       {expanded && (
         <>
           {day.coachNote && <p className="mt-1.5 text-xs text-muted2 leading-relaxed">{day.coachNote}</p>}
+          {(day.sessionWhy || day.sessionContext) && (
+            <div className="mt-2.5 border-l-2 border-accent/60 pl-3">
+              <div className="text-[9px] tracking-[0.15em] uppercase text-accent/80 font-medium mb-1">
+                Why this session
+              </div>
+              <p className="text-[11px] text-muted2 font-light leading-relaxed italic">
+                {day.sessionWhy || day.sessionContext}
+              </p>
+            </div>
+          )}
           <div className="mt-3 flex flex-col gap-1.5">
             {day.exercises.map((ex, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
