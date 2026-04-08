@@ -11,6 +11,7 @@ import CollapsibleSection from "@/components/CollapsibleSection";
 import { trimSessionToTime, estimateSessionTime, estimateSessionTimeWithRest } from "@/lib/time-budget";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
 import ExerciseSwapSheet from "@/components/ExerciseSwapSheet";
+import ConstraintsBanner from "@/components/ConstraintsBanner";
 
 // ── Phase coaching notes ──
 const PHASE_NOTES: Record<string, Record<CyclePhase, { body: string }>> = {
@@ -215,6 +216,19 @@ export default function PreSessionPage() {
     setSwapIdx(null);
   }, [swapIdx, week, dayIdx]);
 
+  const handleToggleRevert = useCallback((idx: number) => {
+    if (!week?.days?.[dayIdx]) return;
+    const updated = { ...week };
+    const updatedDay = { ...updated.days[dayIdx] };
+    const updatedExercises = [...updatedDay.exercises];
+    const ex = updatedExercises[idx];
+    if (!ex?.swappedFrom) return;
+    updatedExercises[idx] = { ...ex, useOriginal: !ex.useOriginal };
+    updatedDay.exercises = updatedExercises;
+    updated.days[dayIdx] = updatedDay;
+    useKineStore.getState().setWeekData(updated);
+  }, [week, dayIdx]);
+
   const adjustDuration = useCallback((delta: number) => {
     setDuration((prev) => {
       const current = prev ?? defaultDuration;
@@ -362,6 +376,13 @@ export default function PreSessionPage() {
       >
         ← Back
       </button>
+
+      <ConstraintsBanner
+        exercises={exercises}
+        injuries={injuries}
+        conditions={conditions}
+        onToggleRevert={handleToggleRevert}
+      />
 
       {/* Hero header card */}
       <div
@@ -747,10 +768,13 @@ export default function PreSessionPage() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px] font-medium truncate text-text">
-                    {ex.name}
+                    {ex.useOriginal && ex.swappedFrom ? ex.swappedFrom : ex.name}
                   </div>
                   <div className={`text-[9px] tracking-wider uppercase font-light ${labelColor}`}>
                     {muscle.toUpperCase()} · {lib?.tags.includes("Compound") ? "Compound" : "Isolation"}
+                    {ex.swappedFrom && (
+                      <span className="text-accent/80 normal-case tracking-normal ml-1">· adapted</span>
+                    )}
                   </div>
                 </div>
                 <span className="font-display text-[13px] tracking-wider text-muted2 shrink-0">

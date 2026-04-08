@@ -19,6 +19,7 @@ import ExerciseEduSheet from "@/components/ExerciseEduSheet";
 import VideoSheet from "@/components/VideoSheet";
 import SkillPathSheet from "@/components/SkillPathSheet";
 import SessionTimer from "@/components/SessionTimer";
+import ConstraintsBanner from "@/components/ConstraintsBanner";
 
 import type { ExerciseLog, SessionStep } from "./types";
 import { detectPRs } from "./detect-prs";
@@ -219,6 +220,22 @@ export default function SessionPage() {
     }));
     setExpandedEx(exIdx);
   }, [effectiveExercises]);
+
+  const handleToggleRevert = useCallback((idx: number) => {
+    if (!week?.days?.[dayIdx]) return;
+    const store = useKineStore.getState();
+    const updatedWeek = { ...week };
+    const updatedDays = [...updatedWeek.days];
+    const updatedDay = { ...updatedDays[dayIdx] };
+    const updatedExercises = [...updatedDay.exercises];
+    const ex = updatedExercises[idx];
+    if (!ex?.swappedFrom) return;
+    updatedExercises[idx] = { ...ex, useOriginal: !ex.useOriginal };
+    updatedDay.exercises = updatedExercises;
+    updatedDays[dayIdx] = updatedDay;
+    updatedWeek.days = updatedDays;
+    store.setWeekData(updatedWeek);
+  }, [week, dayIdx]);
 
   const skipExercise = useCallback((exIdx: number) => {
     setLogs((prev) => ({
@@ -470,6 +487,12 @@ export default function SessionPage() {
         <button onClick={() => router.back()} className="text-xs text-muted2 hover:text-text transition-colors">
           ← Back
         </button>
+        <ConstraintsBanner
+          exercises={effectiveExercises}
+          injuries={injuries}
+          conditions={conditions}
+          onToggleRevert={handleToggleRevert}
+        />
         <h1 className="mt-2 font-display text-2xl tracking-wide text-text">{day.sessionTitle}</h1>
         {day.coachNote && <p className="mt-1 text-xs text-muted2">{day.coachNote}</p>}
         <p className="mt-1 text-[10px] text-muted">

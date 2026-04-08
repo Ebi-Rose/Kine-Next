@@ -104,12 +104,17 @@ export default function ExerciseCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className={`text-[13px] font-medium truncate ${skipped ? "line-through text-muted" : "text-text"}`}>{exercise.name}</span>
+            <span className={`text-[13px] font-medium truncate ${skipped ? "line-through text-muted" : "text-text"}`}>
+              {exercise.useOriginal && exercise.swappedFrom ? exercise.swappedFrom : exercise.name}
+            </span>
             {log.saved && !skipped && (
               <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[9px] text-accent shrink-0">✓ saved</span>
             )}
             {skipped && (
               <span className="rounded-full bg-border px-2 py-0.5 text-[9px] text-muted shrink-0">skipped</span>
+            )}
+            {exercise.swappedFrom && !skipped && (
+              <span className="rounded-full border border-accent/30 bg-accent-dim px-2 py-0.5 text-[9px] text-accent shrink-0">↻ adapted</span>
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
