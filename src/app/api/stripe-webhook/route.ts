@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   // Best-effort user_id extraction from common Stripe event shapes.
   const eventUserId = (() => {
-    const obj = event.data.object as Record<string, unknown>;
+    const obj = event.data.object as unknown as Record<string, unknown>;
     const meta = (obj.metadata as Record<string, string> | undefined) || undefined;
     if (meta?.supabase_user_id) return meta.supabase_user_id;
     // For invoice events, fall through to subscription metadata if present
