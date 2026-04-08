@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { installFeedbackContext, trackRoute } from "@/lib/feedback-context";
+import { loadExerciseVideos } from "@/data/exercise-videos";
 import AuthGuard from "@/components/AuthGuard";
 import BottomNav from "@/components/BottomNav";
 import ToastContainer from "@/components/Toast";
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname();
   useEffect(() => { installFeedbackContext(); }, []);
+  useEffect(() => { loadExerciseVideos(); }, []);
   useEffect(() => { trackRoute(pathname); }, [pathname]);
 
   return (
