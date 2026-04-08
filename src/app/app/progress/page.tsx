@@ -23,7 +23,6 @@ import {
   type LifeStage,
   type ProgressLayout,
 } from "@/lib/progress-engine";
-import { calculateORM } from "@/lib/progression";
 import { formatRelativeDate } from "@/lib/date-utils";
 import { kgToDisplay, weightUnit } from "@/lib/format";
 import BottomSheet from "@/components/BottomSheet";
@@ -77,9 +76,6 @@ export default function ProgressPage() {
   const system = measurementSystem || "metric";
 
   const [activeTab, setActiveTab] = useState<TabId>("strength");
-  const [showORM, setShowORM] = useState(false);
-  const [ormWeight, setOrmWeight] = useState("");
-  const [ormReps, setOrmReps] = useState("");
   const [replaySession, setReplaySession] = useState<SessionRecord | null>(null);
   const [showOverridePanel, setShowOverridePanel] = useState(false);
 
@@ -129,7 +125,6 @@ export default function ProgressPage() {
             layout={layout}
             history={history}
             system={system}
-            onOpenORM={() => setShowORM(true)}
           />
         )}
 
@@ -143,40 +138,6 @@ export default function ProgressPage() {
           />
         )}
       </div>
-
-      {/* ORM Calculator */}
-      <BottomSheet open={showORM} onClose={() => setShowORM(false)} title="1RM Calculator">
-        <p className="text-xs text-muted2 mb-4">
-          Enter a weight and reps to estimate your one-rep max (Brzycki formula).
-        </p>
-        <div className="flex gap-3 mb-4">
-          <input
-            type="number"
-            placeholder={`Weight (${weightUnit(system)})`}
-            aria-label={`Weight in ${weightUnit(system)}`}
-            value={ormWeight}
-            onChange={(e) => setOrmWeight(e.target.value)}
-            className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
-          />
-          <input
-            type="number"
-            placeholder="Reps"
-            aria-label="Number of reps"
-            value={ormReps}
-            onChange={(e) => setOrmReps(e.target.value)}
-            className="w-20 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text outline-none focus:border-accent"
-          />
-        </div>
-        {ormWeight && ormReps && (
-          <div className="rounded-lg border border-accent bg-accent-dim p-4 text-center">
-            <p className="text-xs text-muted2">Estimated 1RM</p>
-            <p className="font-display text-3xl text-accent">
-              {calculateORM(parseFloat(ormWeight), parseInt(ormReps))}
-              {weightUnit(system)}
-            </p>
-          </div>
-        )}
-      </BottomSheet>
 
       {/* Session Replay */}
       <BottomSheet
@@ -226,12 +187,10 @@ function StrengthTabBody({
   layout,
   history,
   system,
-  onOpenORM,
 }: {
   layout: ProgressLayout;
   history: ReturnType<typeof deriveEngineHistory>;
   system: ReturnType<typeof useKineStore.getState>["measurementSystem"];
-  onOpenORM: () => void;
 }) {
   const tileIds = layout.gridTiles.map((t) => t.id) as StatTileId[];
   return (
@@ -245,16 +204,6 @@ function StrengthTabBody({
       </div>
 
       {layout.isEmptyState && <EmptyStateCard />}
-
-      <div className="mt-4">
-        <button
-          onClick={onOpenORM}
-          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-left flex items-center justify-between hover:border-border-active transition-colors"
-        >
-          <span className="text-xs text-text">1RM calculator</span>
-          <span className="text-muted">→</span>
-        </button>
-      </div>
     </div>
   );
 }
