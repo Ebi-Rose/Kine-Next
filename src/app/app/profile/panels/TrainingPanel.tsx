@@ -15,12 +15,14 @@ import {
 } from "@/data/constants";
 import { BackButton, EditableRow } from "./_helpers";
 import { isProgrammeStarted } from "@/lib/date-utils";
+import { buildWeek, type WeekData } from "@/lib/week-builder";
 
 export default function TrainingPanel({ onBack }: { onBack: () => void }) {
   const store = useKineStore();
   const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setWeekData, progressDB, setProgressDB } = store;
   const [editing, setEditing] = useState<string | null>(null);
   const [showApplyChoice, setShowApplyChoice] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
 
   const started = isProgrammeStarted(progressDB.programStartDate ?? null);
 
@@ -43,10 +45,62 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
     setShowApplyChoice(true);
   }
 
-  function applyFromThisWeek() {
-    setWeekData(null);
+  async function applyFromThisWeek() {
     setShowApplyChoice(false);
-    toast("Settings updated — rebuild your week to apply", "success");
+    setRebuilding(true);
+
+    // Capture the existing week so we can preserve any days that have
+    // already been completed. We identify completed days via progressDB
+    // .sessions for the current weekNum (each SessionRecord has dayIdx).
+    const previousWeek = store.weekData;
+    const currentWeekNum = progressDB.currentWeek || previousWeek?._weekNum || 1;
+    const completedDayIdxs = new Set<number>(
+      (progressDB.sessions ?? [])
+        .filter((s) => s.weekNum === currentWeekNum && typeof s.dayIdx === "number")
+        .map((s) => s.dayIdx as number),
+    );
+
+    try {
+      // Clear first so the UI shows a building state while AI runs.
+      setWeekData(null);
+
+      const result = await buildWeek();
+      const next: WeekData | null = result.weekData ?? null;
+
+      if (!next) {
+        toast(result.error || "Couldn't rebuild the week", "error");
+        // Restore the previous week so the user isn't stranded.
+        if (previousWeek) setWeekData(previousWeek);
+        return;
+      }
+
+      // Preserve completed days from the previous week by overwriting the
+      // corresponding entries in the newly-built week. Days the user hasn't
+      // touched yet get the new settings (training days, duration, etc.).
+      if (previousWeek && completedDayIdxs.size > 0) {
+        next.days = next.days.map((day, idx) =>
+          completedDayIdxs.has(idx) && previousWeek.days[idx]
+            ? previousWeek.days[idx]
+            : day,
+        );
+      }
+
+      setWeekData(next);
+
+      if (!result.success && result.error) {
+        toast(result.error, "error");
+      } else if (completedDayIdxs.size > 0) {
+        toast(`Week rebuilt — kept ${completedDayIdxs.size} completed session${completedDayIdxs.size === 1 ? "" : "s"}`, "success");
+      } else {
+        toast("Week rebuilt with new settings", "success");
+      }
+    } catch (e) {
+      console.error("[TrainingPanel] rebuild failed:", e);
+      toast("Couldn't rebuild the week", "error");
+      if (previousWeek) setWeekData(previousWeek);
+    } finally {
+      setRebuilding(false);
+    }
   }
 
   function applyFromNextWeek() {
@@ -177,10 +231,10 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
               Past sessions won&apos;t be changed.
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              <Button className="w-full" onClick={applyFromThisWeek}>
-                Apply from this week
+              <Button className="w-full" onClick={applyFromThisWeek} disabled={rebuilding}>
+                {rebuilding ? "Rebuilding…" : "Apply from this week"}
               </Button>
-              <Button className="w-full" variant="secondary" onClick={applyFromNextWeek}>
+              <Button className="w-full" variant="secondary" onClick={applyFromNextWeek} disabled={rebuilding}>
                 Apply from next week
               </Button>
               <button
