@@ -301,11 +301,29 @@ function validateInjuries(
   }
 }
 
+/**
+ * Canonical movement key — strips variant modifiers so that near-duplicates
+ * ("Leg Curl" vs "Seated Leg Curl", "Barbell Row" vs "Bent-Over Barbell Row")
+ * collapse to the same signature. Used by validateDuplicates to prevent
+ * programming two versions of the same movement in one session.
+ */
+function movementKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\b(seated|standing|lying|prone|supine|incline|decline|flat|kneeling|half[- ]?kneeling|single[- ]?leg|single[- ]?arm|unilateral|bilateral|close[- ]?grip|wide[- ]?grip|neutral[- ]?grip|reverse[- ]?grip|bent[- ]?over|cable|machine|barbell|dumbbell|kettlebell|smith[- ]?machine|trap[- ]?bar|ez[- ]?bar|landmine|banded|weighted|bodyweight)\b/g, "")
+    .replace(/[-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function validateDuplicates(day: WeekDay, issues: ValidationIssue[]): void {
-  const seen = new Set<string>();
+  const seenExact = new Set<string>();
+  const seenKey = new Map<string, string>(); // movement key -> kept name
   for (let i = day.exercises.length - 1; i >= 0; i--) {
     const name = day.exercises[i].name;
-    if (seen.has(name)) {
+    const key = movementKey(name);
+
+    if (seenExact.has(name)) {
       issues.push({
         type: "duplicate_exercise",
         dayNumber: day.dayNumber,
@@ -314,9 +332,23 @@ function validateDuplicates(day: WeekDay, issues: ValidationIssue[]): void {
         repaired: true,
       });
       day.exercises.splice(i, 1);
-    } else {
-      seen.add(name);
+      continue;
     }
+
+    if (key && seenKey.has(key) && seenKey.get(key) !== name) {
+      issues.push({
+        type: "duplicate_exercise",
+        dayNumber: day.dayNumber,
+        exercise: name,
+        detail: `"${name}" is a near-duplicate of "${seenKey.get(key)}" (same movement pattern) — removed`,
+        repaired: true,
+      });
+      day.exercises.splice(i, 1);
+      continue;
+    }
+
+    seenExact.add(name);
+    if (key) seenKey.set(key, name);
   }
 }
 
