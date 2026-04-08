@@ -1,7 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { findExercise } from "@/data/exercise-library";
+import { CATEGORY_COLORS } from "@/data/constants";
+import { DAY_LABELS } from "@/data/constants";
+import { appNow } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
+
+function getCategoryColor(exerciseName: string): string {
+  const ex = findExercise(exerciseName);
+  return ex ? CATEGORY_COLORS[ex.muscle] : "var(--color-muted)";
+}
 
 const REST_COPY = [
   "Your body is adapting even now.",
@@ -43,39 +52,72 @@ export default function RestDayHome({
         </div>
       </div>
 
-      {/* Tomorrow's session preview */}
-      {nextDay && (
-        <div className="rounded-[10px] border border-border bg-surface p-4 mb-3">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] tracking-[0.15em] uppercase text-muted">
-              {nextTrainingDay === todayIdx + 1 ? "Tomorrow" : "Next session"}
-            </span>
-            <span className="text-[13px] font-medium text-text">
-              {nextDay.sessionTitle} · {nextDay.sessionDuration}
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {nextDay.exercises.map((ex, i) => {
-              const lib = findExercise(ex.name);
-              const color = lib
-                ? `var(--color-cat-${lib.muscle})`
-                : "var(--color-muted)";
-              return (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 text-xs text-muted2 font-light"
+      {/* Tomorrow's session preview — same look as a regular DayCard */}
+      {nextDay && (() => {
+        const daysAhead = nextTrainingDay - todayIdx;
+        const date = new Date(appNow());
+        date.setDate(date.getDate() + daysAhead);
+        const locale = typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-GB";
+        const dateStr = date.toLocaleDateString(locale, { day: "numeric", month: "short" });
+        const dayLabel = DAY_LABELS[(nextDay.dayNumber - 1) % 7];
+
+        return (
+          <div className="rounded-[10px] border border-border bg-surface p-4 hover:border-border-active transition-colors">
+            {/* Day header */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted2">
+                {dayLabel}
+                <span className="text-muted font-light ml-1">{dateStr}</span>
+              </span>
+              <span className="font-display text-[9px] tracking-[2px] text-muted uppercase">
+                {nextDay.sessionDuration}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="mt-2 font-display text-lg tracking-wide text-text" style={{ fontSize: "clamp(18px, 5vw, 22px)" }}>
+              {nextDay.sessionTitle}
+            </h3>
+
+            {/* Summary row */}
+            <div className="mt-1.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-muted2 font-light truncate flex-1">
+                  {nextDay.exercises.length} exercises · {nextDay.sessionDuration}
+                </p>
+                <Link
+                  href={`/app/pre-session?day=${nextTrainingDay}`}
+                  className="text-[10px] text-accent hover:underline shrink-0 ml-2"
                 >
+                  View →
+                </Link>
+              </div>
+              {nextDay.coachNote && (
+                <p className="mt-1.5 text-[10px] text-muted font-light leading-relaxed truncate">
+                  {nextDay.coachNote}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-1">
+                {nextDay.exercises.slice(0, 3).map((ex, i) => (
                   <span
-                    className="inline-block w-[5px] h-[5px] rounded-full shrink-0"
-                    style={{ background: color }}
-                  />
-                  {ex.name} · {ex.sets} × {ex.reps}
-                </div>
-              );
-            })}
+                    key={i}
+                    className="inline-flex items-center gap-1 text-[9px] text-muted2 bg-surface2/50 rounded px-1.5 py-0.5"
+                  >
+                    <span
+                      className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ background: getCategoryColor(ex.name) }}
+                    />
+                    {ex.name}
+                  </span>
+                ))}
+                {nextDay.exercises.length > 3 && (
+                  <span className="text-[9px] text-muted">+{nextDay.exercises.length - 3}</span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
