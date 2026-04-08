@@ -13,7 +13,6 @@ import { isProgrammeStarted } from "@/lib/date-utils";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import SessionRearrange from "@/components/SessionRearrange";
-import { toast } from "@/components/Toast";
 import { findExercise } from "@/data/exercise-library";
 import { weightUnit, formatDateShortLocale, detectLocale } from "@/lib/format";
 import type { MuscleGroup } from "@/data/exercise-library";
