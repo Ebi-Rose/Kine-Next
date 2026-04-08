@@ -1,5 +1,15 @@
 // ── Condition Context for AI Prompts ──
-// Returns condition-specific constraints for all AI calls.
+//
+// Returns condition-specific GLOBAL constraints for all AI calls.
+// These are programme-wide framing guidelines for the LLM — NOT
+// per-exercise swap rules.
+//
+// Per-exercise behaviour (avoid / modify) now lives in
+// `exercise-indications.ts` and is enforced by the indication
+// pipeline at filter time. This file is intentionally narrow:
+// it tells the model what the condition MEANS for the user's
+// programme as a whole. See docs/specs/exercise-indications.md §6.
+//
 // Conditions are context, not identity — the programme adapts silently.
 
 const CONDITION_CONTEXT: Record<string, string> = {

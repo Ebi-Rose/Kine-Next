@@ -16,16 +16,17 @@ import { getPhaseContext } from "./periodisation";
 import { getConditionContext } from "./condition-context";
 import { validateWeek } from "./week-validation";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
-// Legacy injury / condition swap helpers — still used by buildFallbackWeek.
-// The maps themselves (INJURY_SWAPS, CONDITION_SWAPS) are no longer consumed
-// by buildUserPrompt; hard filtering runs through the indication pipeline.
-// See docs/specs/exercise-indications.md §6.
-import { applyInjurySwaps, applyConditionSwaps, type SwappedExercise } from "@/data/injury-swaps";
+// injury-swaps.ts is no longer imported anywhere in the build path.
+// Hard filtering and template-time swaps both run through the
+// indication pipeline. The legacy file remains in the repo as a
+// reference dataset only — see docs/specs/exercise-indications.md §6.
 import {
   filterPool,
   formatPoolForPrompt,
   getCycleEnvelope,
   modulateSetCount,
+  swapTemplateExercises,
+  pickGenericFullBody,
   type UserContext,
 } from "./indication-pipeline";
 import { EXERCISE_INDICATIONS } from "@/data/exercise-indications";
@@ -408,6 +409,16 @@ function buildFallbackWeek(): WeekData {
   const store = useKineStore.getState();
   const { goal, exp, equip, injuries, conditions, trainingDays, duration } = store;
 
+  // Build a single user context for the indication pipeline so the
+  // template-swap and generic full-body picker share the same logic.
+  const fallbackCtx: UserContext = {
+    goal: (goal || "general") as UserContext["goal"],
+    experience: (exp || "new") as UserContext["experience"],
+    equipment: equip,
+    injuries,
+    conditions,
+  };
+
   const programName = PROGRAM_MAP[goal || "general"]?.[exp || "new"] || "Custom Program";
   const durationLabel =
     DURATION_OPTIONS.find((d) => d.value === duration)?.label || "45-60 min";
@@ -433,10 +444,10 @@ function buildFallbackWeek(): WeekData {
       const sessionIdx = dayIdx % split.sessions.length;
       const template = split.sessions[sessionIdx];
 
-      const swappedExercises = applyEquipmentSwaps(
-        applyConditionSwaps(applyInjurySwaps(template.exercises, injuries), conditions),
-        equip,
-      );
+      // Run the template's exercise list through the indication
+      // pipeline. Each exercise is kept if it passes hard filters,
+      // otherwise swapped for the highest-scoring same-muscle alternative.
+      const swappedExercises = swapTemplateExercises(template.exercises, fallbackCtx);
 
       const exercises = swappedExercises.slice(0, exCount).map((sx) => {
         const base = buildFallbackPrescription(sx.name, goalKey);
@@ -462,7 +473,9 @@ function buildFallbackWeek(): WeekData {
         sessionTitle: "Full Body",
         sessionDuration: durationLabel,
         coachNote: "Your session is ready — tap to start when you are.",
-        exercises: buildGenericFallback(equip, goalKey, exCount),
+        exercises: pickGenericFullBody(fallbackCtx, exCount).map((c) =>
+          buildFallbackPrescription(c.exercise.name, goalKey),
+        ),
       });
     } else {
       days.push({
@@ -483,30 +496,6 @@ function buildFallbackWeek(): WeekData {
     days,
     _isFallback: true,
   };
-}
-
-/** Swap exercises that require equipment the user doesn't have */
-function applyEquipmentSwaps(exercises: SwappedExercise[], userEquip: string[]): SwappedExercise[] {
-  return exercises.map((ex) => {
-    const libEx = EXERCISE_LIBRARY.find((e) => e.name === ex.name);
-    if (!libEx) return ex;
-    if (libEx.equip.some((e) => userEquip.includes(e))) return ex;
-
-    const alt = EXERCISE_LIBRARY.find(
-      (e) =>
-        e.muscle === libEx.muscle &&
-        e.name !== ex.name &&
-        e.equip.some((eq) => userEquip.includes(eq)),
-    );
-    if (!alt) return ex;
-    // Equipment swap — only mark as adapted if not already attributed to an
-    // injury or condition (those are higher-priority reasons to surface).
-    return {
-      name: alt.name,
-      swappedFrom: ex.swappedFrom ?? ex.name,
-      swappedReason: ex.swappedReason ?? "equipment",
-    };
-  });
 }
 
 /** Build prescription (sets/reps/rest) based on goal — female-optimised */
@@ -540,28 +529,8 @@ export function buildFallbackPrescription(name: string, goal: string): Exercise 
   return { name, sets: "3", reps: isBodyweight ? "10-15" : "10-15", rest: "60-90 sec" };
 }
 
-/** Generic full-body fallback when no split template matches */
-function buildGenericFallback(equip: string[], goal: string, exCount: number): Exercise[] {
-  const hasBarbell = equip.includes("barbell");
-  const hasDumbbells = equip.includes("dumbbells");
-  const hasMachines = equip.includes("machines");
-  const hasKettlebell = equip.includes("kettlebell");
-
-  let names: string[];
-  if (hasBarbell) {
-    names = ["Barbell Back Squat", "Romanian Deadlift", "Barbell Bench Press", "Barbell Row", "Face Pulls", "Plank", "Lateral Raise"];
-  } else if (hasDumbbells) {
-    names = ["Goblet Squat", "Dumbbell Romanian Deadlift", "Dumbbell Bench Press", "Dumbbell Row", "Lateral Raise", "Glute Bridge", "Plank"];
-  } else if (hasKettlebell) {
-    names = ["Goblet Squat", "Kettlebell Swing", "Single-Leg Deadlift", "Push-Up", "Glute Bridge", "Plank", "Bird Dog"];
-  } else if (hasMachines) {
-    names = ["Leg Press", "Hip Thrust Machine", "Lat Pulldown", "Chest Press", "Seated Cable Row", "Leg Curl", "Face Pulls"];
-  } else {
-    names = ["Bodyweight Squat", "Push-Up", "Glute Bridge", "Bird Dog", "Plank", "Dead Bug", "Cossack Squat"];
-  }
-
-  return names.slice(0, exCount).map((name) => buildFallbackPrescription(name, goal));
-}
+// Generic full-body fallback now lives in indication-pipeline as
+// pickGenericFullBody() — see buildFallbackWeek() above.
 
 // ── Post-processing: cycle envelope + rationale ──
 //

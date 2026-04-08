@@ -341,6 +341,90 @@ export function modulateSetCount(
   return setsStr;
 }
 
+// ── Template swap (replaces injury-swaps + condition-swaps + equip-swaps) ─
+//
+// Given a list of exercise names from a hand-curated session template,
+// keep each exercise if it passes the user's hard filters; otherwise
+// find the highest-scoring alternative in the same muscle group.
+// Returns parallel arrays of (final name, original name when swapped,
+// reason key) so the UI can show the "↻ adapted" chip.
+
+export interface SwappedTemplateExercise {
+  name: string;
+  swappedFrom?: string;
+  swappedReason?: string;
+}
+
+export function swapTemplateExercises(
+  names: string[],
+  ctx: UserContext,
+): SwappedTemplateExercise[] {
+  return names.map((name) => {
+    const ex = EXERCISE_LIBRARY.find((e) => e.name === name);
+    if (!ex) return { name };
+    const ind = EXERCISE_INDICATIONS[name];
+    if (!ind) return { name };
+
+    const check = passesHardFilters(ex, ind, ctx);
+    if (check.ok) return { name };
+
+    // Find a replacement in the same muscle group
+    const replacement = pickForSlot(
+      { muscles: [ex.muscle], role: ind.sessionRole[0] ?? "accessory" },
+      ctx,
+    );
+    if (!replacement || replacement.exercise.name === name) {
+      // No safe alternative found — return the original. The user will
+      // see the indication-pipeline rationale and can swap manually.
+      return { name };
+    }
+
+    return {
+      name: replacement.exercise.name,
+      swappedFrom: name,
+      swappedReason: check.reason,
+    };
+  });
+}
+
+// ── Generic full-body picker (replaces hardcoded fallback names) ────
+//
+// Builds a balanced full-body session by picking the highest-scoring
+// candidate for each pattern slot in turn. Slots run in this order:
+// squat → hinge → push → pull → core → finisher. We stop once we hit
+// `count` exercises.
+
+export function pickGenericFullBody(
+  ctx: UserContext,
+  count: number,
+): ScoredCandidate[] {
+  const slots: SlotRequirement[] = [
+    { muscles: ["legs"], role: "primary", pattern: "squat" },
+    { muscles: ["hinge"], role: "primary", pattern: "hinge" },
+    { muscles: ["push"], role: "primary", pattern: "horizontalPush" },
+    { muscles: ["pull"], role: "primary", pattern: "horizontalPull" },
+    { muscles: ["core"], role: "accessory" },
+    { muscles: ["legs", "hinge"], role: "accessory" },
+    { muscles: ["push", "pull"], role: "accessory" },
+  ];
+  const picked: ScoredCandidate[] = [];
+  const used = new Set<string>();
+  for (const slot of slots) {
+    if (picked.length >= count) break;
+    // Avoid picking the same exercise twice in one session
+    const ctxWithUsed: UserContext = {
+      ...ctx,
+      recentlyProgrammed: new Set([...(ctx.recentlyProgrammed ?? []), ...used]),
+    };
+    const winner = pickForSlot(slot, ctxWithUsed);
+    if (winner && !used.has(winner.exercise.name)) {
+      picked.push(winner);
+      used.add(winner.exercise.name);
+    }
+  }
+  return picked;
+}
+
 // ── Utility: pool as prompt-friendly metadata ──────────────────────
 
 /**
