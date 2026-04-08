@@ -60,44 +60,38 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        const subResp = await fetch(
-          `https://api.stripe.com/v1/subscriptions/${session.subscription}`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-            },
-          }
-        );
-        const subscription = await subResp.json();
-        if (!subResp.ok)
-          throw new Error(
-            subscription.error?.message || "Failed to retrieve subscription"
+        // Fetch the subscription details. Use raw fetch (no SDK retry layer).
+        let subscription: Record<string, unknown> = {};
+        try {
+          const subResp = await fetch(
+            `https://api.stripe.com/v1/subscriptions/${session.subscription}`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+              },
+            }
           );
-
-        // Guard: if user already has a different active subscription, cancel the new one
-        const customerId = session.customer as string;
-        const allActiveSubs = await stripe.subscriptions.list({
-          customer: customerId,
-          status: "active",
-          limit: 10,
-        });
-        const duplicates = allActiveSubs.data.filter(
-          (s) => s.id !== session.subscription
-        );
-        for (const dup of duplicates) {
-          console.warn(`[webhook] cancelling duplicate subscription ${dup.id} for user ${userId}`);
-          await stripe.subscriptions.cancel(dup.id, { prorate: true });
-          logAudit({ event: "duplicate_subscription_cancelled", user_id: userId, ip: getRequestIp(request.headers), metadata: { cancelled_sub: dup.id, kept_sub: session.subscription as string } });
+          const parsed = await subResp.json();
+          if (subResp.ok) {
+            subscription = parsed;
+          } else {
+            console.error("[webhook] subscription fetch failed:", parsed.error?.message);
+          }
+        } catch (err) {
+          console.error("[webhook] subscription fetch threw:", err instanceof Error ? err.message : err);
         }
 
         // Period dates: top-level on older API versions, items-level on newer
-        const item = subscription.items?.data?.[0];
-        const periodStart = subscription.current_period_start
+        const item = (subscription.items as { data?: Array<Record<string, number | undefined>> } | undefined)?.data?.[0];
+        const periodStart = (subscription.current_period_start as number | undefined)
           || item?.current_period_start;
-        const periodEnd = subscription.current_period_end
+        const periodEnd = (subscription.current_period_end as number | undefined)
           || item?.current_period_end;
 
         const now = new Date().toISOString();
+        // CRITICAL: write the subscription row FIRST, before any other Stripe
+        // calls. A failure in the duplicate-cancel guard below must never
+        // prevent the user's subscription from being recorded.
         const { error: subError } = await supabase
           .from("subscriptions")
           .upsert(
@@ -106,8 +100,8 @@ export async function POST(request: NextRequest) {
               stripe_customer_id: session.customer as string,
               stripe_subscription_id: session.subscription as string,
               plan,
-              status: subscription.status || "active",
-              cancel_at_period_end: subscription.cancel_at_period_end || false,
+              status: (subscription.status as string) || "active",
+              cancel_at_period_end: (subscription.cancel_at_period_end as boolean) || false,
               current_period_start: periodStart
                 ? new Date(periodStart * 1000).toISOString()
                 : now,
@@ -118,8 +112,32 @@ export async function POST(request: NextRequest) {
             },
             { onConflict: "user_id" }
           );
-        if (subError)
+        if (subError) {
           console.error("[webhook] subscription upsert failed:", subError);
+          // Re-throw so Stripe retries — without the row, the user has no access.
+          throw new Error(`subscription upsert failed: ${subError.message}`);
+        }
+
+        // Best-effort: cancel any other active subscriptions for this customer.
+        // Wrapped so a transient Stripe SDK error doesn't undo the upsert above.
+        try {
+          const customerId = session.customer as string;
+          const allActiveSubs = await stripe.subscriptions.list({
+            customer: customerId,
+            status: "active",
+            limit: 10,
+          });
+          const duplicates = allActiveSubs.data.filter(
+            (s) => s.id !== session.subscription
+          );
+          for (const dup of duplicates) {
+            console.warn(`[webhook] cancelling duplicate subscription ${dup.id} for user ${userId}`);
+            await stripe.subscriptions.cancel(dup.id, { prorate: true });
+            logAudit({ event: "duplicate_subscription_cancelled", user_id: userId, ip: getRequestIp(request.headers), metadata: { cancelled_sub: dup.id, kept_sub: session.subscription as string } });
+          }
+        } catch (err) {
+          console.error("[webhook] duplicate-cancel guard failed (non-fatal):", err instanceof Error ? err.message : err);
+        }
 
         const { error: profError } = await supabase.from("profiles").upsert(
           {
@@ -131,6 +149,54 @@ export async function POST(request: NextRequest) {
         );
         if (profError)
           console.error("[webhook] profile upsert failed:", profError);
+        break;
+      }
+
+      case "customer.subscription.created": {
+        // Safety net: if checkout.session.completed didn't write the row
+        // (transient failure, missing metadata, etc.), this catches it.
+        const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.supabase_user_id;
+        if (!userId) break;
+
+        const createdItem = subscription.items?.data?.[0];
+        const priceId = createdItem?.price?.id;
+        const plan = priceId === process.env.STRIPE_PRICE_YEARLY ? "yearly"
+          : priceId === process.env.STRIPE_PRICE_MONTHLY ? "monthly"
+          : subscription.metadata?.plan || "monthly";
+
+        const subAny = subscription as unknown as Record<string, unknown>;
+        const itemAny = createdItem as unknown as Record<string, unknown> | undefined;
+        const cStart = (typeof subAny.current_period_start === "number" ? subAny.current_period_start : null)
+          || (itemAny?.current_period_start as number | undefined);
+        const cEnd = (typeof subAny.current_period_end === "number" ? subAny.current_period_end : null)
+          || (itemAny?.current_period_end as number | undefined);
+
+        const cNow = new Date().toISOString();
+        const { error: createdError } = await supabase
+          .from("subscriptions")
+          .upsert(
+            {
+              user_id: userId,
+              stripe_customer_id: subscription.customer as string,
+              stripe_subscription_id: subscription.id,
+              plan,
+              status: subscription.status,
+              cancel_at_period_end: subscription.cancel_at_period_end || false,
+              current_period_start: typeof cStart === "number"
+                ? new Date(cStart * 1000).toISOString()
+                : cNow,
+              current_period_end: typeof cEnd === "number"
+                ? new Date(cEnd * 1000).toISOString()
+                : cNow,
+              updated_at: cNow,
+            },
+            { onConflict: "user_id" }
+          );
+        if (createdError) {
+          console.error("[webhook] subscription.created upsert failed:", createdError);
+          throw new Error(`subscription.created upsert failed: ${createdError.message}`);
+        }
         break;
       }
 

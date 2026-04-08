@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { after } from "next/server";
 
 type AuditEvent =
   | "access_code_success"
@@ -36,19 +37,22 @@ export function logAudit(entry: AuditEntry): void {
 
   const supabase = createClient(url, key);
 
-  // Fire-and-forget — don't await
-  supabase
-    .from("audit_log")
-    .insert({
-      event: entry.event,
-      user_id: entry.user_id || null,
-      ip: entry.ip || null,
-      metadata: entry.metadata || {},
-      created_at: new Date().toISOString(),
-    })
-    .then(({ error }) => {
-      if (error) console.error("[audit] insert failed:", error.message);
-    });
+  // Run after the response is sent so the serverless function isn't frozen
+  // before the insert lands.
+  after(
+    supabase
+      .from("audit_log")
+      .insert({
+        event: entry.event,
+        user_id: entry.user_id || null,
+        ip: entry.ip || null,
+        metadata: entry.metadata || {},
+        created_at: new Date().toISOString(),
+      })
+      .then(({ error }) => {
+        if (error) console.error("[audit] insert failed:", error.message);
+      })
+  );
 }
 
 /**
