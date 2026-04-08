@@ -17,7 +17,21 @@ export default function ExerciseCard({
   index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, onQuickSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [],
 }: {
   index: number;
-  exercise: { name: string; sets: string; reps: string; rest: string; swappedFrom?: string; swappedReason?: string; useOriginal?: boolean };
+  exercise: {
+    name: string;
+    sets: string;
+    reps: string;
+    rest: string;
+    swappedFrom?: string;
+    swappedReason?: string;
+    useOriginal?: boolean;
+    // Populated by the indication pipeline (v1.0)
+    whyForYou?: string;
+    scoringFactors?: string[];
+    intensityCap?: number;
+    rmAttempts?: boolean;
+    effortFraming?: string;
+  };
   log: ExerciseLog | undefined;
   expanded: boolean;
   onToggle: () => void;
@@ -43,6 +57,7 @@ export default function ExerciseCard({
   // Subscribe so this card re-renders when the Supabase video cache lands.
   useExerciseVideosReady();
   const [showVideoInline, setShowVideoInline] = useState(false);
+  const [showRationale, setShowRationale] = useState(false);
 
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -140,6 +155,43 @@ export default function ExerciseCard({
               {[...muscleTags.primary, ...muscleTags.secondary].slice(0, 3).map((tag) => (
                 <span key={tag} className="rounded-full bg-surface2/60 px-1.5 py-0.5 text-[9px] text-muted2 font-light">{tag}</span>
               ))}
+              {exercise.effortFraming && (
+                <span className="rounded-full border border-accent/25 bg-accent/8 px-1.5 py-0.5 text-[9px] text-accent font-light">
+                  cycle-aware
+                </span>
+              )}
+            </div>
+          )}
+          {/* Rationale strip: whyForYou + expandable top factors. Only
+              renders when the indication pipeline has populated it. */}
+          {expanded && exercise.whyForYou && (
+            <div className="mt-2 rounded-lg border border-border/60 bg-surface2/40 px-3 py-2">
+              <p className="text-[11px] leading-snug text-muted font-light">
+                {exercise.whyForYou}
+              </p>
+              {exercise.effortFraming && (
+                <p className="mt-1 text-[11px] leading-snug text-accent/90 font-light italic">
+                  {exercise.effortFraming}
+                </p>
+              )}
+              {exercise.scoringFactors && exercise.scoringFactors.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowRationale((v) => !v); }}
+                    className="mt-1 text-[10px] text-accent/80 hover:text-accent transition-colors"
+                  >
+                    {showRationale ? "Hide reasoning" : "Why this?"}
+                  </button>
+                  {showRationale && (
+                    <ul className="mt-1 space-y-0.5">
+                      {exercise.scoringFactors.map((f) => (
+                        <li key={f} className="text-[10px] text-muted2 font-light">· {f}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

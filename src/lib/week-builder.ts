@@ -11,12 +11,24 @@ import {
   INJURY_OPTIONS,
   CONDITION_OPTIONS,
 } from "@/data/constants";
-import { getCycleContext } from "./cycle";
+import { getCycleContext, getCurrentPhase } from "./cycle";
 import { getPhaseContext } from "./periodisation";
 import { getConditionContext } from "./condition-context";
 import { validateWeek } from "./week-validation";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
-import { INJURY_SWAPS, CONDITION_SWAPS, applyInjurySwaps, applyConditionSwaps, type SwappedExercise } from "@/data/injury-swaps";
+// Legacy injury / condition swap helpers — still used by buildFallbackWeek.
+// The maps themselves (INJURY_SWAPS, CONDITION_SWAPS) are no longer consumed
+// by buildUserPrompt; hard filtering runs through the indication pipeline.
+// See docs/specs/exercise-indications.md §6.
+import { applyInjurySwaps, applyConditionSwaps, type SwappedExercise } from "@/data/injury-swaps";
+import {
+  filterPool,
+  formatPoolForPrompt,
+  getCycleEnvelope,
+  modulateSetCount,
+  type UserContext,
+} from "./indication-pipeline";
+import { EXERCISE_INDICATIONS } from "@/data/exercise-indications";
 import { WEEKLY_SPLITS } from "@/data/weekly-splits";
 import { SKILL_PATHS } from "@/data/skill-paths";
 import { loadRulesForSystem, weightUnit, kgToDisplay, type MeasurementSystem } from "./format";
@@ -39,6 +51,16 @@ export interface Exercise {
   swapNote?: string;
   /** True if the user asked to remember this swap for future sessions. */
   swapRemember?: boolean;
+  /** Populated by the indication pipeline: short, user-facing reason this exercise was picked. */
+  whyForYou?: string;
+  /** Populated by the indication pipeline: top-3 factors from scoring (for the "Why this?" expander). */
+  scoringFactors?: string[];
+  /** Populated by the cycle envelope: target RPE ceiling for this phase (6-10). */
+  intensityCap?: number;
+  /** Populated by the cycle envelope: whether 1RM attempts are OK in this phase for this lift. */
+  rmAttempts?: boolean;
+  /** Populated by the cycle envelope: short phase-aware effort message for the session card. */
+  effortFraming?: string;
 }
 
 export interface WeekDay {
@@ -221,41 +243,43 @@ function buildUserPrompt(): string {
     }
   }
 
-  // Build available exercise pool (filtered by equipment + experience)
-  const availableExercises = EXERCISE_LIBRARY.filter((ex) => {
-    if (!ex.equip.some((e) => equip.includes(e))) return false;
-    if (ex.minExp === "intermediate" && exp !== "intermediate") return false;
-    if (ex.minExp === "developing" && exp === "new") return false;
-    return true;
-  });
-
-  const poolByMuscle: Record<string, string[]> = {};
-  for (const ex of availableExercises) {
-    if (!poolByMuscle[ex.muscle]) poolByMuscle[ex.muscle] = [];
-    poolByMuscle[ex.muscle].push(ex.name);
-  }
-  const poolStr = Object.entries(poolByMuscle)
-    .map(([muscle, names]) => `${muscle}: ${names.join(", ")}`)
-    .join("\n");
-
-  // Build injury + condition avoidance list
-  const avoidExercises = new Set<string>();
-  for (const injury of injuries) {
-    const swaps = INJURY_SWAPS[injury];
-    if (swaps) {
-      for (const ex of Object.keys(swaps)) avoidExercises.add(ex);
+  // ── Indication pipeline: hard-filter the exercise pool ────────────
+  //
+  // Replaces the legacy equipment/experience filter AND the
+  // INJURY_SWAPS / CONDITION_SWAPS avoid-list. The pipeline drops
+  // exercises that fail ANY hard filter (equipment, experience,
+  // injury, condition, life stage), so there's no longer a separate
+  // "don't use these" section in the prompt — contra-indicated lifts
+  // simply never appear in the pool.
+  //
+  // Recently-programmed exercises feed the variety bonus in scoring.
+  const recentNames = new Set<string>();
+  for (const s of progressDB.sessions.slice(-3)) {
+    const exList = (s as { exercises?: Array<{ name?: string }> }).exercises;
+    if (Array.isArray(exList)) {
+      for (const e of exList) if (e?.name) recentNames.add(e.name);
     }
   }
-  for (const cond of conditions) {
-    const swaps = CONDITION_SWAPS[cond];
-    if (swaps) {
-      for (const ex of Object.keys(swaps)) avoidExercises.add(ex);
-    }
-  }
-  let injuryAvoidCtx = "";
-  if (avoidExercises.size > 0) {
-    injuryAvoidCtx = `\n\nDO NOT USE THESE EXERCISES (injury/condition contraindicated): ${[...avoidExercises].join(", ")}`;
-  }
+
+  const userCtx: UserContext = {
+    goal: (goal || "general") as UserContext["goal"],
+    experience: (exp || "new") as UserContext["experience"],
+    equipment: equip,
+    injuries,
+    conditions,
+    recentlyProgrammed: recentNames,
+    // lifeStage is deliberately not sourced here — pregnancy / postpartum
+    // are out of scope per spec v0.2 §9 until physio review. Peri /
+    // post-menopause can be surfaced through cycleType later.
+  };
+
+  const scoredPool = filterPool(userCtx);
+  const poolStr = formatPoolForPrompt(scoredPool);
+
+  // Note: injury / condition avoidance is now enforced by the pipeline
+  // hard filters above, not by a separate DO NOT USE list. We keep an
+  // empty string to preserve prompt layout.
+  const injuryAvoidCtx = "";
 
   return `Generate a Week ${weekNum} training program structure as compact JSON. All weights and load suggestions must use ${unit}.
 
@@ -271,7 +295,7 @@ Trainee:
 ${cycleCtx}
 ${phaseCtx}${historyCtx}${weekFeedbackCtx}${injuryAvoidCtx}
 
-EXERCISE POOL — only use exercises from this list:
+EXERCISE POOL — only use exercises from this list. Each entry is tagged with [role, f=fatigueCost 1-5, L=loadability h/m/l]. Prefer "primary" role exercises for the first slot of each session, "secondary" or "accessory" for follow-ups. High fatigueCost lifts (f4-5) should appear once per session, never twice on consecutive days. Exercises contra-indicated by the user's injuries, conditions, equipment, and experience have already been filtered out — everything below is safe to prescribe:
 ${poolStr}
 
 PRESCRIPTION GUIDE (female-optimised — women recover faster between sets and tolerate higher volume at moderate loads):
@@ -539,6 +563,64 @@ function buildGenericFallback(equip: string[], goal: string, exCount: number): E
   return names.slice(0, exCount).map((name) => buildFallbackPrescription(name, goal));
 }
 
+// ── Post-processing: cycle envelope + rationale ──
+//
+// Runs after either the LLM or the fallback produces a week. For
+// every exercise:
+//   1. Attach whyForYou from its indication profile (with {goal}
+//      token substitution).
+//   2. Apply the cycle-phase prescription envelope — scale set count,
+//      set the intensity cap, flag 1RM attempts, and surface the
+//      phase-specific effort framing copy.
+//
+// If the user isn't tracking a cycle or isn't in a known phase, the
+// envelope is neutral and no prescription changes.
+export function applyIndicationPostProcessing(weekData: WeekData): WeekData {
+  const store = useKineStore.getState();
+  const { goal, cycleType, cycle } = store;
+  const goalLabel = goal === "muscle" ? "muscle" : goal === "strength" ? "strength" : "consistency";
+
+  // Resolve the user's current cycle phase (null if untracked or not
+  // applicable). We ONLY apply envelopes for users with regular cycles
+  // — irregular / hormonal / na users get the neutral envelope.
+  let currentPhase: ReturnType<typeof getCurrentPhase> | null = null;
+  if (cycleType === "regular") {
+    currentPhase = getCurrentPhase(cycle.periodLog, cycle.avgLength);
+  }
+  const phase = currentPhase?.phase ?? null;
+
+  const days = weekData.days.map((day) => {
+    if (day.isRest || !day.exercises.length) return day;
+
+    const exercises = day.exercises.map((ex): Exercise => {
+      const ind = EXERCISE_INDICATIONS[ex.name];
+
+      // Rationale from the indication profile
+      let whyForYou: string | undefined;
+      if (ind) {
+        whyForYou = ind.whyForYou.replace(/\{goal\}/g, goalLabel);
+      }
+
+      // Cycle envelope
+      const env = getCycleEnvelope(ex.name, phase);
+      const modulatedSets = modulateSetCount(ex.sets, env.setMultiplier);
+
+      return {
+        ...ex,
+        sets: modulatedSets,
+        ...(whyForYou !== undefined ? { whyForYou } : {}),
+        intensityCap: env.intensityCap,
+        rmAttempts: env.rmAttempts,
+        ...(env.effortFraming !== null ? { effortFraming: env.effortFraming } : {}),
+      };
+    });
+
+    return { ...day, exercises };
+  });
+
+  return { ...weekData, days };
+}
+
 // ── Main Build Function ──
 
 export interface BuildResult {
@@ -622,7 +704,10 @@ export async function buildWeek(): Promise<BuildResult> {
     }
 
     // Apply skill preferences — swap exercises to user's preferred variants
-    const finalWeek = applySkillPreferences(validation.weekData, store.skillPreferences);
+    const withSkills = applySkillPreferences(validation.weekData, store.skillPreferences);
+
+    // Apply indication post-processing — whyForYou rationale + cycle envelope
+    const finalWeek = applyIndicationPostProcessing(withSkills);
 
     return { success: true, weekData: finalWeek };
   } catch (err) {
@@ -630,9 +715,12 @@ export async function buildWeek(): Promise<BuildResult> {
     const fallback = buildFallbackWeek();
     fallback._weekNum = store.progressDB.currentWeek || 1;
 
+    const withSkills = applySkillPreferences(fallback, store.skillPreferences);
+    const finalWeek = applyIndicationPostProcessing(withSkills);
+
     return {
       success: false,
-      weekData: applySkillPreferences(fallback, store.skillPreferences),
+      weekData: finalWeek,
       error: apiErrorMessage(err),
     };
   }
