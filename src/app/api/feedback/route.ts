@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Forwards in-app feedback to the Kine Tools Supabase project
 // (where the admin /inbox lives). Separate project from kine-next's
@@ -29,7 +29,7 @@ function parseContext(raw: string | undefined): unknown {
 }
 
 async function uploadToBucket(
-  client: ReturnType<typeof createClient>,
+  client: SupabaseClient,
   file: File,
   prefix: string,
 ): Promise<{ path: string; publicUrl: string }> {
