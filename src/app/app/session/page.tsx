@@ -477,30 +477,6 @@ export default function SessionPage() {
         </p>
       </div>
 
-      {/* Set notation education — first encounter, not in silent mode */}
-      {eduMode !== "silent" && !useKineStore.getState().eduFlags.seen_set_notation && (
-        <div className="mb-4 rounded-xl border border-border bg-surface p-4">
-          <p className="text-[10px] text-accent font-display tracking-wider mb-2">TRAINING SHORTHAND</p>
-          <div className="flex flex-col gap-1 text-[11px]">
-            <div><span className="text-text font-medium">3×8</span> <span className="text-muted2 font-light">— 3 sets of 8 reps</span></div>
-            <div><span className="text-text font-medium">3×8-10</span> <span className="text-muted2 font-light">— start at 8, add weight when you hit 10 for all sets</span></div>
-            <div><span className="text-text font-medium">RPE 7</span> <span className="text-muted2 font-light">— could have done 3 more reps</span></div>
-            <div><span className="text-text font-medium">RIR 2</span> <span className="text-muted2 font-light">— stopped 2 reps short of failure</span></div>
-          </div>
-          <button
-            onClick={() => {
-              const store = useKineStore.getState();
-              store.setGoal(store.goal); // trigger re-render
-              const flags = { ...store.eduFlags, seen_set_notation: true };
-              useKineStore.setState({ eduFlags: flags } as Partial<typeof store>);
-            }}
-            className="mt-2 text-[10px] text-accent hover:underline"
-          >
-            Got it
-          </button>
-        </div>
-      )}
-
       {/* Time budget notice */}
       {isTrimmed && (
         <div className="mb-4 rounded-lg border border-accent/20 bg-accent-dim/30 p-3">

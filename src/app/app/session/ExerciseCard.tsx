@@ -258,10 +258,20 @@ export default function ExerciseCard({
                     const inc = getIncrement(exercise.name);
                     return (
                     <>
-                      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
-                        aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
-                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                        className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <div className="flex items-center gap-1">
+                        <button aria-label={`Decrease reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
+                          const cur = parseInt(set.reps) || 0;
+                          if (cur > 0) onUpdateSet(index, setIdx, "reps", String(cur - 1));
+                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+                        <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
+                          aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
+                          onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
+                          className="w-14 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                        <button aria-label={`Increase reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
+                          const cur = parseInt(set.reps) || 0;
+                          onUpdateSet(index, setIdx, "reps", String(cur + 1));
+                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+                      </div>
                       <span className="text-muted">×</span>
                       <div className="flex items-center gap-1">
                         <button aria-label={`Decrease weight for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
@@ -285,10 +295,20 @@ export default function ExerciseCard({
                   {/* Bodyweight: reps only */}
                   {(logType === "bodyweight" || logType === "bodyweight_unilateral") && (
                     <>
-                      <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
-                        aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
-                        onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
-                        className="w-20 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                      <div className="flex items-center gap-1">
+                        <button aria-label={`Decrease reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
+                          const cur = parseInt(set.reps) || 0;
+                          if (cur > 0) onUpdateSet(index, setIdx, "reps", String(cur - 1));
+                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+                        <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
+                          aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
+                          onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
+                          className="w-16 rounded-lg border border-border bg-bg px-2 py-1.5 text-center text-sm text-text outline-none focus:border-accent" />
+                        <button aria-label={`Increase reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
+                          const cur = parseInt(set.reps) || 0;
+                          onUpdateSet(index, setIdx, "reps", String(cur + 1));
+                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+                      </div>
                       <span className="text-xs text-muted">{logType === "bodyweight_unilateral" ? "reps/side" : "reps"}</span>
                     </>
                   )}

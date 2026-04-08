@@ -49,6 +49,10 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
     intro: "Set up the session however works for you today. Nothing here is required.",
     sections: [
       {
+        title: "Training shorthand",
+        body: <><strong className="text-accent font-normal">3×8</strong> means 3 sets of 8 reps. <strong className="text-accent font-normal">3×8-10</strong> means start at 8 reps and add weight when you can hit 10 for all sets.</>,
+      },
+      {
         title: "Energy check-in",
         body: <>Tap <strong className="text-accent font-normal">Low</strong>, <strong className="text-accent font-normal">Normal</strong>, <strong className="text-accent font-normal">Good</strong>, or <strong className="text-accent font-normal">Great</strong>. This is just a note for you — it won't change your workout.</>,
       },
@@ -74,6 +78,10 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
     label: "Your session",
     intro: "Focus on the work. The app handles the rest.",
     sections: [
+      {
+        title: "Training shorthand",
+        body: <><strong className="text-accent font-normal">3×8</strong> means 3 sets of 8 reps. <strong className="text-accent font-normal">3×8-10</strong> means start at 8 reps and add weight when you can hit 10 for all sets.</>,
+      },
       {
         title: "Logging sets",
         body: "Enter reps and weight for each set. Set 1's weight auto-fills the rest — adjust if needed.",
@@ -124,7 +132,7 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
       },
       {
         title: "History tab",
-        body: "Past sessions and the 1RM calculator. Tap any session to see what you did and how it felt.",
+        body: "Past sessions. Tap any session to see what you did and how it felt.",
       },
       {
         title: "Customize",
