@@ -40,13 +40,11 @@ export default function AppHome() {
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(0);
   const router = useRouter();
-
-  // If no goal set, redirect to onboarding
-  useEffect(() => {
-    if (!goal) {
-      router.replace("/app/onboarding");
-    }
-  }, [goal, router]);
+  // Note: we intentionally DO NOT redirect to /app/onboarding from here.
+  // AuthGuard is the single source of truth for onboarding status via the
+  // sticky onboarded_at flag on the user. Redirecting on a missing `goal`
+  // here fights with AuthGuard and sends onboarded users who are mid-sync
+  // back through onboarding, which overwrites their data.
 
   // Rotate loading messages
   useEffect(() => {
@@ -74,7 +72,16 @@ export default function AppHome() {
     setLoading(false);
   }
 
-  if (!goal) return null;
+  // No goal yet — we're either hydrating from localStorage or waiting for
+  // the cloud sync to restore state. Show a quiet placeholder, NOT a
+  // redirect to onboarding (AuthGuard already decided this user is valid).
+  if (!goal) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-xs text-muted font-light">Loading your programme…</p>
+      </div>
+    );
+  }
 
   const programmeStarted = isProgrammeStarted(progressDB.programStartDate);
 
