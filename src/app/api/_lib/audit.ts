@@ -39,20 +39,16 @@ export function logAudit(entry: AuditEntry): void {
 
   // Run after the response is sent so the serverless function isn't frozen
   // before the insert lands.
-  after(
-    supabase
-      .from("audit_log")
-      .insert({
-        event: entry.event,
-        user_id: entry.user_id || null,
-        ip: entry.ip || null,
-        metadata: entry.metadata || {},
-        created_at: new Date().toISOString(),
-      })
-      .then(({ error }) => {
-        if (error) console.error("[audit] insert failed:", error.message);
-      })
-  );
+  after(async () => {
+    const { error } = await supabase.from("audit_log").insert({
+      event: entry.event,
+      user_id: entry.user_id || null,
+      ip: entry.ip || null,
+      metadata: entry.metadata || {},
+      created_at: new Date().toISOString(),
+    });
+    if (error) console.error("[audit] insert failed:", error.message);
+  });
 }
 
 /**
