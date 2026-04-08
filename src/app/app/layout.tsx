@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { installFeedbackContext, trackRoute } from "@/lib/feedback-context";
 import AuthGuard from "@/components/AuthGuard";
 import BottomNav from "@/components/BottomNav";
 import ToastContainer from "@/components/Toast";
@@ -19,6 +20,9 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  useEffect(() => { installFeedbackContext(); }, []);
+  useEffect(() => { trackRoute(pathname); }, [pathname]);
   const pathname = usePathname();
 
   return (
