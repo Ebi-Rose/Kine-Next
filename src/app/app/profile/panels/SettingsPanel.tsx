@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import { signOut } from "@/lib/auth";
+import { getTheme, setTheme, type Theme } from "@/lib/theme";
 import { appNow } from "@/lib/dev-time";
 import { syncNow } from "@/lib/sync";
 import Button from "@/components/Button";
@@ -13,6 +14,9 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
   const { measurementSystem, setMeasurementSystem, resetOnboarding } = useKineStore();
   const [deleteStep, setDeleteStep] = useState<"idle" | "confirm" | "deleting">("idle");
   const [restoring, setRestoring] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
+  useEffect(() => { setThemeState(getTheme()); }, []);
+  function applyTheme(t: Theme) { setTheme(t); setThemeState(t); }
 
   async function handleSync() {
     await syncNow();
@@ -141,7 +145,7 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
 
       {/* Preferences */}
       <p className="mt-4 mb-2 text-[10px] tracking-[0.15em] uppercase text-muted">Preferences</p>
-      <div className="rounded-[10px] border border-border bg-surface p-4">
+      <div className="rounded-[10px] border border-border bg-surface p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-xs text-text">Units</span>
           <div className="flex gap-1">
@@ -150,6 +154,18 @@ export default function SettingsPanel({ onBack }: { onBack: () => void }) {
                 className={`rounded-lg px-3 py-1 text-xs transition-all ${
                   (measurementSystem || "metric") === s ? "bg-accent text-bg" : "bg-surface2 text-muted2 hover:text-text"
                 }`}>{s === "metric" ? "kg" : "lbs"}</button>
+            ))}
+          </div>
+        </div>
+        <div className="h-px bg-border/50" />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-text">Theme</span>
+          <div className="flex gap-1">
+            {(["dark", "light"] as const).map((t) => (
+              <button key={t} onClick={() => applyTheme(t)}
+                className={`rounded-lg px-3 py-1 text-xs transition-all capitalize ${
+                  theme === t ? "bg-accent text-bg" : "bg-surface2 text-muted2 hover:text-text"
+                }`}>{t}</button>
             ))}
           </div>
         </div>

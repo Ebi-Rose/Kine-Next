@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kine — Light Mode Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500&display=swap" rel="stylesheet">
+<style>
+  /* ── Dark tokens (current) ── */
+  .dark {
+    --bg: #13110f;
+    --sf: #1a1815;
+    --sf2: #23201b;
+    --bd: #2a2722;
+    --ac: #c49098;
+    --acd: rgba(196,144,152,0.10);
+    --acm: rgba(196,144,152,0.18);
+    --tx: #f0ebe6;
+    --mt: #8a847d;
+    --mt2: #a09a93;
+    --sage: #8ba88b;
+    --gold: #c4a962;
+    --blue: #7b8fa8;
+    --hero-op: 0.06;
+  }
+  /* ── Light tokens (proposed) ── */
+  .light {
+    --bg: #f6f1ea;        /* warm cream, never pure white */
+    --sf: #fffbf5;        /* card */
+    --sf2: #ede5da;       /* nested surface */
+    --bd: #dcd2c4;        /* visible but soft */
+    --ac: #8e5560;        /* darkened rose — AA on cream */
+    --acd: rgba(142,85,96,0.08);
+    --acm: rgba(142,85,96,0.16);
+    --tx: #1c1612;        /* warm near-black */
+    --mt: #7a6f63;        /* muted */
+    --mt2: #554b42;       /* muted2 */
+    --sage: #4f6b4f;
+    --gold: #8a6f2e;
+    --blue: #4a607a;
+    --hero-op: 0.04;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "DM Sans", sans-serif;
+    background: #0a0a0a;
+    color: #f0ebe6;
+    padding: 48px 20px 100px;
+    line-height: 1.5;
+  }
+  .page-title {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 42px; font-style: italic;
+    text-align: center; margin-bottom: 6px;
+  }
+  .page-sub {
+    text-align: center; color: #8a8a8a; font-size: 13px;
+    font-weight: 300; max-width: 680px; margin: 0 auto 48px;
+  }
+
+  h2.section {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 26px; font-style: italic;
+    text-align: center; color: #d8d3ce;
+    margin: 56px 0 20px;
+  }
+
+  /* ── Palette swatches ── */
+  .palette-row {
+    display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .palette {
+    background: #141211; border: 1px solid #232019; border-radius: 16px;
+    padding: 22px; width: 480px;
+  }
+  .palette h3 {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 20px; font-style: italic; margin-bottom: 4px;
+  }
+  .palette .tag {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+    color: #7a7570; margin-bottom: 16px;
+  }
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .sw {
+    border-radius: 10px; padding: 10px; min-height: 72px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    font-size: 10px; border: 1px solid rgba(255,255,255,0.06);
+  }
+  .sw .name { font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+  .sw .hex { opacity: 0.7; font-family: monospace; font-size: 9px; }
+
+  /* ── Phones ── */
+  .phones-row {
+    display: flex; justify-content: center; gap: 36px; flex-wrap: wrap;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; }
+  .phone-label {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 22px; font-style: italic; margin-bottom: 2px;
+  }
+  .phone-sub {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+    color: #7a7570; margin-bottom: 14px;
+  }
+  .phone {
+    width: 340px; height: 720px; border-radius: 36px; overflow: hidden;
+    overflow-y: auto;
+    background: var(--bg);
+    color: var(--tx);
+    box-shadow: 0 0 0 2px #2a2520, 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .phone.light { box-shadow: 0 0 0 2px #3a342c, 0 20px 60px rgba(0,0,0,0.5); }
+  .phone::-webkit-scrollbar { width: 0; }
+  .phone::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background: url("/hero-bg-opt.jpg") center/cover no-repeat;
+    opacity: var(--hero-op); pointer-events: none;
+  }
+  .phone > * { position: relative; z-index: 1; }
+
+  .header {
+    padding: 20px 24px 6px;
+  }
+  .logo {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 20px; letter-spacing: 4px;
+  }
+  .logo .k { color: var(--ac); }
+
+  main {
+    padding: 16px 24px 96px;
+  }
+  .greeting {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 32px; font-style: italic; line-height: 1.15;
+    margin-bottom: 2px;
+  }
+  .date {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--mt); margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--sf);
+    border: 1px solid var(--bd);
+    border-radius: 16px;
+    padding: 18px 18px;
+    margin-bottom: 14px;
+  }
+  .card.accent { border-color: var(--ac); background: var(--acd); }
+  .card .eyebrow {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--mt); margin-bottom: 6px;
+  }
+  .card .title {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 22px; font-style: italic; margin-bottom: 4px;
+  }
+  .card .meta { font-size: 12px; color: var(--mt2); margin-bottom: 14px; }
+  .btn {
+    display: inline-block; padding: 10px 18px; border-radius: 999px;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+    background: var(--ac); color: var(--bg); font-weight: 500;
+    border: none;
+  }
+  .btn.ghost {
+    background: transparent; color: var(--tx); border: 1px solid var(--bd);
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat {
+    background: var(--sf); border: 1px solid var(--bd); border-radius: 14px;
+    padding: 14px;
+  }
+  .stat .lbl {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--mt); margin-bottom: 6px;
+  }
+  .stat .val {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 26px; font-style: italic;
+  }
+  .stat .delta { font-size: 10px; color: var(--sage); }
+
+  .session-list { display: flex; flex-direction: column; gap: 8px; }
+  .session-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px;
+    background: var(--sf2);
+    border-radius: 12px;
+    font-size: 12px;
+  }
+  .session-row .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 8px; background: var(--ac);
+  }
+  .session-row.done .dot { background: var(--sage); }
+  .session-row.skip .dot { background: var(--mt); }
+
+  .chip {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    background: var(--acm); color: var(--ac);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  .nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--sf); border-top: 1px solid var(--bd);
+    padding: 14px 24px 18px;
+    display: flex; justify-content: space-around;
+    z-index: 2;
+  }
+  .nav .tab {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--mt);
+  }
+  .nav .tab.active { color: var(--ac); }
+
+  /* Divider label rows */
+  .notes {
+    max-width: 780px; margin: 56px auto 0;
+    font-size: 13px; color: #a09a93; line-height: 1.7;
+  }
+  .notes h3 {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 22px; font-style: italic;
+    color: #e0dbd4; margin-bottom: 10px;
+  }
+  .notes ul { padding-left: 20px; }
+  .notes li { margin-bottom: 8px; }
+  .notes strong { color: #d8d3ce; font-weight: 500; }
+  .notes code {
+    background: #1a1815; padding: 1px 6px; border-radius: 4px;
+    font-size: 11px; color: #c49098;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Light Mode</h1>
+<p class="page-sub">
+  Exploring a warm-cream counterpart to Kine's current dark palette. Same
+  feminine warmth, different time of day.
+</p>
+
+<h2 class="section">Palette</h2>
+<div class="palette-row">
+
+  <!-- DARK -->
+  <div class="palette">
+    <h3>Dark — Current</h3>
+    <div class="tag">Direction E (Warm Feminine)</div>
+    <div class="swatches">
+      <div class="sw" style="background:#13110f;color:#f0ebe6">
+        <span class="name">bg</span><span class="hex">#13110f</span>
+      </div>
+      <div class="sw" style="background:#1a1815;color:#f0ebe6">
+        <span class="name">surface</span><span class="hex">#1a1815</span>
+      </div>
+      <div class="sw" style="background:#23201b;color:#f0ebe6">
+        <span class="name">surface2</span><span class="hex">#23201b</span>
+      </div>
+      <div class="sw" style="background:#2a2722;color:#f0ebe6">
+        <span class="name">border</span><span class="hex">#2a2722</span>
+      </div>
+      <div class="sw" style="background:#c49098;color:#13110f">
+        <span class="name">accent</span><span class="hex">#c49098</span>
+      </div>
+      <div class="sw" style="background:#f0ebe6;color:#13110f">
+        <span class="name">text</span><span class="hex">#f0ebe6</span>
+      </div>
+      <div class="sw" style="background:#8a847d;color:#13110f">
+        <span class="name">muted</span><span class="hex">#8a847d</span>
+      </div>
+      <div class="sw" style="background:#a09a93;color:#13110f">
+        <span class="name">muted2</span><span class="hex">#a09a93</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT -->
+  <div class="palette">
+    <h3>Light — Proposed</h3>
+    <div class="tag">Warm cream, not clinical white</div>
+    <div class="swatches">
+      <div class="sw" style="background:#f6f1ea;color:#1c1612">
+        <span class="name">bg</span><span class="hex">#f6f1ea</span>
+      </div>
+      <div class="sw" style="background:#fffbf5;color:#1c1612">
+        <span class="name">surface</span><span class="hex">#fffbf5</span>
+      </div>
+      <div class="sw" style="background:#ede5da;color:#1c1612">
+        <span class="name">surface2</span><span class="hex">#ede5da</span>
+      </div>
+      <div class="sw" style="background:#dcd2c4;color:#1c1612">
+        <span class="name">border</span><span class="hex">#dcd2c4</span>
+      </div>
+      <div class="sw" style="background:#8e5560;color:#fffbf5">
+        <span class="name">accent</span><span class="hex">#8e5560</span>
+      </div>
+      <div class="sw" style="background:#1c1612;color:#f6f1ea">
+        <span class="name">text</span><span class="hex">#1c1612</span>
+      </div>
+      <div class="sw" style="background:#7a6f63;color:#fffbf5">
+        <span class="name">muted</span><span class="hex">#7a6f63</span>
+      </div>
+      <div class="sw" style="background:#554b42;color:#fffbf5">
+        <span class="name">muted2</span><span class="hex">#554b42</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 class="section">Today Screen</h2>
+<div class="phones-row">
+
+  <!-- DARK PHONE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Dark</div>
+    <div class="phone-sub">Current</div>
+    <div class="phone dark">
+      <div class="header"><span class="logo"><span class="k">K</span>INĒ</span></div>
+      <main>
+        <div class="greeting">Good morning,<br><em>Ebi.</em></div>
+        <div class="date">Wednesday · April 8</div>
+
+        <div class="card accent">
+          <div class="eyebrow">Today's session</div>
+          <div class="title">Lower body — strength</div>
+          <div class="meta">6 exercises · ~45 min · Week 3 / Block 2</div>
+          <button class="btn">Begin warmup</button>
+        </div>
+
+        <div class="row2">
+          <div class="stat">
+            <div class="lbl">Streak</div>
+            <div class="val">12</div>
+            <div class="delta">↑ 3 days</div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Volume / wk</div>
+            <div class="val">48.2k</div>
+            <div class="delta">↑ 6%</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow">This week</div>
+          <div class="session-list">
+            <div class="session-row done"><span><span class="dot"></span>Mon · Upper push</span><span class="chip">done</span></div>
+            <div class="session-row done"><span><span class="dot"></span>Tue · Mobility</span><span class="chip">done</span></div>
+            <div class="session-row"><span><span class="dot"></span>Wed · Lower strength</span><span class="chip">today</span></div>
+            <div class="session-row skip"><span><span class="dot"></span>Thu · Rest</span><span>—</span></div>
+            <div class="session-row"><span><span class="dot"></span>Fri · Upper pull</span><span>—</span></div>
+          </div>
+        </div>
+      </main>
+      <div class="nav">
+        <div class="tab active">Today</div>
+        <div class="tab">Progress</div>
+        <div class="tab">Learn</div>
+        <div class="tab">Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT PHONE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Light</div>
+    <div class="phone-sub">Proposed</div>
+    <div class="phone light">
+      <div class="header"><span class="logo"><span class="k">K</span>INĒ</span></div>
+      <main>
+        <div class="greeting">Good morning,<br><em>Ebi.</em></div>
+        <div class="date">Wednesday · April 8</div>
+
+        <div class="card accent">
+          <div class="eyebrow">Today's session</div>
+          <div class="title">Lower body — strength</div>
+          <div class="meta">6 exercises · ~45 min · Week 3 / Block 2</div>
+          <button class="btn">Begin warmup</button>
+        </div>
+
+        <div class="row2">
+          <div class="stat">
+            <div class="lbl">Streak</div>
+            <div class="val">12</div>
+            <div class="delta">↑ 3 days</div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Volume / wk</div>
+            <div class="val">48.2k</div>
+            <div class="delta">↑ 6%</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow">This week</div>
+          <div class="session-list">
+            <div class="session-row done"><span><span class="dot"></span>Mon · Upper push</span><span class="chip">done</span></div>
+            <div class="session-row done"><span><span class="dot"></span>Tue · Mobility</span><span class="chip">done</span></div>
+            <div class="session-row"><span><span class="dot"></span>Wed · Lower strength</span><span class="chip">today</span></div>
+            <div class="session-row skip"><span><span class="dot"></span>Thu · Rest</span><span>—</span></div>
+            <div class="session-row"><span><span class="dot"></span>Fri · Upper pull</span><span>—</span></div>
+          </div>
+        </div>
+      </main>
+      <div class="nav">
+        <div class="tab active">Today</div>
+        <div class="tab">Progress</div>
+        <div class="tab">Learn</div>
+        <div class="tab">Profile</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <h3>Design decisions</h3>
+  <ul>
+    <li><strong>Warm cream, not white.</strong> <code>#f6f1ea</code> bg keeps Kine's warmth and reads feminine; pure <code>#fff</code> would feel clinical and break brand.</li>
+    <li><strong>Accent darkened for contrast.</strong> The rose <code>#c49098</code> fails AA on cream, so light-mode accent is <code>#8e5560</code> — same hue family, just weighted for legibility. Buttons keep filled rose; links/active states use it too.</li>
+    <li><strong>Hero texture softened.</strong> The <code>hero-bg-opt.jpg</code> overlay drops from 0.06 → 0.04 opacity — on light backgrounds it has more visible impact.</li>
+    <li><strong>Category accents</strong> (sage/gold/blue) darken in parallel so they stay distinguishable against cream and maintain semantic meaning across both themes.</li>
+    <li><strong>Borders visible.</strong> <code>#dcd2c4</code> gives card edges definition without harsh lines — matches the soft feel of the dark theme's muted borders.</li>
+    <li><strong>Filled accent buttons invert.</strong> Dark mode: rose bg + dark text. Light mode: dark-rose bg + cream text. Maintains the same visual weight.</li>
+  </ul>
+
+  <h3 style="margin-top:32px">Implementation notes (not in scope yet)</h3>
+  <ul>
+    <li>Add a <code>.light</code> class on <code>&lt;html&gt;</code> that overrides the same CSS custom properties defined in <code>globals.css</code>.</li>
+    <li>Toggle lives in Profile; default to system preference via <code>prefers-color-scheme</code> on first load, persist choice in localStorage.</li>
+    <li>Every component reads from <code>--color-*</code> tokens already — no per-component refactoring needed beyond any hardcoded hex values (audit required).</li>
+    <li>Sentry/error screens and onboarding backgrounds that use custom gradients will need parallel light values.</li>
+  </ul>
+</div>
+
+</body>
+</html>

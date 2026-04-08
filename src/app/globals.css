@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-@theme inline {
-  /* Kine design tokens — Direction E (Warm Feminine) */
+@theme {
+  /* Kine design tokens — Direction E (Warm Feminine) — DARK (default) */
   --color-bg: #13110f;
   --color-surface: #1a1815;
   --color-surface2: #23201b;
@@ -30,6 +30,27 @@
   --font-body: "DM Sans", sans-serif;
 }
 
+/* ── Light theme overrides ── */
+html.light {
+  --color-bg: #f6f1ea;
+  --color-surface: #fffbf5;
+  --color-surface2: #ede5da;
+  --color-border: #dcd2c4;
+  --color-border-active: #8e5560;
+  --color-accent: #8e5560;
+  --color-accent-dim: rgba(142, 85, 96, 0.08);
+  --color-text: #1c1612;
+  --color-muted: #7a6f63;
+  --color-muted2: #554b42;
+
+  --color-cat-push: #8e5560;
+  --color-cat-pull: #4a607a;
+  --color-cat-legs: #8a6f2e;
+  --color-cat-hinge: #8a6f2e;
+  --color-cat-core: #4f6b4f;
+  --color-cat-cardio: #7a4d85;
+}
+
 /* ── Base ── */
 body {
   background: var(--color-bg);
@@ -50,6 +71,9 @@ body::before {
   background: url("/hero-bg-opt.jpg") center/cover no-repeat;
   opacity: 0.06;
   pointer-events: none;
+}
+html.light body::before {
+  opacity: 0.04;
 }
 
 /* ── Scrollbar ── */
@@ -128,6 +152,9 @@ input[type="number"] {
 /* ── Date input ── */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.6);
+}
+html.light input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.3);
 }
 
 /* ── Touch ── */

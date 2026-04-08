@@ -45,6 +45,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cormorant.variable} ${dmSans.variable}`}>
+      <head>
+        {/* Apply light/dark theme before first paint to avoid FOUC */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                try {
+                  var t = localStorage.getItem('kine_theme');
+                  if (t !== 'dark' && t !== 'light') {
+                    t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+                  }
+                  if (t === 'light') document.documentElement.classList.add('light');
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body>
         <style
           dangerouslySetInnerHTML={{

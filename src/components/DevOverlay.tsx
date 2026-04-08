@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import { setDevDateOverride, getDevDateOverride, appNow, appTodayISO } from "@/lib/dev-time";
 import { toast } from "@/components/Toast";
+import { getTheme, setTheme, type Theme } from "@/lib/theme";
 
 /**
  * Wait for Zustand's async persist (encrypted storage) to flush before reloading.
@@ -26,6 +27,13 @@ export default function DevOverlay() {
     () => getDevDateOverride()?.toISOString().split("T")[0] || ""
   );
   const [showState, setShowState] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
+  useEffect(() => { setThemeState(getTheme()); }, []);
+  function toggleTheme() {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    setThemeState(next);
+  }
 
   // Dev tools available in all access modes for beta testing
 
@@ -224,7 +232,16 @@ export default function DevOverlay() {
             W{store.progressDB.currentWeek} · {store.progressDB.sessions.length}s
           </span>
         </div>
-        <button onClick={() => setOpen(false)} className="text-[10px] text-muted2 hover:text-text px-1">✕</button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleTheme}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            className="rounded border border-border/50 px-1.5 py-0.5 text-[9px] text-muted2 hover:text-accent hover:border-accent/40 transition-all capitalize"
+          >
+            {theme}
+          </button>
+          <button onClick={() => setOpen(false)} className="text-[10px] text-muted2 hover:text-text px-1">✕</button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -314,6 +331,7 @@ export default function DevOverlay() {
                 { key: "aisha", label: "Aisha", desc: "Beginner" },
                 { key: "emma", label: "Emma", desc: "Postpartum" },
                 { key: "diane", label: "Diane", desc: "Peri" },
+                { key: "iris", label: "Iris", desc: "Hypermobile" },
                 { key: "demo", label: "Demo", desc: "Generic" },
               ].map((p) => (
                 <button
