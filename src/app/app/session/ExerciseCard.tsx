@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ExerciseLog } from "./types";
 import { findExercise } from "@/data/exercise-library";
 import { getBreathingCue, getMuscleTags, getConditionCue, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, isSquat, isHinge, isCompound } from "@/data/education";
@@ -40,6 +41,7 @@ export default function ExerciseCard({
   const unitPerSide = weightUnitPerSide(system);
   // Subscribe so this card re-renders when the Supabase video cache lands.
   useExerciseVideosReady();
+  const [showVideoInline, setShowVideoInline] = useState(false);
 
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -90,12 +92,13 @@ export default function ExerciseCard({
         {/* Thumbnail placeholder */}
         {videoThumb ? (
           <div
-            className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border"
-            onClick={(e) => { e.stopPropagation(); if (vidUrl && onVideoPlay) onVideoPlay(vidUrl); }}
+            className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); setShowVideoInline((v) => !v); }}
+            aria-label={showVideoInline ? `Hide ${exercise.name} video` : `Play ${exercise.name} video inline`}
           >
-            <img src={videoThumb} alt={`Play video for ${exercise.name}`} className="h-full w-full object-cover" />
+            <img src={videoThumb} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <span className="text-white text-[10px]">▶</span>
+              <span className="text-white text-[10px]">{showVideoInline ? "✕" : "▶"}</span>
             </div>
           </div>
         ) : (
@@ -150,6 +153,22 @@ export default function ExerciseCard({
         )}
         <span className="text-muted text-[10px] shrink-0">{expanded ? "▾" : "▸"}</span>
       </button>
+
+      {showVideoInline && vidUrl && (
+        <div className="mx-4 mb-3 rounded-lg overflow-hidden border border-border bg-black">
+          <video
+            src={vidUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            controls
+            aria-label={`${exercise.name} demonstration video`}
+            className="w-full"
+            style={{ maxHeight: "40vh" }}
+          />
+        </div>
+      )}
 
       {expanded && !log.saved && (() => {
         const exInfo = findExercise(exercise.name);

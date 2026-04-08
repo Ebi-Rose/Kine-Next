@@ -74,11 +74,15 @@ export default function ExerciseSwapSheet({
         if (search && !ex.name.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       })
-      .map((ex) => ({
-        ...ex,
-        fit: scoreSwap(ex.muscle, currentEx?.muscle || "", sessionMuscles),
-        comparison: getComparison(ex, currentEx),
-      }));
+      .map((ex) => {
+        const fit = scoreSwap(ex.muscle, currentEx?.muscle || "", sessionMuscles);
+        return {
+          ...ex,
+          fit,
+          comparison: getComparison(ex, currentEx),
+          rationale: getRationale(fit, ex, currentEx, sessionMuscles),
+        };
+      });
   }, [currentExercise, currentEx, sessionExercises, equip, exp, mode, search, sessionMuscles]);
 
   // Group by compound/isolation for "like" mode, by muscle group for "all" mode
@@ -238,6 +242,11 @@ export default function ExerciseSwapSheet({
                         </>
                       )}
                     </div>
+                    {ex.rationale && (
+                      <div className="mt-1 text-[9px] text-muted font-light leading-snug">
+                        {ex.rationale}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col items-end shrink-0 gap-0.5">
                     <span className={`rounded-full px-1.5 py-0.5 text-[8px] tracking-wider uppercase ${
@@ -274,6 +283,40 @@ function scoreSwap(candidateMuscle: string, replacedMuscle: string, sessionMuscl
   if (candidateMuscle === replacedMuscle) return "ideal";
   if (sessionMuscles.includes(candidateMuscle)) return "acceptable";
   return "compromise";
+}
+
+/**
+ * Short, human-readable rationale for WHY a candidate is ideal/acceptable/compromise.
+ * Shown inline so the user can make an informed choice instead of just trusting a label.
+ */
+function getRationale(
+  fit: FitScore,
+  candidate: { muscle: string; tags: string[]; logType: string; equip: string[] },
+  current: { muscle: string; tags: string[]; logType: string; equip: string[] } | undefined,
+  sessionMuscles: string[],
+): string {
+  if (!current) return "";
+  const candCompound = candidate.tags.includes("Compound");
+  const curCompound = current.tags.includes("Compound");
+
+  if (fit === "ideal") {
+    if (candCompound && curCompound) return "Same muscle group, same compound pattern — direct swap.";
+    if (!candCompound && !curCompound) return "Same muscle group and isolation style — equivalent stimulus.";
+    if (candCompound && !curCompound) return "Same muscle group, but adds compound loading — a step up.";
+    return "Same muscle group but isolation-only — less overall load.";
+  }
+
+  if (fit === "acceptable") {
+    const focusLabel = MUSCLE_LABELS[candidate.muscle] || candidate.muscle;
+    const otherFocus = sessionMuscles.filter((m) => m !== current.muscle).length > 0;
+    if (otherFocus) {
+      return `Still hits today's session focus (${focusLabel}). Reduces ${MUSCLE_LABELS[current.muscle] || current.muscle} volume.`;
+    }
+    return `Hits ${focusLabel}, which is part of today's session.`;
+  }
+
+  // compromise
+  return `Changes today's balance — works ${MUSCLE_LABELS[candidate.muscle] || candidate.muscle} instead of ${MUSCLE_LABELS[current.muscle] || current.muscle}. Fine as a one-off if time or energy is short.`;
 }
 
 function getComparison(
