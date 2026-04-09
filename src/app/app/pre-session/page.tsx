@@ -178,7 +178,8 @@ export default function PreSessionPage() {
     }
     if (phaseInfo) parts.push(phaseInfo.phase.charAt(0).toUpperCase() + phaseInfo.phase.slice(1) + " phase");
     if (conditions.length) parts.push(conditions.length + " condition" + (conditions.length > 1 ? "s" : ""));
-    if (injuries.length || injuryNotes) parts.push(injuries.map(injuryLabel).join(", ") || "injury note");
+    if (injuries.length) parts.push(`${injuries.length} ${injuries.length === 1 ? "injury" : "injuries"}`);
+    else if (injuryNotes) parts.push("injury note");
     if (daysSinceLastSession !== null) parts.push(`${daysSinceLastSession} day${daysSinceLastSession !== 1 ? "s" : ""} rest`);
     return parts.length ? parts.join(" · ") : "Tap to check in";
   }, [energy, phaseInfo, conditions, injuries, injuryNotes, daysSinceLastSession]);

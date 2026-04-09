@@ -36,10 +36,13 @@ export default function ConstraintsBanner({
     .map((ex, i) => ({ ex, i }))
     .filter(({ ex }) => ex.swappedFrom);
 
+  const systemSwaps = swappedIndexes.filter(({ ex }) => ex.swappedReason && ex.swappedReason !== "user");
+  const userSwaps = swappedIndexes.filter(({ ex }) => !ex.swappedReason || ex.swappedReason === "user");
+
   const hasActiveConstraints = injuries.length > 0 || conditions.length > 0;
 
-  // No constraints at all — nothing to show
-  if (!hasActiveConstraints) return null;
+  // No constraints and no swaps — nothing to show
+  if (!hasActiveConstraints && swappedIndexes.length === 0) return null;
 
   const chips = [
     ...injuries.map((v) => reasonLabel(v)),
@@ -81,47 +84,87 @@ export default function ConstraintsBanner({
           <>Today&apos;s exercises are already suitable — no adaptations needed.</>
         ) : (
           <>
-            <span className="text-accent font-medium">{swappedIndexes.length}</span>
-            {swappedIndexes.length === 1 ? " exercise was" : " exercises were"} adapted for this session.
+            {systemSwaps.length > 0 && (
+              <>
+                <span className="text-accent font-medium">{systemSwaps.length}</span>
+                {systemSwaps.length === 1 ? " exercise was" : " exercises were"} adapted for your context
+              </>
+            )}
+            {systemSwaps.length > 0 && userSwaps.length > 0 && <> · </>}
+            {userSwaps.length > 0 && (
+              <>
+                <span className="text-accent font-medium">{userSwaps.length}</span>
+                {userSwaps.length === 1 ? " was" : " were"} changed by you
+              </>
+            )}
+            .
           </>
         )}
       </p>
 
       {open && !noSwaps && (
-        <div className="mt-3.5 pt-3.5 border-t border-border flex flex-col gap-2.5">
-          {swappedIndexes.map(({ ex, i }) => {
-            const reverted = ex.useOriginal === true;
-            return (
-              <div
-                key={i}
-                className="flex items-center justify-between gap-2.5 rounded-[10px] bg-surface2/60 px-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <div className="text-[11px] leading-snug text-text">
-                    <span className={reverted ? "text-text font-medium" : "text-muted line-through"}>
-                      {ex.swappedFrom}
-                    </span>
-                    <span className="text-muted mx-1">→</span>
-                    <span className={reverted ? "text-muted line-through" : "text-text font-medium"}>
-                      {ex.name}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-[9px] text-muted">
-                    {reasonLabel(ex.swappedReason)}
-                    {ex.swapNote && <span className="text-muted2"> · &ldquo;{ex.swapNote}&rdquo;</span>}
-                  </div>
-                </div>
-                <button
-                  onClick={() => onToggleRevert(i)}
-                  className="shrink-0 rounded-full border border-border-active px-2.5 py-1 text-[10px] text-accent hover:bg-accent-dim transition-colors"
-                >
-                  {reverted ? "Use adapted" : "Use original"}
-                </button>
-              </div>
-            );
-          })}
+        <div className="mt-3.5 pt-3.5 border-t border-border flex flex-col gap-3.5">
+          {systemSwaps.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="text-[9px] tracking-[0.18em] uppercase text-muted2">Adapted for your context</div>
+              {systemSwaps.map(({ ex, i }) => (
+                <SwapRow key={i} ex={ex} index={i} onToggleRevert={onToggleRevert} kind="system" />
+              ))}
+            </div>
+          )}
+          {userSwaps.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="text-[9px] tracking-[0.18em] uppercase text-muted2">Your changes</div>
+              {userSwaps.map(({ ex, i }) => (
+                <SwapRow key={i} ex={ex} index={i} onToggleRevert={onToggleRevert} kind="user" />
+              ))}
+            </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SwapRow({
+  ex,
+  index,
+  onToggleRevert,
+  kind,
+}: {
+  ex: Exercise;
+  index: number;
+  onToggleRevert: (i: number) => void;
+  kind: "system" | "user";
+}) {
+  const reverted = ex.useOriginal === true;
+  return (
+    <div className="flex items-center justify-between gap-2.5 rounded-[10px] bg-surface2/60 px-3 py-2.5">
+      <div className="min-w-0">
+        <div className="text-[11px] leading-snug text-text">
+          <span className={reverted ? "text-text font-medium" : "text-muted line-through"}>
+            {ex.swappedFrom}
+          </span>
+          <span className="text-muted mx-1">→</span>
+          <span className={reverted ? "text-muted line-through" : "text-text font-medium"}>
+            {ex.name}
+          </span>
+        </div>
+        <div className="mt-0.5 text-[9px] text-muted">
+          {kind === "system" ? (
+            <>Kine adapted this · {reasonLabel(ex.swappedReason)}</>
+          ) : (
+            <>Your choice</>
+          )}
+          {ex.swapNote && <span className="text-muted2"> · &ldquo;{ex.swapNote}&rdquo;</span>}
+        </div>
+      </div>
+      <button
+        onClick={() => onToggleRevert(index)}
+        className="shrink-0 rounded-full border border-border-active px-2.5 py-1 text-[10px] text-accent hover:bg-accent-dim transition-colors"
+      >
+        {reverted ? "Use adapted" : "Use original"}
+      </button>
     </div>
   );
 }
