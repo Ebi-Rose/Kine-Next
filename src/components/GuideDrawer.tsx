@@ -42,6 +42,17 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
         title: "Weekly check-in",
         body: "At the end of the week, a quick check-in asks how training felt. This helps shape next week.",
       },
+      {
+        title: "Kinē isn't another AI wrapper",
+        body: (
+          <>
+            Structured periodisation, cycle-aware training, and evidence-based programming — not just a chat prompt.{" "}
+            <a href="/app/how-we-build" className="text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent">
+              See how Kinē builds your programme →
+            </a>
+          </>
+        ),
+      },
     ],
   },
   "/app/pre-session": {

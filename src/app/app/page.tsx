@@ -512,21 +512,6 @@ function WeekView({
       {/* ── TODAY TAB ── */}
       {(viewTab === "today" && !isViewingPast) && (
         <div>
-          {/* How Kine is different — first 2 weeks */}
-          {progressDB.currentWeek <= 2 && (
-            <Link
-              href="/app/how-we-build"
-              className="mb-4 block rounded-[14px] border border-accent/20 bg-accent-dim p-4 hover:border-accent/40 transition-all"
-            >
-              <p className="text-xs font-medium text-text">
-                Kine isn&apos;t another AI wrapper
-              </p>
-              <p className="mt-1 text-[10px] text-muted2 font-light leading-relaxed">
-                See how structured periodisation, cycle-aware training, and evidence-based programming set Kine apart. →
-              </p>
-            </Link>
-          )}
-
           {/* Cycle phase arc + period quick-log */}
           {phase && (
             <div className="mb-4 rounded-[14px] border border-border bg-surface p-4">
@@ -656,13 +641,9 @@ function WeekView({
           ) : (
             <>
               <AdaptationCard />
-              {displayWeek.weekCoachNote && (
-                <div className="mb-4 rounded-[var(--radius-default)] border border-border bg-surface p-4">
-                  <p className="text-xs leading-relaxed text-muted2">
-                    {displayWeek.weekCoachNote}
-                  </p>
-                </div>
-              )}
+              {/* weekCoachNote intentionally omitted here — AdaptationCard
+                  is the single source of weekly context on Today view.
+                  The coach note still shows on the Week tab below. */}
               {/* Today's session card — compact, matches other days */}
               {(() => {
                 const todayDay = displayWeek.days[todayIdx];
