@@ -1,37 +1,320 @@
-// ── Condition Context for AI Prompts ──
+// ── Condition Context ──────────────────────────────────────────────
 //
-// Returns condition-specific GLOBAL constraints for all AI calls.
-// These are programme-wide framing guidelines for the LLM — NOT
-// per-exercise swap rules.
+// Thin consumer over src/data/condition-rules.ts. Provides the
+// stacking primitive `mergeConditionRules` and a small set of
+// projection functions that other modules use.
 //
-// Per-exercise behaviour (avoid / modify) now lives in
-// `exercise-indications.ts` and is enforced by the indication
-// pipeline at filter time. This file is intentionally narrow:
-// it tells the model what the condition MEANS for the user's
-// programme as a whole. See docs/specs/exercise-indications.md §6.
+// SPEC: docs/specs/condition-context-contract.md
+// DATA: src/data/condition-rules.ts
 //
-// Conditions are context, not identity — the programme adapts silently.
+// This file holds NO content. Every cue, cap, modifier, and
+// framing string lives in the authored data library. All edits
+// to condition content go there, reviewed in PRs.
+//
+// Exports:
+//   - mergeConditionRules(ids)   — core stacking primitive
+//   - getConditionRule(id)       — single-condition lookup
+//   - getConditionContext(ids)   — LLM framing string (back-compat
+//                                   signature; used by week-builder)
+//   - getConditionCoachNote(ids) — user-facing plain-language note
+//   - getConditionRedFlags(ids)  — list of safety phrases
 
-const CONDITION_CONTEXT: Record<string, string> = {
-  pcos: "PCOS — frame programming around compound movement patterns the user enjoys. Steady, sustainable progression. Avoid medical/treatment language.",
-  fibroids: "Fibroids — low-impact alternatives preferred. Avoid excessive intra-abdominal pressure during heavy loading. Flag high-impact exercises for swap.",
-  endometriosis: "Endometriosis — low-impact alternatives on symptomatic days. Anti-inflammatory movement beneficial. Flag high-impact exercises. Late-luteal may need auto-scaling.",
-  pelvic_floor: "Pelvic floor — no max-effort Valsalva loading. Exhale-on-exertion, not breath-holding. Pelvic floor-friendly alternatives for high-impact movements.",
-  hypermobility: "Hypermobility / EDS — cap deep range of motion (no end-range loading, no locked-out joints). Prefer tempo (3–4s eccentric) and isometric holds. Strictly avoid ballistic and plyometric movements (no jumps, no bounding, no bouncing reps). Dampen weekly volume by ~10–15%. Prioritise joint stability and control over mobility and depth. Longer rest between sets.",
-};
+import {
+  CONDITION_RULES,
+  type ConditionRule,
+  type ConditionExerciseRules,
+  type ConditionWarmupMods,
+  type WarmupBlockRef,
+} from "@/data/condition-rules";
+import type {
+  ConditionId,
+  MovementPattern,
+} from "@/data/exercise-indications";
+import type { CyclePhase } from "./cycle";
+
+// ── Utility primitives ─────────────────────────────────────────────
+
+function uniqueStrings(items: string[]): string[] {
+  return Array.from(new Set(items));
+}
+
+function uniquePatterns(items: MovementPattern[]): MovementPattern[] {
+  return Array.from(new Set(items));
+}
+
+function uniqueBlocksById(blocks: WarmupBlockRef[]): WarmupBlockRef[] {
+  const seen = new Set<string>();
+  const out: WarmupBlockRef[] = [];
+  for (const b of blocks) {
+    if (seen.has(b.id)) continue;
+    seen.add(b.id);
+    out.push(b);
+  }
+  return out;
+}
 
 /**
- * Build condition context string for AI prompts.
- * Returns empty string if no conditions, otherwise a newline-prefixed section.
+ * Merge per-pattern modifier cues. Multiple conditions that cue the
+ * same pattern get their cues concatenated with "; ". Substring
+ * dedupe prevents near-duplicates piling up.
  */
-export function getConditionContext(conditions: string[]): string {
+function mergeModifiers(
+  modLists: Array<Partial<Record<MovementPattern, string>>>,
+): Partial<Record<MovementPattern, string>> {
+  const merged: Partial<Record<MovementPattern, string>> = {};
+  for (const mods of modLists) {
+    for (const [pattern, cue] of Object.entries(mods)) {
+      if (!cue) continue;
+      const key = pattern as MovementPattern;
+      const existing = merged[key];
+      if (!existing) {
+        merged[key] = cue;
+      } else {
+        // Dedupe on the first 20-char substring to catch near-duplicates.
+        const head = cue.slice(0, 20).toLowerCase();
+        if (!existing.toLowerCase().includes(head)) {
+          merged[key] = existing + "; " + cue;
+        }
+      }
+    }
+  }
+  return merged;
+}
+
+/**
+ * Merge per-phase volume multipliers. Multiplicative across
+ * conditions for each phase. Missing phases in a given condition
+ * default to 1.0 (no dampening from that condition).
+ */
+function mergePhaseMultipliers(
+  rules: ConditionRule[],
+): Partial<Record<CyclePhase, number>> {
+  const phases: CyclePhase[] = [
+    "menstrual",
+    "follicular",
+    "ovulatory",
+    "luteal",
+  ];
+  const out: Partial<Record<CyclePhase, number>> = {};
+  for (const phase of phases) {
+    let multiplier = 1.0;
+    let anySet = false;
+    for (const r of rules) {
+      const p = r.exerciseRules.volumeMultiplier?.phases?.[phase];
+      if (typeof p === "number") {
+        multiplier *= p;
+        anySet = true;
+      }
+    }
+    if (anySet) out[phase] = multiplier;
+  }
+  return out;
+}
+
+// ── Empty / identity rule ──────────────────────────────────────────
+
+const EMPTY_EXERCISE_RULES: ConditionExerciseRules = {
+  avoidPatterns: [],
+  cautionPatterns: [],
+  modifiers: {},
+  volumeMultiplier: { default: 1.0 },
+  workingLoadCap: 1.0,
+  heavyTopSetsAllowed: true,
+};
+
+const EMPTY_WARMUP_MODS: ConditionWarmupMods = {
+  addBlocks: [],
+  removeBlocks: [],
+  cues: [],
+};
+
+function emptyRule(): ConditionRule {
+  return {
+    // "none" is deliberately not a ConditionId — this object is only
+    // ever returned by mergeConditionRules for empty input and
+    // consumers should treat the id as opaque.
+    id: "none" as ConditionId,
+    displayName: "None",
+    summary: "",
+    globalFraming: "",
+    coachNote: "",
+    exerciseRules: {
+      avoidPatterns: [],
+      cautionPatterns: [],
+      modifiers: {},
+      volumeMultiplier: { default: 1.0 },
+      workingLoadCap: 1.0,
+      heavyTopSetsAllowed: true,
+    },
+    warmupMods: {
+      addBlocks: [],
+      removeBlocks: [],
+      cues: [],
+    },
+    educationTags: [],
+    redFlags: [],
+  };
+}
+
+// ── Single-rule lookup ─────────────────────────────────────────────
+
+/** Look up a single condition rule. Returns undefined for unknown ids. */
+export function getConditionRule(
+  id: ConditionId,
+): ConditionRule | undefined {
+  return CONDITION_RULES[id];
+}
+
+// ── Core stacking primitive ────────────────────────────────────────
+
+/**
+ * Merge multiple conditions into a single ConditionRule. Stacking
+ * rules per docs/specs/condition-rules.md §"Stacking rules":
+ *
+ *   - avoidPatterns / cautionPatterns → union
+ *   - modifiers → concatenated per pattern, substring-deduped
+ *   - volumeMultiplier.default → multiplicative
+ *   - volumeMultiplier.phases → multiplicative per phase
+ *   - workingLoadCap → minimum wins
+ *   - repRangeFloor → maximum wins
+ *   - heavyTopSetsAllowed → AND (any false wins)
+ *   - warmupMods.addBlocks → union, dedupe by id
+ *   - warmupMods.removeBlocks / cues → union
+ *   - redFlags → union
+ *   - educationTags → union
+ *
+ * Unknown ids are silently dropped. Empty input returns the
+ * identity rule.
+ */
+export function mergeConditionRules(ids: ConditionId[]): ConditionRule {
+  if (!ids || ids.length === 0) return emptyRule();
+
+  const rules: ConditionRule[] = [];
+  for (const id of ids) {
+    const r = CONDITION_RULES[id];
+    if (r) rules.push(r);
+  }
+
+  if (rules.length === 0) return emptyRule();
+  if (rules.length === 1) return rules[0];
+
+  const workingLoadCap = Math.min(
+    ...rules.map((r) => r.exerciseRules.workingLoadCap ?? 1),
+  );
+  const repRangeFloorValues = rules
+    .map((r) => r.exerciseRules.repRangeFloor)
+    .filter((v): v is number => typeof v === "number");
+  const repRangeFloor =
+    repRangeFloorValues.length > 0 ? Math.max(...repRangeFloorValues) : undefined;
+
+  const defaultVolumeMult = rules.reduce(
+    (acc, r) => acc * (r.exerciseRules.volumeMultiplier?.default ?? 1),
+    1,
+  );
+
+  return {
+    id: ("merged:" + ids.join("+")) as ConditionId,
+    displayName: rules.map((r) => r.displayName).join(" + "),
+    summary: rules.map((r) => r.summary).filter(Boolean).join(" "),
+    globalFraming: rules
+      .map((r) => r.globalFraming)
+      .filter(Boolean)
+      .join("\n\n"),
+    coachNote: rules.map((r) => r.coachNote).filter(Boolean).join(" "),
+    exerciseRules: {
+      avoidPatterns: uniquePatterns(
+        rules.flatMap((r) => r.exerciseRules.avoidPatterns),
+      ),
+      cautionPatterns: uniquePatterns(
+        rules.flatMap((r) => r.exerciseRules.cautionPatterns),
+      ),
+      modifiers: mergeModifiers(rules.map((r) => r.exerciseRules.modifiers)),
+      volumeMultiplier: {
+        default: defaultVolumeMult,
+        phases: mergePhaseMultipliers(rules),
+      },
+      workingLoadCap,
+      ...(repRangeFloor !== undefined ? { repRangeFloor } : {}),
+      heavyTopSetsAllowed: rules.every(
+        (r) => r.exerciseRules.heavyTopSetsAllowed !== false,
+      ),
+    },
+    warmupMods: {
+      addBlocks: uniqueBlocksById(
+        rules.flatMap((r) => r.warmupMods.addBlocks),
+      ),
+      removeBlocks: uniqueStrings(
+        rules.flatMap((r) => r.warmupMods.removeBlocks),
+      ),
+      cues: uniqueStrings(rules.flatMap((r) => r.warmupMods.cues)),
+    },
+    educationTags: uniqueStrings(rules.flatMap((r) => r.educationTags)),
+    redFlags: uniqueStrings(rules.flatMap((r) => r.redFlags)),
+  };
+}
+
+// ── Projection: LLM framing ────────────────────────────────────────
+
+/**
+ * Build the condition-context string injected into the week-builder
+ * system prompt. Preserves the legacy "- Health conditions: ..."
+ * format for backward compatibility with the existing prompt layout.
+ *
+ * Returns empty string when no conditions apply.
+ */
+export function getConditionContext(
+  conditions: string[] | null | undefined,
+): string {
   if (!conditions || conditions.length === 0) return "";
 
-  const parts = conditions
-    .map((c) => CONDITION_CONTEXT[c])
-    .filter(Boolean);
+  const parts: string[] = [];
+  for (const id of conditions) {
+    const rule = CONDITION_RULES[id as ConditionId];
+    if (!rule) continue;
+    parts.push(rule.displayName + " — " + rule.globalFraming);
+  }
 
   if (parts.length === 0) return "";
-
   return "\n- Health conditions: " + parts.join("; ");
+}
+
+// ── Projection: user-facing coach note ─────────────────────────────
+
+/**
+ * User-facing plain-language note describing how the programme is
+ * adapting for the user's conditions. Rendered on the week card.
+ *
+ * Returns empty string when no conditions apply.
+ */
+export function getConditionCoachNote(
+  conditions: string[] | null | undefined,
+): string {
+  if (!conditions || conditions.length === 0) return "";
+  const notes: string[] = [];
+  for (const id of conditions) {
+    const rule = CONDITION_RULES[id as ConditionId];
+    if (rule?.coachNote) notes.push(rule.coachNote);
+  }
+  return notes.join(" ");
+}
+
+// ── Projection: red flags ──────────────────────────────────────────
+
+/**
+ * List of red-flag symptom phrases across all the user's conditions.
+ * Consumed by session-analysis to surface "talk to your clinician"
+ * prompts when logged notes mention any of these patterns.
+ *
+ * Returns empty array when no conditions apply.
+ */
+export function getConditionRedFlags(
+  conditions: string[] | null | undefined,
+): string[] {
+  if (!conditions || conditions.length === 0) return [];
+  const flags: string[] = [];
+  for (const id of conditions) {
+    const rule = CONDITION_RULES[id as ConditionId];
+    if (rule) flags.push(...rule.redFlags);
+  }
+  return uniqueStrings(flags);
 }
