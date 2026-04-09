@@ -24,6 +24,7 @@ import type { CyclePhase } from "@/lib/cycle";
 // ── Types ──────────────────────────────────────────────────────────
 
 export type MovementPattern =
+  // Compound patterns
   | "squat"
   | "hinge"
   | "horizontalPush"
@@ -33,9 +34,33 @@ export type MovementPattern =
   | "lunge"
   | "carry"
   | "rotation"
-  | "isolation"
+  // Lower-body isolation
+  | "isolation_quad"
+  | "isolation_hamstring"
+  | "isolation_glute"
+  | "isolation_calf"
+  | "isolation_adductor_abductor"
+  // Upper-body isolation
+  | "isolation_lateral_delt"
+  | "isolation_rear_delt"
+  | "isolation_chest_fly"
+  | "isolation_bicep"
+  | "isolation_tricep"
+  | "isolation_trap"
+  // Core
+  | "core_anti_extension"
+  | "core_anti_rotation"
+  | "core_anti_lateral_flexion"
+  | "core_flexion"
+  // Utility
+  | "mobility"
+  | "activation"
   | "cardio"
-  | "skill";
+  | "skill"
+  /** @deprecated Prefer a specific isolation_* or core_* sub-type.
+   *  Retained so legacy data not yet re-categorised still typechecks.
+   *  Remove once no call sites remain. */
+  | "isolation";
 
 export type StimulusProfile =
   | "hypertrophy"
@@ -272,7 +297,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_quad",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -288,7 +313,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_hamstring",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -304,7 +329,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "general"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_glute",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -320,7 +345,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "general"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_calf",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -336,7 +361,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "general"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_adductor_abductor",
     stimulusProfile: ["hypertrophy", "stability"],
     unilateral: false,
     technicalDemand: 1,
@@ -396,7 +421,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_hamstring",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -450,7 +475,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_lateral_delt",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -466,7 +491,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_tricep",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -482,7 +507,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_chest_fly",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -535,7 +560,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_bicep",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -551,7 +576,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_rear_delt",
     stimulusProfile: ["hypertrophy", "stability"],
     unilateral: false,
     technicalDemand: 1,
@@ -567,7 +592,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_trap",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -584,7 +609,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "strength", "general"],
     experience: { min: "new" },
     sessionRole: ["accessory", "activation"],
-    movementPattern: "isolation",
+    movementPattern: "core_anti_extension",
     stimulusProfile: ["stability"],
     unilateral: false,
     technicalDemand: 2,
@@ -603,7 +628,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "general"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "core_flexion",
     stimulusProfile: ["hypertrophy"],
     unilateral: false,
     technicalDemand: 1,
@@ -622,7 +647,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "general"],
     experience: { min: "new" },
     sessionRole: ["accessory", "finisher"],
-    movementPattern: "isolation",
+    movementPattern: "core_anti_rotation",
     stimulusProfile: ["hypertrophy", "stability"],
     unilateral: false,
     technicalDemand: 1,
@@ -656,7 +681,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["general"],
     experience: { min: "new" },
     sessionRole: ["activation"],
-    movementPattern: "isolation",
+    movementPattern: "mobility",
     stimulusProfile: ["mobility"],
     unilateral: false,
     technicalDemand: 1,
@@ -674,7 +699,7 @@ const TEMPLATES: Record<TemplateKey, Template> = {
     goal: ["muscle", "strength", "general"],
     experience: { min: "new" },
     sessionRole: ["activation"],
-    movementPattern: "isolation",
+    movementPattern: "activation",
     stimulusProfile: ["stability"],
     unilateral: false,
     technicalDemand: 1,
@@ -922,7 +947,7 @@ const OVERRIDES: Record<string, OverridePatch> = {
   "Wall Sit": {
     experience: { min: "new" },
     sessionRole: ["finisher", "accessory"],
-    movementPattern: "isolation",
+    movementPattern: "isolation_quad",
     stimulusProfile: ["endurance", "stability"],
     technicalDemand: 1,
     fatigueCost: 2,
@@ -1172,7 +1197,7 @@ const OVERRIDES: Record<string, OverridePatch> = {
   },
   "Dragon Flag": {
     experience: { min: "intermediate" },
-    movementPattern: "isolation",
+    movementPattern: "core_anti_extension",
     stimulusProfile: ["strength", "stability"],
     technicalDemand: 5,
     whyForYou:
