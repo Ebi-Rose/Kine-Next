@@ -46,7 +46,7 @@ const GUIDE_CONTENT: Record<string, { label: string; intro: string; sections: Gu
         title: "Kinē isn't another AI wrapper",
         body: (
           <>
-            Structured periodisation, cycle-aware training, and evidence-based programming — not just a chat prompt.{" "}
+            You&apos;re not talking to a chatbot. Most fitness apps ask an AI what you should do — Kinē decides against your goals, cycle phase, injuries, and equipment first, then uses AI to personalise it.{" "}
             <a href="/app/how-we-build" className="text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent">
               See how Kinē builds your programme →
             </a>
