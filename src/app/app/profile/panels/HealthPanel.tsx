@@ -9,6 +9,7 @@ import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
 import { CYCLE_OPTIONS, INJURY_OPTIONS, CONDITION_OPTIONS, LIFE_STAGE_OPTIONS } from "@/data/constants";
 import { BackButton } from "./_helpers";
+import RebuildBanner from "@/components/RebuildBanner";
 
 const CONDITION_COMFORT_MAP: Record<string, string[]> = {
   fibroids: ["impactSensitive"],
@@ -37,12 +38,15 @@ const COMFORT_LABELS: Record<string, string> = {
 };
 
 export default function HealthPanel({ onBack }: { onBack: () => void }) {
-  const { cycleType, setCycleType, cycle, setCycle, injuries, setInjuries, injuryNotes, setInjuryNotes, conditions, setConditions, comfortFlags, setWeekData, personalProfile, setLifeStage, setAge } = useKineStore();
+  const { cycleType, setCycleType, cycle, setCycle, injuries, setInjuries, injuryNotes, setInjuryNotes, conditions, setConditions, comfortFlags, personalProfile, setLifeStage, setAge } = useKineStore();
   const [newDate, setNewDate] = useState("");
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [conditionWarning, setConditionWarning] = useState<string | null>(null);
   const [injuryWarning, setInjuryWarning] = useState<string | null>(null);
   const [ageDraft, setAgeDraft] = useState(personalProfile?.age?.toString() ?? "");
+
+  const [rebuildOpen, setRebuildOpen] = useState(false);
+  const [lastChange, setLastChange] = useState<string | undefined>(undefined);
 
   const phase = cycleType === "regular" ? getCurrentPhase(cycle.periodLog, cycle.avgLength) : null;
 
@@ -54,10 +58,10 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
     toast("Period logged", "success");
   }
 
-  function saveHealthAndClearWeek() {
-    setWeekData(null);
+  function openRebuild(label: string) {
     setEditingSection(null);
-    toast("Updated — rebuild your week to apply", "success");
+    setLastChange(label);
+    setRebuildOpen(true);
   }
 
   function handleConditionToggle(value: string) {
@@ -68,10 +72,10 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
         return;
       }
       setConditions(conditions.filter((c) => c !== value));
-      saveHealthAndClearWeek();
+      openRebuild("Conditions");
     } else {
       setConditions([...conditions, value]);
-      saveHealthAndClearWeek();
+      openRebuild("Conditions");
     }
   }
 
@@ -79,7 +83,7 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
     if (!conditionWarning) return;
     setConditions(conditions.filter((c) => c !== conditionWarning));
     setConditionWarning(null);
-    saveHealthAndClearWeek();
+    openRebuild("Conditions");
   }
 
   function handleInjuryToggle(value: string) {
@@ -87,7 +91,7 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
       setInjuryWarning(value);
     } else {
       setInjuries([...injuries, value]);
-      saveHealthAndClearWeek();
+      openRebuild("Injuries");
     }
   }
 
@@ -95,7 +99,7 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
     if (!injuryWarning) return;
     setInjuries(injuries.filter((i) => i !== injuryWarning));
     setInjuryWarning(null);
-    saveHealthAndClearWeek();
+    openRebuild("Injuries");
   }
 
   return (
@@ -345,6 +349,12 @@ export default function HealthPanel({ onBack }: { onBack: () => void }) {
           </p>
         </div>
       )}
+
+      <RebuildBanner
+        open={rebuildOpen}
+        onResolve={() => setRebuildOpen(false)}
+        changeLabel={lastChange}
+      />
     </div>
   );
 }

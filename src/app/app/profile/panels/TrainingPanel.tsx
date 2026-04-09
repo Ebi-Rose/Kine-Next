@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import Button from "@/components/Button";
-import { toast } from "@/components/Toast";
 import {
   GOAL_OPTIONS,
   EXP_OPTIONS,
@@ -14,17 +13,14 @@ import {
   DAY_LABELS,
 } from "@/data/constants";
 import { BackButton, EditableRow } from "./_helpers";
-import { isProgrammeStarted } from "@/lib/date-utils";
-import { buildWeek, type WeekData } from "@/lib/week-builder";
+import RebuildBanner from "@/components/RebuildBanner";
 
 export default function TrainingPanel({ onBack }: { onBack: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, setWeekData, progressDB, setProgressDB } = store;
+  const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration } = store;
   const [editing, setEditing] = useState<string | null>(null);
-  const [showApplyChoice, setShowApplyChoice] = useState(false);
-  const [rebuilding, setRebuilding] = useState(false);
-
-  const started = isProgrammeStarted(progressDB.programStartDate ?? null);
+  const [rebuildOpen, setRebuildOpen] = useState(false);
+  const [lastChange, setLastChange] = useState<string | undefined>(undefined);
 
   // Match equipment to a preset for display
   const matchedPreset = EQUIP_PRESETS.find(
@@ -34,82 +30,10 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
     ? matchedPreset.label
     : equip.map((e) => EQUIP_LABELS[e] || e).join(", ") || "—";
 
-  function onSettingChanged() {
+  function onSettingChanged(label?: string) {
     setEditing(null);
-    if (!started) {
-      // Programme hasn't started — apply immediately
-      setWeekData(null);
-      toast("Settings updated", "success");
-      return;
-    }
-    setShowApplyChoice(true);
-  }
-
-  async function applyFromThisWeek() {
-    setShowApplyChoice(false);
-    setRebuilding(true);
-
-    // Capture the existing week so we can preserve any days that have
-    // already been completed. We identify completed days via progressDB
-    // .sessions for the current weekNum (each SessionRecord has dayIdx).
-    const previousWeek = store.weekData;
-    const currentWeekNum = progressDB.currentWeek || previousWeek?._weekNum || 1;
-    const completedDayIdxs = new Set<number>(
-      (progressDB.sessions ?? [])
-        .filter((s) => s.weekNum === currentWeekNum && typeof s.dayIdx === "number")
-        .map((s) => s.dayIdx as number),
-    );
-
-    try {
-      // Clear first so the UI shows a building state while AI runs.
-      setWeekData(null);
-
-      const result = await buildWeek();
-      const next: WeekData | null = result.weekData ?? null;
-
-      if (!next) {
-        toast(result.error || "Couldn't rebuild the week", "error");
-        // Restore the previous week so the user isn't stranded.
-        if (previousWeek) setWeekData(previousWeek);
-        return;
-      }
-
-      // Preserve completed days from the previous week by overwriting the
-      // corresponding entries in the newly-built week. Days the user hasn't
-      // touched yet get the new settings (training days, duration, etc.).
-      if (previousWeek && completedDayIdxs.size > 0) {
-        next.days = next.days.map((day, idx) =>
-          completedDayIdxs.has(idx) && previousWeek.days[idx]
-            ? previousWeek.days[idx]
-            : day,
-        );
-      }
-
-      setWeekData(next);
-
-      if (!result.success && result.error) {
-        toast(result.error, "error");
-      } else if (completedDayIdxs.size > 0) {
-        toast(`Week rebuilt — kept ${completedDayIdxs.size} completed session${completedDayIdxs.size === 1 ? "" : "s"}`, "success");
-      } else {
-        toast("Week rebuilt with new settings", "success");
-      }
-    } catch (e) {
-      console.error("[TrainingPanel] rebuild failed:", e);
-      toast("Couldn't rebuild the week", "error");
-      if (previousWeek) setWeekData(previousWeek);
-    } finally {
-      setRebuilding(false);
-    }
-  }
-
-  function applyFromNextWeek() {
-    setProgressDB({
-      ...progressDB,
-      pendingProfileChange: true,
-    });
-    setShowApplyChoice(false);
-    toast("Settings saved — changes apply from next week", "success");
+    if (label) setLastChange(label);
+    setRebuildOpen(true);
   }
 
   return (
@@ -120,7 +44,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
       <EditableRow label="Goal" value={GOAL_OPTIONS.find((g) => g.value === goal)?.label || "—"} isEditing={editing === "goal"} onEdit={() => setEditing("goal")}>
         <div className="flex flex-col gap-2">
           {GOAL_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => { setGoal(opt.value as typeof goal); onSettingChanged(); }}
+            <button key={opt.value} onClick={() => { setGoal(opt.value as typeof goal); onSettingChanged("Goal"); }}
               className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${goal === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
               {opt.label}
             </button>
@@ -131,7 +55,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
       <EditableRow label="Experience" value={EXP_OPTIONS.find((e) => e.value === exp)?.label || "—"} isEditing={editing === "exp"} onEdit={() => setEditing("exp")}>
         <div className="flex flex-col gap-2">
           {EXP_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => { setExp(opt.value as typeof exp); onSettingChanged(); }}
+            <button key={opt.value} onClick={() => { setExp(opt.value as typeof exp); onSettingChanged("Experience"); }}
               className={`rounded-lg border px-3 py-2 text-left text-xs transition-all ${exp === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
               {opt.label}
             </button>
@@ -151,7 +75,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
-        <Button size="sm" className="mt-3 w-full" onClick={onSettingChanged}>Save equipment</Button>
+        <Button size="sm" className="mt-3 w-full" onClick={() => onSettingChanged("Equipment")}>Save equipment</Button>
       </EditableRow>
 
       <EditableRow label="Training days" value={trainingDays.map((d) => DAY_LABELS[d]).join(", ") || "—"} isEditing={editing === "days"} onEdit={() => setEditing("days")}>
@@ -171,13 +95,13 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
             </button>
           ))}
         </div>
-        <Button size="sm" className="mt-3 w-full" onClick={onSettingChanged}>Save days</Button>
+        <Button size="sm" className="mt-3 w-full" onClick={() => onSettingChanged("Training days")}>Save days</Button>
       </EditableRow>
 
       <EditableRow label="Session length" value={DURATION_OPTIONS.find((d) => d.value === duration)?.label || "—"} isEditing={editing === "duration"} onEdit={() => setEditing("duration")}>
         <div className="grid grid-cols-2 gap-2">
           {DURATION_OPTIONS.map((opt) => (
-            <button key={opt.value} onClick={() => { setDuration(opt.value as typeof duration); onSettingChanged(); }}
+            <button key={opt.value} onClick={() => { setDuration(opt.value as typeof duration); onSettingChanged("Session length"); }}
               className={`rounded-lg border px-3 py-2 text-xs transition-all ${duration === opt.value ? "border-accent bg-accent-dim text-text" : "border-border text-muted2 hover:border-border-active"}`}>
               {opt.label}
             </button>
@@ -212,7 +136,7 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
               </div>
             ))}
           </div>
-          <Button size="sm" className="mt-3 w-full" onClick={onSettingChanged}>Save durations</Button>
+          <Button size="sm" className="mt-3 w-full" onClick={() => onSettingChanged("Per-day durations")}>Save durations</Button>
         </EditableRow>
       )}
 
@@ -220,33 +144,11 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
         Changes won&apos;t affect past sessions.
       </p>
 
-      {/* Apply timing choice */}
-      {showApplyChoice && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4" onClick={() => setShowApplyChoice(false)}>
-          <div className="w-full max-w-[var(--container-max)] rounded-2xl border border-border bg-surface p-5 animate-fade-up" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-display text-base tracking-wide text-text text-center">
-              When should this take effect?
-            </h3>
-            <p className="mt-1 text-[11px] text-muted2 text-center">
-              Past sessions won&apos;t be changed.
-            </p>
-            <div className="mt-4 flex flex-col gap-2">
-              <Button className="w-full" onClick={applyFromThisWeek} disabled={rebuilding}>
-                {rebuilding ? "Rebuilding…" : "Apply from this week"}
-              </Button>
-              <Button className="w-full" variant="secondary" onClick={applyFromNextWeek} disabled={rebuilding}>
-                Apply from next week
-              </Button>
-              <button
-                onClick={() => setShowApplyChoice(false)}
-                className="mt-1 text-xs text-muted2 hover:text-text transition-colors text-center"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RebuildBanner
+        open={rebuildOpen}
+        onResolve={() => setRebuildOpen(false)}
+        changeLabel={lastChange}
+      />
     </div>
   );
 }
