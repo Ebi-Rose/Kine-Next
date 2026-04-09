@@ -19,6 +19,32 @@ function reloadAfterPersist() {
  * Floating dev panel — available on every /app/* page in development.
  * Renders as a draggable pill that expands into a compact overlay.
  */
+// ── Dev gate ───────────────────────────────────────────────────────
+// The dev overlay is hidden from beta testers. To unlock for a session
+// the user must:
+//   1. Visit any /app route with ?dev=unlock in the URL, then
+//   2. Enter the passcode (NEXT_PUBLIC_DEV_PASSCODE, default "kine2026")
+// Unlock is session-scoped via sessionStorage. Clearing the tab re-locks.
+//
+// This is not real security (client-side bundles are public). It's a
+// visibility gate to keep the pill off non-technical users' screens.
+const DEV_PASSCODE = process.env.NEXT_PUBLIC_DEV_PASSCODE || "kine2026";
+const DEV_UNLOCK_KEY = "kine_dev_unlocked";
+
+function isDevUnlocked(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return window.sessionStorage.getItem(DEV_UNLOCK_KEY) === "1"; }
+  catch { return false; }
+}
+
+function setDevUnlocked(value: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (value) window.sessionStorage.setItem(DEV_UNLOCK_KEY, "1");
+    else window.sessionStorage.removeItem(DEV_UNLOCK_KEY);
+  } catch { /* noop */ }
+}
+
 export default function DevOverlay() {
   const store = useKineStore();
   const [open, setOpen] = useState(false);
@@ -28,14 +54,50 @@ export default function DevOverlay() {
   );
   const [showState, setShowState] = useState(false);
   const [theme, setThemeState] = useState<Theme>("dark");
+  const [unlocked, setUnlocked] = useState(false);
+  const [showPasscodePrompt, setShowPasscodePrompt] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState("");
+  const [passcodeError, setPasscodeError] = useState(false);
+
   useEffect(() => { setThemeState(getTheme()); }, []);
+
+  // Gate: check unlock state + watch for ?dev=unlock URL trigger
+  useEffect(() => {
+    setUnlocked(isDevUnlocked());
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("dev") === "unlock") {
+      setShowPasscodePrompt(true);
+      url.searchParams.delete("dev");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   function toggleTheme() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     setThemeState(next);
   }
 
-  // Dev tools available in all access modes for beta testing
+  function submitPasscode() {
+    if (passcodeInput === DEV_PASSCODE) {
+      setDevUnlocked(true);
+      setUnlocked(true);
+      setShowPasscodePrompt(false);
+      setPasscodeInput("");
+      setPasscodeError(false);
+      toast("Dev mode unlocked", "success");
+    } else {
+      setPasscodeError(true);
+    }
+  }
+
+  function lockDev() {
+    setDevUnlocked(false);
+    setUnlocked(false);
+    setOpen(false);
+    toast("Dev mode locked", "success");
+  }
 
   const activeOverride = getDevDateOverride();
 
@@ -204,6 +266,55 @@ export default function DevOverlay() {
     { id: "state" as const, label: "State" },
   ];
 
+  // Passcode prompt (only visible if user hit ?dev=unlock)
+  if (showPasscodePrompt && !unlocked) {
+    return (
+      <div
+        role="dialog"
+        aria-label="Dev mode passcode"
+        className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4"
+      >
+        <div className="w-full max-w-xs rounded-2xl border border-border bg-bg p-5">
+          <h3 className="text-sm font-medium text-text mb-1">Dev mode</h3>
+          <p className="text-[11px] text-muted2 mb-3">
+            Enter the passcode to unlock the developer tools for this session.
+          </p>
+          <input
+            type="password"
+            autoFocus
+            value={passcodeInput}
+            onChange={(e) => { setPasscodeInput(e.target.value); setPasscodeError(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter") submitPasscode(); }}
+            aria-invalid={passcodeError}
+            className={`w-full rounded-lg border bg-surface px-3 py-2 text-sm text-text outline-none mb-2 ${passcodeError ? "border-danger" : "border-border focus:border-accent"}`}
+            placeholder="••••••••"
+          />
+          {passcodeError && (
+            <p className="text-[10px] text-danger mb-2">Wrong passcode.</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={submitPasscode}
+              className="flex-1 rounded-full bg-accent text-bg px-3 py-2 text-xs font-medium"
+            >
+              Unlock
+            </button>
+            <button
+              onClick={() => { setShowPasscodePrompt(false); setPasscodeInput(""); setPasscodeError(false); }}
+              className="flex-1 rounded-full border border-border px-3 py-2 text-xs text-muted2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Gate: if not unlocked, render nothing at all. Beta testers don't see
+  // the DEV pill. To unlock, visit any /app route with ?dev=unlock.
+  if (!unlocked) return null;
+
   // Floating pill when closed
   if (!open) {
     return (
@@ -239,6 +350,13 @@ export default function DevOverlay() {
             className="rounded border border-border/50 px-1.5 py-0.5 text-[9px] text-muted2 hover:text-accent hover:border-accent/40 transition-all capitalize"
           >
             {theme}
+          </button>
+          <button
+            onClick={lockDev}
+            title="Lock dev mode"
+            className="rounded border border-border/50 px-1.5 py-0.5 text-[9px] text-muted2 hover:text-accent hover:border-accent/40 transition-all"
+          >
+            Lock
           </button>
           <button onClick={() => setOpen(false)} className="text-[10px] text-muted2 hover:text-text px-1">✕</button>
         </div>

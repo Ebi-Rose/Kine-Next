@@ -34,7 +34,7 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const dayIdx = Number(searchParams.get("day") ?? -1);
 
-  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, conditions, comfortFlags, exp, skillPreferences, setSkillPreferences } =
+  const { weekData, sessionLogs, setSessionLogs, feedbackState, setFeedbackState, progressDB, sessionTimeBudgets, eduMode, sessionMode, restConfig, injuries, conditions, comfortFlags, exp, goal, skillPreferences, setSkillPreferences } =
     useKineStore();
   // Store is ready if goal exists (set during onboarding)
   const hydrated = useKineStore((s) => s.goal !== null);
@@ -759,6 +759,10 @@ export default function SessionPage() {
           context={(effectiveExercises[eduSheetIdx] as { context?: string }).context}
           cues={(effectiveExercises[eduSheetIdx] as { cues?: string[] }).cues}
           conditions={conditions}
+          goal={goal}
+          effortFraming={(effectiveExercises[eduSheetIdx] as { effortFraming?: string }).effortFraming}
+          rmAttempts={(effectiveExercises[eduSheetIdx] as { rmAttempts?: boolean }).rmAttempts}
+          intensityCap={(effectiveExercises[eduSheetIdx] as { intensityCap?: number }).intensityCap}
         />
       )}
 
