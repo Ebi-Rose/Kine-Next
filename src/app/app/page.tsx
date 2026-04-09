@@ -663,7 +663,7 @@ function WeekView({
                   </p>
                 </div>
               )}
-              {/* Today's session card — always expanded */}
+              {/* Today's session card — compact, matches other days */}
               {(() => {
                 const todayDay = displayWeek.days[todayIdx];
                 const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number; date?: string }[])
@@ -674,7 +674,7 @@ function WeekView({
                     isToday={true}
                     isCompleted={isCompleted}
                     isPast={false}
-                    expanded={true}
+                    expanded={false}
                     readOnly={false}
                   />
                 );
