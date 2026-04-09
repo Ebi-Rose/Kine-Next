@@ -208,7 +208,7 @@ export default function ExerciseCard({
       </button>
 
       {showVideoInline && vidUrl && (
-        <div className="mx-auto mb-3 max-w-xs rounded-lg overflow-hidden border border-border bg-black relative">
+        <div className="mx-auto mb-3 w-full max-w-[240px] aspect-[9/16] rounded-lg overflow-hidden border border-border bg-black relative">
           <button
             type="button"
             onClick={() => setShowVideoInline(false)}
@@ -225,8 +225,7 @@ export default function ExerciseCard({
             playsInline
             controls
             aria-label={`${exercise.name} demonstration video`}
-            className="w-full"
-            style={{ maxHeight: "40vh" }}
+            className="w-full h-full object-cover"
           />
         </div>
       )}
