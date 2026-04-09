@@ -51,7 +51,7 @@ You don't need to do anything differently. The programming already reflects this
     },
     surfaces_at: ["anytime"],
     gentle: true,
-    body: `Two things are true at once in perimenopause: you can absolutely keep getting stronger, and the rhythm of how that strength shows up changes.
+    body: `Two things are true at once in perimenopause: you can absolutely keep getting stronger, and the pace that strength shows up at changes.
 
 The headline change is recovery. Hormonal shifts in this window are associated with longer recovery times for many women, and the same session can take longer to bounce back from than it used to. Sleep often gets noisier in the same window, which compounds it. None of this is a wall — it's a different tempo.
 

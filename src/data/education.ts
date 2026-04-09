@@ -15,7 +15,7 @@ export interface MuscleInfo {
 export const MUSCLE_GLOSSARY: Record<string, MuscleInfo> = {
   glutes: {
     region: "Lower body", muscleName: "Glutes",
-    text: "Your glutes are the biggest muscle group in your body - they stabilise your spine, protect your knees, and drive every compound lower-body movement. Most people never train them through full range, which means the strongest muscle they have stays underused.",
+    text: "The glutes are the biggest muscle group in the body. They stabilise the spine, protect the knees, and do most of the work in any compound lower-body lift. Most people never train them through full range, which leaves the strongest muscle they have underused.",
     trainingNote: "The glutes respond best to a mix of heavy compound work (squats, deadlifts) and high-rep isolation (hip thrusts, kickbacks). Full range of motion matters more than load.",
     trainedBy: ["Hip Thrust", "Barbell Back Squat", "Romanian Deadlift", "Bulgarian Split Squat", "Banded Hip Thrust", "Hip Thrust Machine", "Kettlebell Swing"],
   },
