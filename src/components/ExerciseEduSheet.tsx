@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { findExercise } from "@/data/exercise-library";
 import { getMuscleTags, getBreathingCue, getConditionCue, isSquat, isHinge, isCompound, KNEE_TRACKING_CUE, NEUTRAL_SPINE_CUE, HIP_HINGE_FIRST, DEPTH_BEFORE_LOAD } from "@/data/education";
 import { getSkillPath } from "@/data/skill-paths";
+import { EXERCISE_INDICATIONS, type ConditionId } from "@/data/exercise-indications";
 import BottomSheet from "@/components/BottomSheet";
 
 type EduEntry = { why?: string; feel?: string; context?: string; cues?: string[] };
@@ -13,13 +14,28 @@ interface Props {
   open: boolean;
   onClose: () => void;
   exerciseName: string;
-  /** AI-generated fields from the week builder */
+  /** Optional legacy AI-generated fields. The sheet now prefers indication
+   *  profile data and falls back to these if they're populated. */
   why?: string;
   feel?: string;
   context?: string;
   cues?: string[];
   conditions?: string[];
+  /** User's goal — used to substitute {goal} tokens in whyForYou. */
+  goal?: "muscle" | "strength" | "general" | null;
+  /** Phase-aware effort copy from the indication pipeline (cycle envelope). */
+  effortFraming?: string;
+  /** Whether 1RM attempts are appropriate for this lift in the current phase. */
+  rmAttempts?: boolean;
+  /** Target RPE ceiling for the current phase. */
+  intensityCap?: number;
 }
+
+const GOAL_LABELS: Record<string, string> = {
+  muscle: "muscle",
+  strength: "strength",
+  general: "consistency",
+};
 
 /** Try exact match first, then partial/fuzzy match against the edu library keys */
 function findEduData(name: string, library: EduLibrary): EduEntry | undefined {
@@ -37,7 +53,7 @@ function findEduData(name: string, library: EduLibrary): EduEntry | undefined {
 /** Lazy-loaded edu library — only fetched when the sheet opens */
 let eduCache: EduLibrary | null = null;
 
-export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp, conditions = [] }: Props) {
+export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp, conditions = [], goal, effortFraming, rmAttempts, intensityCap }: Props) {
   const [eduLibrary, setEduLibrary] = useState<EduLibrary | null>(eduCache);
 
   useEffect(() => {
@@ -49,23 +65,47 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
   }, [open]);
 
   const lib = findExercise(exerciseName);
+  const indication = EXERCISE_INDICATIONS[exerciseName];
   const muscleTags = getMuscleTags(exerciseName);
   const breathCue = getBreathingCue(exerciseName, conditions);
   const condCue = getConditionCue(exerciseName, conditions);
   const skillPath = getSkillPath(exerciseName, []);
 
   const eduData = eduLibrary ? findEduData(exerciseName, eduLibrary) : undefined;
-  const why = whyProp || eduData?.why || null;
+
+  // whyForYou: prefer the caller's legacy prop, then the indication
+  // profile (with {goal} substitution), then the static edu library,
+  // then a generic fallback. The indication path is what the week
+  // builder now populates through the pipeline.
+  const goalLabel = goal ? GOAL_LABELS[goal] ?? "your goal" : "your goal";
+  const indicationWhy = indication?.whyForYou?.replace(/\{goal\}/g, goalLabel);
+  const why = whyProp || indicationWhy || eduData?.why || null;
   const feel = feelProp || eduData?.feel || null;
   const context = contextProp || eduData?.context || null;
   const cues = cuesProp || eduData?.cues || null;
+
+  // Exercise-specific modifications for the user's conditions, pulled
+  // from the indication profile. Much more specific than the generic
+  // conditionCue sourced from the education library.
+  const exerciseConditionModifications: Array<{ id: string; note: string }> = [];
+  if (indication?.conditionModify) {
+    for (const c of conditions) {
+      const note = indication.conditionModify[c as ConditionId];
+      if (note) exerciseConditionModifications.push({ id: c, note });
+    }
+  }
+
+  // Cycle-aware envelope content — only render when the pipeline has
+  // actually populated it (i.e. the user is in a tracked phase and
+  // this exercise carries modulation).
+  const showCycleSection = Boolean(effortFraming) || (rmAttempts === false);
 
   return (
     <BottomSheet open={open} onClose={onClose} title={exerciseName}>
       <div className="flex flex-col gap-4">
 
-        {/* Muscle tags */}
-        {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0) && (
+        {/* Muscle tags + indication chips */}
+        {(muscleTags.primary.length > 0 || muscleTags.secondary.length > 0 || indication) && (
           <div className="flex flex-wrap gap-1.5">
             {muscleTags.primary.map((m) => (
               <span key={m} className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[10px] text-accent font-medium">{m}</span>
@@ -73,6 +113,21 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
             {muscleTags.secondary.map((m) => (
               <span key={m} className="rounded-full bg-surface2 px-2.5 py-0.5 text-[10px] text-muted2">{m}</span>
             ))}
+            {indication?.sessionRole[0] && (
+              <span className="rounded-full border border-border bg-surface2/60 px-2.5 py-0.5 text-[10px] text-muted2 capitalize">
+                {indication.sessionRole[0]}
+              </span>
+            )}
+            {indication?.stimulusProfile.slice(0, 2).map((s) => (
+              <span key={s} className="rounded-full border border-border bg-surface2/60 px-2.5 py-0.5 text-[10px] text-muted2 capitalize">
+                {s}
+              </span>
+            ))}
+            {indication?.cycleModulation && (
+              <span className="rounded-full border border-accent/30 bg-accent/8 px-2.5 py-0.5 text-[10px] text-accent">
+                cycle-aware
+              </span>
+            )}
           </div>
         )}
 
@@ -85,6 +140,41 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
               : "Exercise information loading...")}
           </p>
         </div>
+
+        {/* Cycle-phase envelope (only when pipeline populated it) */}
+        {showCycleSection && (
+          <div className="rounded-lg border border-accent/25 bg-accent/8 p-3">
+            <p className="text-[10px] text-accent font-display tracking-wider mb-1">THIS WEEK</p>
+            {effortFraming && (
+              <p className="text-xs text-muted2 font-light leading-relaxed italic">{effortFraming}</p>
+            )}
+            <div className="flex gap-3 mt-2 text-[10px] text-muted2">
+              {typeof intensityCap === "number" && (
+                <span>Cap: RPE {intensityCap}</span>
+              )}
+              {rmAttempts === false && (
+                <span>No max attempts</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Exercise-specific modifications for user's conditions.
+            Sourced from indication.conditionModify — much more
+            targeted than the generic condition cue below. */}
+        {exerciseConditionModifications.length > 0 && (
+          <div className="rounded-lg border border-border bg-surface2/40 p-3">
+            <p className="text-[10px] text-accent font-display tracking-wider mb-1.5">WORKING AROUND</p>
+            <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
+              {exerciseConditionModifications.map(({ id, note }) => (
+                <li key={id} className="flex items-start gap-2 text-xs">
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[9px] text-accent font-medium capitalize shrink-0">{id.replace(/_/g, " ")}</span>
+                  <span className="text-muted2 font-light leading-relaxed">{note}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* What you should feel — always show something */}
         <div>
@@ -158,6 +248,14 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
               <span>·</span>
               <span>{lib.logType}</span>
               {lib.minExp && <><span>·</span><span>Min: {lib.minExp}</span></>}
+              {indication && (
+                <>
+                  <span>·</span>
+                  <span>Skill {indication.technicalDemand}/5</span>
+                  <span>·</span>
+                  <span>Fatigue {indication.fatigueCost}/5</span>
+                </>
+              )}
             </div>
           </div>
         )}
