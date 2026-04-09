@@ -208,7 +208,7 @@ export default function ExerciseCard({
       </button>
 
       {showVideoInline && vidUrl && (
-        <div className="mx-4 mb-3 rounded-lg overflow-hidden border border-border bg-black relative">
+        <div className="mx-auto mb-3 max-w-xs rounded-lg overflow-hidden border border-border bg-black relative">
           <button
             type="button"
             onClick={() => setShowVideoInline(false)}
