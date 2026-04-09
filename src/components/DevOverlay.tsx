@@ -22,13 +22,10 @@ function reloadAfterPersist() {
 // ── Dev gate ───────────────────────────────────────────────────────
 // The DEV pill is visible to everyone so beta testers who've been given
 // the passcode can opt in. Tapping the pill when locked shows a passcode
-// modal; unlock is session-scoped via sessionStorage and persists until
-// the tab closes. Visiting ?dev=unlock also opens the modal directly.
-//
-// This is a visibility/opt-in gate, not real security — the passcode
-// ships in the client bundle. Good enough to keep non-technical users
-// from accidentally opening the developer tool.
-const DEV_PASSCODE = process.env.NEXT_PUBLIC_DEV_PASSCODE || "kine2026";
+// modal which calls /api/dev-unlock — the real passcode lives in the
+// server-side DEV_PASSCODE env var and never ships in the client bundle.
+// Unlock is session-scoped via sessionStorage and persists until the
+// tab closes.
 const DEV_UNLOCK_KEY = "kine_dev_unlocked";
 
 function isDevUnlocked(): boolean {
@@ -57,7 +54,8 @@ export default function DevOverlay() {
   const [unlocked, setUnlocked] = useState(false);
   const [showPasscodePrompt, setShowPasscodePrompt] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
-  const [passcodeError, setPasscodeError] = useState(false);
+  const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => { setThemeState(getTheme()); }, []);
 
@@ -79,16 +77,38 @@ export default function DevOverlay() {
     setThemeState(next);
   }
 
-  function submitPasscode() {
-    if (passcodeInput === DEV_PASSCODE) {
-      setDevUnlocked(true);
-      setUnlocked(true);
-      setShowPasscodePrompt(false);
-      setPasscodeInput("");
-      setPasscodeError(false);
-      toast("Dev mode unlocked", "success");
-    } else {
-      setPasscodeError(true);
+  async function submitPasscode() {
+    if (verifying) return;
+    setVerifying(true);
+    setPasscodeError(null);
+    try {
+      const resp = await fetch("/api/dev-unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode: passcodeInput }),
+      });
+      if (resp.status === 429) {
+        setPasscodeError("Too many attempts. Wait a minute and try again.");
+        return;
+      }
+      if (resp.status === 503) {
+        setPasscodeError("Dev mode is not configured on this environment.");
+        return;
+      }
+      const data = await resp.json().catch(() => ({ ok: false }));
+      if (data.ok) {
+        setDevUnlocked(true);
+        setUnlocked(true);
+        setShowPasscodePrompt(false);
+        setPasscodeInput("");
+        toast("Dev mode unlocked", "success");
+      } else {
+        setPasscodeError("Wrong passcode.");
+      }
+    } catch {
+      setPasscodeError("Couldn't reach the server.");
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -283,25 +303,28 @@ export default function DevOverlay() {
             type="password"
             autoFocus
             value={passcodeInput}
-            onChange={(e) => { setPasscodeInput(e.target.value); setPasscodeError(false); }}
+            onChange={(e) => { setPasscodeInput(e.target.value); setPasscodeError(null); }}
             onKeyDown={(e) => { if (e.key === "Enter") submitPasscode(); }}
-            aria-invalid={passcodeError}
+            aria-invalid={!!passcodeError}
+            disabled={verifying}
             className={`w-full rounded-lg border bg-surface px-3 py-2 text-sm text-text outline-none mb-2 ${passcodeError ? "border-danger" : "border-border focus:border-accent"}`}
             placeholder="••••••••"
           />
           {passcodeError && (
-            <p className="text-[10px] text-danger mb-2">Wrong passcode.</p>
+            <p className="text-[10px] text-danger mb-2">{passcodeError}</p>
           )}
           <div className="flex gap-2">
             <button
               onClick={submitPasscode}
-              className="flex-1 rounded-full bg-accent text-bg px-3 py-2 text-xs font-medium"
+              disabled={verifying || !passcodeInput}
+              className="flex-1 rounded-full bg-accent text-bg px-3 py-2 text-xs font-medium disabled:opacity-50"
             >
-              Unlock
+              {verifying ? "Checking…" : "Unlock"}
             </button>
             <button
-              onClick={() => { setShowPasscodePrompt(false); setPasscodeInput(""); setPasscodeError(false); }}
-              className="flex-1 rounded-full border border-border px-3 py-2 text-xs text-muted2"
+              onClick={() => { setShowPasscodePrompt(false); setPasscodeInput(""); setPasscodeError(null); }}
+              disabled={verifying}
+              className="flex-1 rounded-full border border-border px-3 py-2 text-xs text-muted2 disabled:opacity-50"
             >
               Cancel
             </button>
