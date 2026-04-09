@@ -890,8 +890,8 @@ export const WEEKLY_SPLITS_V2: Partial<
               { role: "primary", pattern: "squat", loadability: "high", note: "Back squat primary." },
               { role: "primary", pattern: "hinge", loadability: "high", note: "RDL loaded." },
               { role: "secondary", pattern: "lunge", loadability: "medium", note: "Unilateral." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Hamstring." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Core anti-extension." },
+              { role: "accessory", pattern: "isolation_hamstring", loadability: "low", note: "Hamstring." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Core anti-extension." },
             ],
           },
           {
@@ -902,7 +902,7 @@ export const WEEKLY_SPLITS_V2: Partial<
               { role: "primary", pattern: "verticalPush", loadability: "high", note: "Overhead press." },
               { role: "primary", pattern: "horizontalPull", loadability: "high", note: "Row." },
               { role: "secondary", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Tricep." },
+              { role: "accessory", pattern: "isolation_tricep", loadability: "low", note: "Tricep." },
             ],
           },
           {
@@ -912,8 +912,8 @@ export const WEEKLY_SPLITS_V2: Partial<
               { role: "primary", pattern: "hinge", loadability: "high", note: "Deadlift or hip thrust." },
               { role: "primary", pattern: "squat", loadability: "high", note: "Front squat." },
               { role: "secondary", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Glute isolation." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Core anti-rotation." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Core anti-rotation." },
             ],
           },
           {
@@ -924,7 +924,7 @@ export const WEEKLY_SPLITS_V2: Partial<
               { role: "primary", pattern: "verticalPull", loadability: "high", note: "Weighted pull-up." },
               { role: "secondary", pattern: "horizontalPush", loadability: "high", note: "Incline press." },
               { role: "accessory", pattern: "verticalPush", loadability: "medium", note: "Overhead accessory." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Bicep or rear delt." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Bicep or rear delt." },
             ],
           },
           {
@@ -934,8 +934,8 @@ export const WEEKLY_SPLITS_V2: Partial<
               { role: "primary", pattern: "lunge", loadability: "high", note: "Bulgarian split squat loaded." },
               { role: "primary", pattern: "hinge", loadability: "high", note: "Hip thrust heavy." },
               { role: "secondary", pattern: "squat", loadability: "medium", note: "Goblet or front squat." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Abductor or calf." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Core anti-lateral flexion." },
+              { role: "accessory", pattern: "isolation_adductor_abductor", loadability: "low", note: "Abductor or calf." },
+              { role: "accessory", pattern: "core_anti_lateral_flexion", loadability: "low", note: "Core anti-lateral flexion." },
             ],
           },
           {
@@ -946,7 +946,761 @@ export const WEEKLY_SPLITS_V2: Partial<
               { role: "secondary", pattern: "horizontalPull", loadability: "medium", note: "Cable or chest-supported row." },
               { role: "accessory", pattern: "verticalPull", loadability: "medium", note: "Lat pulldown." },
               { role: "accessory", pattern: "verticalPush", loadability: "low", note: "Lateral raise or light OHP." },
-              { role: "accessory", pattern: "isolation", loadability: "low", note: "Arms — user preference." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Arms — user preference." },
+            ],
+          },
+        ],
+      },
+    },
+
+    // ── STRENGTH-GOAL ISOLATION SUB-TYPE NOTE ──────────────────────────
+    // Where the strength templates above (.new / .developing / etc.)
+    // use the generic `isolation` value, that's legacy from the initial
+    // draft — the typechecker accepts it because `isolation` is
+    // retained as @deprecated. The strength templates will be migrated
+    // to specific sub-types in a follow-up pass. The general-goal
+    // templates below use the sub-types directly from the start.
+  },
+
+  // ── GENERAL ─────────────────────────────────────────────────────────
+  //
+  // General-goal templates prioritise CONSISTENCY over intensity.
+  //   - 4 slots per session (vs 5 for strength) — less daunting
+  //   - More variety across sessions within a week
+  //   - Lower loadability throughout — moderate and low dominate
+  //   - Cardio/conditioning note populated for new users
+  //   - Same pattern priority as strength (hinge > squat > pull > push)
+  //     because the philosophy is "strength training is the product,"
+  //     just at a more approachable intensity.
+  //
+  // NOTE: muscle-goal templates are intentionally NOT drafted yet —
+  // see literature-review-brief-muscle-templates.md. Muscle waits on
+  // Q1 evidence review before authoring.
+  general: {
+    new: {
+      // 2-DAY GENERAL NEW ──────────────────────────────────────────────
+      2: {
+        weekCoachNote:
+          "Two full-body sessions. Keep it simple and undaunting — consistency matters more than intensity at this stage.",
+        optionalCardioNote:
+          "Want to add cardio? A 20-30 minute walk, easy bike ride, or dance class on a non-training day is perfect. You don't need more — your lifts are already doing most of the work.",
+        sessions: [
+          {
+            title: "Full Body — Session A",
+            coachNote: "Two big compound movements and a couple of accessories. Leave feeling good, not crushed.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Goblet or bodyweight squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Glute bridge, hip thrust, or RDL." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "low", note: "Push-up or DB press." },
+              { role: "accessory", pattern: "horizontalPull", loadability: "low", note: "Row — DB or band." },
+            ],
+          },
+          {
+            title: "Full Body — Session B",
+            coachNote: "Unilateral lower and a pull-focused upper body. Familiar shape, slightly different emphasis.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL primary." },
+              { role: "secondary", pattern: "lunge", loadability: "low", note: "Step-up or walking lunge." },
+              { role: "accessory", pattern: "verticalPull", loadability: "low", note: "Lat pulldown or assisted pull-up." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank family — dead bug or bird dog." },
+            ],
+          },
+        ],
+      },
+
+      // 3-DAY GENERAL NEW ──────────────────────────────────────────────
+      3: {
+        weekCoachNote:
+          "Three full-body sessions rotating through squat, hinge, and mixed-compound days. Building the habit comes first.",
+        optionalCardioNote:
+          "Three sessions a week is already plenty. If you want to add cardio, a walk or easy cycle on rest days is the simplest addition — nothing structured needed.",
+        sessions: [
+          {
+            title: "Full Body — Squat Day",
+            coachNote: "Squat leads. Simple shape, low pressure.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Goblet or bodyweight squat." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "low", note: "DB press or push-up." },
+              { role: "accessory", pattern: "horizontalPull", loadability: "low", note: "Row." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank family." },
+            ],
+          },
+          {
+            title: "Full Body — Hinge Day",
+            coachNote: "Hinge leads. Hip thrust is the star — glute work that feels good.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL primary." },
+              { role: "secondary", pattern: "lunge", loadability: "low", note: "Walking lunge or step-up." },
+              { role: "accessory", pattern: "verticalPull", loadability: "low", note: "Lat pulldown." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Bird dog or Pallof press." },
+            ],
+          },
+          {
+            title: "Full Body — Mixed",
+            coachNote: "A gentle full-body day. No single lift is the focus — the point is moving well across the whole body.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "low", note: "Bodyweight or goblet squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Hip thrust." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "low", note: "DB or incline press." },
+              { role: "accessory", pattern: "horizontalPull", loadability: "low", note: "Row variant." },
+            ],
+          },
+        ],
+      },
+
+      // 4-DAY GENERAL NEW ──────────────────────────────────────────────
+      4: {
+        weekCoachNote:
+          "Four sessions, split lower and upper. Each day hits its focus cleanly — no one day is brutal, no one day is wasted.",
+        optionalCardioNote:
+          "Four sessions is a full week for most people. Cardio is optional — if you want it, 15-20 minutes of easy work on a rest day is the sweet spot.",
+        sessions: [
+          {
+            title: "Lower Body — Easy Compound",
+            coachNote: "Squat and hinge, both moderate. Gentle introduction to compound work.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Goblet or bodyweight squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "low", note: "Step-up or walking lunge." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank family." },
+            ],
+          },
+          {
+            title: "Upper Body — Push & Pull",
+            coachNote: "Balanced push and pull. Gentle shapes, strict form.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row variant." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "medium", note: "DB press or push-up." },
+              { role: "accessory", pattern: "verticalPull", loadability: "low", note: "Lat pulldown." },
+              { role: "accessory", pattern: "verticalPush", loadability: "low", note: "Seated overhead press." },
+            ],
+          },
+          {
+            title: "Lower Body — Glute Focus",
+            coachNote: "Hip thrust is the session. Follow-on work supports the glutes.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust primary." },
+              { role: "secondary", pattern: "lunge", loadability: "low", note: "Walking lunge." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof or bird dog." },
+            ],
+          },
+          {
+            title: "Upper Body — Volume",
+            coachNote: "Lighter upper day. More reps, less load — quality of movement is the point.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "low", note: "DB or incline press." },
+              { role: "secondary", pattern: "horizontalPull", loadability: "low", note: "Chest-supported row." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Face pull or rear delt fly." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Bicep curl — optional." },
+            ],
+          },
+        ],
+      },
+
+      // 5-DAY GENERAL NEW ──────────────────────────────────────────────
+      5: {
+        weekCoachNote:
+          "Five sessions is a lot at general level — make sure you want this frequency. Each day stays light on intent and short on duration.",
+        optionalCardioNote:
+          "At five sessions a week, skip structured cardio unless it's something you enjoy. Walking is always welcome.",
+        sessions: [
+          {
+            title: "Lower Body — Squat Day",
+            coachNote: "Squat-led lower day. Keep it gentle — five sessions is a lot.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Goblet squat primary." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "low", note: "Step-up." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank." },
+            ],
+          },
+          {
+            title: "Upper Body — Pull Day",
+            coachNote: "Pulling leads. Upper back is the priority.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row variant." },
+              { role: "secondary", pattern: "verticalPull", loadability: "low", note: "Lat pulldown." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "low", note: "DB press." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Face pull." },
+            ],
+          },
+          {
+            title: "Lower Body — Hinge Day",
+            coachNote: "Hinge leads. Glute-focused day.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL." },
+              { role: "secondary", pattern: "squat", loadability: "low", note: "Goblet squat." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof press." },
+            ],
+          },
+          {
+            title: "Upper Body — Push Day",
+            coachNote: "Pressing primary — still balanced with pull.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "DB press." },
+              { role: "secondary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "accessory", pattern: "verticalPush", loadability: "low", note: "Overhead press." },
+              { role: "accessory", pattern: "isolation_tricep", loadability: "low", note: "Tricep." },
+            ],
+          },
+          {
+            title: "Full Body — Light & Mobility",
+            coachNote: "A gentler full-body day to close the week. Mobility work welcome.",
+            slots: [
+              { role: "primary", pattern: "lunge", loadability: "low", note: "Walking lunge or step-up." },
+              { role: "secondary", pattern: "hinge", loadability: "low", note: "Hip thrust light." },
+              { role: "accessory", pattern: "horizontalPull", loadability: "low", note: "Row." },
+              { role: "accessory", pattern: "mobility", loadability: "low", note: "Mobility flow or carry." },
+            ],
+          },
+        ],
+      },
+
+      // 6-DAY GENERAL NEW ──────────────────────────────────────────────
+      // Unusual combination — new lifter + 6 days is ambitious. Kept light
+      // and varied, with a mobility day explicitly built in.
+      6: {
+        weekCoachNote:
+          "Six sessions as a new lifter is very ambitious. Each day is short and light — if it's too much, drop a day, no guilt.",
+        optionalCardioNote:
+          "With six sessions a week, structured cardio is unnecessary. Rest days are more valuable.",
+        sessions: [
+          {
+            title: "Lower Body — Squat",
+            coachNote: "Gentle squat day.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Goblet squat." },
+              { role: "secondary", pattern: "hinge", loadability: "low", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "low", note: "Step-up." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank." },
+            ],
+          },
+          {
+            title: "Upper Body — Pull",
+            coachNote: "Pull-led upper day.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "secondary", pattern: "verticalPull", loadability: "low", note: "Lat pulldown." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "low", note: "DB press." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Face pull." },
+            ],
+          },
+          {
+            title: "Lower Body — Hinge",
+            coachNote: "Glute-focused hinge day.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust." },
+              { role: "secondary", pattern: "squat", loadability: "low", note: "Goblet." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper Body — Push",
+            coachNote: "Pressing primary — light and balanced.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "DB press." },
+              { role: "secondary", pattern: "horizontalPull", loadability: "low", note: "Row." },
+              { role: "accessory", pattern: "verticalPush", loadability: "low", note: "Overhead." },
+              { role: "accessory", pattern: "isolation_lateral_delt", loadability: "low", note: "Lateral raise." },
+            ],
+          },
+          {
+            title: "Lower Body — Unilateral",
+            coachNote: "Single-leg focus. Lighter than the other lower days.",
+            slots: [
+              { role: "primary", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "secondary", pattern: "hinge", loadability: "low", note: "Single-leg hip thrust." },
+              { role: "accessory", pattern: "isolation_calf", loadability: "low", note: "Calf." },
+              { role: "accessory", pattern: "core_anti_lateral_flexion", loadability: "low", note: "Side plank." },
+            ],
+          },
+          {
+            title: "Mobility & Carry",
+            coachNote: "A dedicated mobility day. Gentle movement, zero intent. Recovery is the point.",
+            slots: [
+              { role: "activation", pattern: "mobility", loadability: "low", note: "Mobility flow." },
+              { role: "accessory", pattern: "carry", loadability: "low", note: "Farmer's carry — light." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank." },
+              { role: "accessory", pattern: "mobility", loadability: "low", note: "Second mobility block — hip or thoracic." },
+            ],
+          },
+        ],
+      },
+    },
+
+    developing: {
+      // 2-DAY ──────────────────────────────────────────────────────────
+      2: {
+        weekCoachNote: "Two full-body sessions. At developing level, each day covers the whole body with moderate intent.",
+        sessions: [
+          {
+            title: "Full Body — Squat Lead",
+            coachNote: "Squat leads. Hinge follows. Push/pull balanced.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Goblet or back squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "medium", note: "DB or bench press." },
+              { role: "accessory", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+            ],
+          },
+          {
+            title: "Full Body — Hinge Lead",
+            coachNote: "Hinge leads. Unilateral lower and pull-heavy upper.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL." },
+              { role: "secondary", pattern: "lunge", loadability: "medium", note: "Walking lunge or split squat." },
+              { role: "accessory", pattern: "verticalPull", loadability: "medium", note: "Pull-up or lat pulldown." },
+              { role: "accessory", pattern: "verticalPush", loadability: "medium", note: "Overhead press." },
+            ],
+          },
+        ],
+      },
+
+      // 3-DAY ──────────────────────────────────────────────────────────
+      3: {
+        weekCoachNote: "Three sessions — lower, upper, lower. Developing lifters get more load and more variety per session.",
+        sessions: [
+          {
+            title: "Lower Body — Squat Focus",
+            coachNote: "Squat leads. Heavier than a new lifter's day, but still moderate intent.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat or goblet." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank." },
+            ],
+          },
+          {
+            title: "Upper Body — Balance",
+            coachNote: "Push and pull in equal measure.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "DB or bench press." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "accessory", pattern: "verticalPull", loadability: "medium", note: "Pull-up or pulldown." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Face pull." },
+            ],
+          },
+          {
+            title: "Lower Body — Hinge Focus",
+            coachNote: "Hinge leads. Glute-focused session.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Front squat." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Unilateral." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+            ],
+          },
+        ],
+      },
+
+      // 4-DAY ──────────────────────────────────────────────────────────
+      4: {
+        weekCoachNote: "Four sessions — lower/upper split. Each pattern twice per week, moderate intent throughout.",
+        sessions: [
+          {
+            title: "Lower Body — Squat",
+            coachNote: "Squat day. Moderate load, full compound work.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat or goblet." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank." },
+            ],
+          },
+          {
+            title: "Upper Body — Push & Pull",
+            coachNote: "Push and pull balanced.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "DB or bench." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "accessory", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "verticalPull", loadability: "medium", note: "Pull-up or pulldown." },
+            ],
+          },
+          {
+            title: "Lower Body — Hinge",
+            coachNote: "Hinge-led day. Glute and hamstring focus.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust primary." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Front or goblet squat." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper Body — Volume",
+            coachNote: "Lighter upper day. Accessories and carries.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Chest-supported row." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "low", note: "Incline or DB press." },
+              { role: "accessory", pattern: "isolation_lateral_delt", loadability: "low", note: "Lateral raise." },
+              { role: "accessory", pattern: "carry", loadability: "low", note: "Farmer's carry." },
+            ],
+          },
+        ],
+      },
+
+      // 5-DAY ──────────────────────────────────────────────────────────
+      5: {
+        weekCoachNote: "Five sessions — 3 lower, 2 upper. Moderate-intent lower body gets the extra frequency.",
+        sessions: [
+          {
+            title: "Lower — Squat",
+            coachNote: "Squat-led.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat or goblet." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "isolation_quad", loadability: "low", note: "Quad isolation." },
+            ],
+          },
+          {
+            title: "Upper — Pull",
+            coachNote: "Pull-led upper.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "secondary", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "medium", note: "DB press." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Face pull." },
+            ],
+          },
+          {
+            title: "Lower — Hinge",
+            coachNote: "Hinge day.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or RDL." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Goblet." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper — Push",
+            coachNote: "Push-led upper.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "Bench or DB press." },
+              { role: "secondary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "accessory", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "isolation_tricep", loadability: "low", note: "Tricep." },
+            ],
+          },
+          {
+            title: "Lower — Unilateral",
+            coachNote: "Unilateral-led lighter lower day.",
+            slots: [
+              { role: "primary", pattern: "lunge", loadability: "medium", note: "Bulgarian split squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Hip thrust." },
+              { role: "accessory", pattern: "isolation_calf", loadability: "low", note: "Calf." },
+              { role: "accessory", pattern: "core_anti_lateral_flexion", loadability: "low", note: "Side plank." },
+            ],
+          },
+        ],
+      },
+
+      // 6-DAY ──────────────────────────────────────────────────────────
+      6: {
+        weekCoachNote: "Six sessions — 3 lower, 3 upper. Recovery discipline matters more than load at this frequency.",
+        sessions: [
+          {
+            title: "Lower — Squat",
+            coachNote: "Squat-led.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "core_anti_extension", loadability: "low", note: "Plank." },
+            ],
+          },
+          {
+            title: "Upper — Push",
+            coachNote: "Push-led upper.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "DB or bench." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row — balance." },
+              { role: "accessory", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "isolation_tricep", loadability: "low", note: "Tricep." },
+            ],
+          },
+          {
+            title: "Lower — Hinge",
+            coachNote: "Hinge-led.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Goblet." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper — Pull",
+            coachNote: "Pull-led upper.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "primary", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
+              { role: "accessory", pattern: "horizontalPush", loadability: "low", note: "DB press." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Bicep." },
+            ],
+          },
+          {
+            title: "Lower — Unilateral",
+            coachNote: "Unilateral day.",
+            slots: [
+              { role: "primary", pattern: "lunge", loadability: "medium", note: "Split squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Hip thrust." },
+              { role: "accessory", pattern: "isolation_adductor_abductor", loadability: "low", note: "Abductor." },
+              { role: "accessory", pattern: "core_anti_lateral_flexion", loadability: "low", note: "Side plank." },
+            ],
+          },
+          {
+            title: "Upper — Volume",
+            coachNote: "Lighter upper day.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "low", note: "Incline press." },
+              { role: "secondary", pattern: "horizontalPull", loadability: "low", note: "Cable row." },
+              { role: "accessory", pattern: "isolation_lateral_delt", loadability: "low", note: "Lateral raise." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Rear delt." },
+            ],
+          },
+        ],
+      },
+    },
+
+    intermediate: {
+      // 2-DAY ──────────────────────────────────────────────────────────
+      // Unusual combination — intermediate lifter on 2 days. Full-body
+      // with real compound work.
+      2: {
+        weekCoachNote: "Two sessions for an intermediate lifter means we go full-body and we actually lift. No junk work.",
+        sessions: [
+          {
+            title: "Full Body A",
+            coachNote: "Squat and hinge both heavy-ish. Full compound work.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat." },
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "medium", note: "Bench or DB." },
+              { role: "accessory", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+            ],
+          },
+          {
+            title: "Full Body B",
+            coachNote: "Hinge leads. Unilateral secondary. Pull primary upper.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or deadlift." },
+              { role: "secondary", pattern: "lunge", loadability: "medium", note: "Bulgarian split squat." },
+              { role: "secondary", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
+              { role: "accessory", pattern: "verticalPush", loadability: "medium", note: "Overhead press." },
+            ],
+          },
+        ],
+      },
+
+      // 3-DAY ──────────────────────────────────────────────────────────
+      3: {
+        weekCoachNote: "Three focused sessions. Each has a clear primary.",
+        sessions: [
+          {
+            title: "Squat Focus",
+            coachNote: "Squat leads. Two variations.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Front or goblet." },
+              { role: "accessory", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+            ],
+          },
+          {
+            title: "Upper Focus",
+            coachNote: "Upper body primaries.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "Bench." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "secondary", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
+            ],
+          },
+          {
+            title: "Hinge Focus",
+            coachNote: "Hinge-led session.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or deadlift." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Second hinge variant." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Unilateral." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+            ],
+          },
+        ],
+      },
+
+      // 4-DAY ──────────────────────────────────────────────────────────
+      4: {
+        weekCoachNote: "Upper/lower x2. Classic intermediate general-goal split.",
+        sessions: [
+          {
+            title: "Lower — Squat",
+            coachNote: "Squat day.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "isolation_quad", loadability: "low", note: "Quad isolation." },
+            ],
+          },
+          {
+            title: "Upper — Balance",
+            coachNote: "Push and pull equal.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "Bench." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "secondary", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Face pull." },
+            ],
+          },
+          {
+            title: "Lower — Hinge",
+            coachNote: "Hinge day.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or deadlift." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Front squat." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Split squat." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper — Volume",
+            coachNote: "Lighter upper day.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Chest-supported row." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "medium", note: "Incline press." },
+              { role: "accessory", pattern: "isolation_lateral_delt", loadability: "low", note: "Lateral raise." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Bicep." },
+            ],
+          },
+        ],
+      },
+
+      // 5-DAY ──────────────────────────────────────────────────────────
+      5: {
+        weekCoachNote: "Five sessions — 3 lower, 2 upper. Intermediate general-goal volume.",
+        sessions: [
+          {
+            title: "Lower — Squat",
+            coachNote: "Squat primary.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "isolation_hamstring", loadability: "low", note: "Hamstring." },
+            ],
+          },
+          {
+            title: "Upper — Push",
+            coachNote: "Push-led.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "Bench." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row — balance." },
+              { role: "secondary", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "isolation_tricep", loadability: "low", note: "Tricep." },
+            ],
+          },
+          {
+            title: "Lower — Hinge",
+            coachNote: "Hinge primary.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or deadlift." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Front squat." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute isolation." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper — Pull",
+            coachNote: "Pull-led.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "primary", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "medium", note: "DB press." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Bicep." },
+            ],
+          },
+          {
+            title: "Lower — Unilateral",
+            coachNote: "Unilateral day.",
+            slots: [
+              { role: "primary", pattern: "lunge", loadability: "medium", note: "Bulgarian split squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Hip thrust." },
+              { role: "accessory", pattern: "isolation_calf", loadability: "low", note: "Calf." },
+              { role: "accessory", pattern: "core_anti_lateral_flexion", loadability: "low", note: "Side plank." },
+            ],
+          },
+        ],
+      },
+
+      // 6-DAY ──────────────────────────────────────────────────────────
+      6: {
+        weekCoachNote: "Six sessions — full alternation. Intermediate volume with clear daily emphasis.",
+        sessions: [
+          {
+            title: "Lower — Squat",
+            coachNote: "Squat day.",
+            slots: [
+              { role: "primary", pattern: "squat", loadability: "medium", note: "Back squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "RDL." },
+              { role: "accessory", pattern: "lunge", loadability: "medium", note: "Walking lunge." },
+              { role: "accessory", pattern: "isolation_quad", loadability: "low", note: "Quad." },
+            ],
+          },
+          {
+            title: "Upper — Push",
+            coachNote: "Push day.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "medium", note: "Bench." },
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "secondary", pattern: "verticalPush", loadability: "medium", note: "Overhead." },
+              { role: "accessory", pattern: "isolation_tricep", loadability: "low", note: "Tricep." },
+            ],
+          },
+          {
+            title: "Lower — Hinge",
+            coachNote: "Hinge day.",
+            slots: [
+              { role: "primary", pattern: "hinge", loadability: "medium", note: "Hip thrust or deadlift." },
+              { role: "secondary", pattern: "squat", loadability: "medium", note: "Front squat." },
+              { role: "accessory", pattern: "isolation_glute", loadability: "low", note: "Glute." },
+              { role: "accessory", pattern: "core_anti_rotation", loadability: "low", note: "Pallof." },
+            ],
+          },
+          {
+            title: "Upper — Pull",
+            coachNote: "Pull day.",
+            slots: [
+              { role: "primary", pattern: "horizontalPull", loadability: "medium", note: "Row." },
+              { role: "primary", pattern: "verticalPull", loadability: "medium", note: "Pull-up." },
+              { role: "secondary", pattern: "horizontalPush", loadability: "medium", note: "DB press." },
+              { role: "accessory", pattern: "isolation_bicep", loadability: "low", note: "Bicep." },
+            ],
+          },
+          {
+            title: "Lower — Unilateral",
+            coachNote: "Unilateral day.",
+            slots: [
+              { role: "primary", pattern: "lunge", loadability: "medium", note: "Split squat." },
+              { role: "secondary", pattern: "hinge", loadability: "medium", note: "Single-leg hip thrust." },
+              { role: "accessory", pattern: "isolation_adductor_abductor", loadability: "low", note: "Abductor." },
+              { role: "accessory", pattern: "core_anti_lateral_flexion", loadability: "low", note: "Side plank." },
+            ],
+          },
+          {
+            title: "Upper — Volume",
+            coachNote: "Lighter upper day.",
+            slots: [
+              { role: "primary", pattern: "horizontalPush", loadability: "low", note: "Incline." },
+              { role: "secondary", pattern: "horizontalPull", loadability: "low", note: "Cable row." },
+              { role: "accessory", pattern: "isolation_lateral_delt", loadability: "low", note: "Lateral raise." },
+              { role: "accessory", pattern: "isolation_rear_delt", loadability: "low", note: "Rear delt." },
             ],
           },
         ],
