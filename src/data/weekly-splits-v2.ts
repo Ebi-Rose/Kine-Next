@@ -64,6 +64,20 @@ export interface SplitV2 {
    * without LLM assist. Keep to two sentences.
    */
   weekCoachNote?: string;
+  /**
+   * Optional guidance shown in the UI for users who want to add
+   * cardio/conditioning work alongside their strength programme.
+   * Does NOT modify the generated week — it's a user-facing note
+   * rendered as opt-in content, not a slot the resolver picks.
+   *
+   * Purpose: for new lifters especially, the idea of "no cardio
+   * at all" can be daunting. This field is the answer to
+   * "can I still do cardio?" without entangling the template with
+   * optional slot resolution.
+   *
+   * See docs/specs/programming-philosophy.html §Open questions Q5.
+   */
+  optionalCardioNote?: string;
 }
 
 /**
