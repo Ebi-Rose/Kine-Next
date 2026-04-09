@@ -28,9 +28,9 @@ export default function ExerciseCard({
     // Populated by the indication pipeline (v1.0)
     whyForYou?: string;
     scoringFactors?: string[];
-    intensityCap?: number;
-    rmAttempts?: boolean;
-    effortFraming?: string;
+    workingLoadCap?: number;
+    heavyTopSetsAllowed?: boolean;
+    framing?: string;
   };
   log: ExerciseLog | undefined;
   expanded: boolean;
@@ -162,7 +162,7 @@ export default function ExerciseCard({
               {[...muscleTags.primary, ...muscleTags.secondary].slice(0, 3).map((tag) => (
                 <span key={tag} className="rounded-full bg-surface2/60 px-1.5 py-0.5 text-[9px] text-muted2 font-light">{tag}</span>
               ))}
-              {exercise.effortFraming && (
+              {exercise.framing && (
                 <span className="rounded-full border border-accent/25 bg-accent/8 px-1.5 py-0.5 text-[9px] text-accent font-light">
                   cycle-aware
                 </span>
@@ -176,9 +176,9 @@ export default function ExerciseCard({
               <p className="text-[11px] leading-snug text-muted font-light">
                 {exercise.whyForYou}
               </p>
-              {exercise.effortFraming && (
+              {exercise.framing && (
                 <p className="mt-1 text-[11px] leading-snug text-accent/90 font-light italic">
-                  {exercise.effortFraming}
+                  {exercise.framing}
                 </p>
               )}
               {exercise.scoringFactors && exercise.scoringFactors.length > 0 && (

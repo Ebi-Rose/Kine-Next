@@ -6,6 +6,7 @@ import { useKineStore } from "@/store/useKineStore";
 import { setDevDateOverride, getDevDateOverride, appNow, appTodayISO } from "@/lib/dev-time";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
+import { TEST_PERSONAS, type TestPersona } from "@/data/test-personas";
 
 export default function DevPanel() {
   const store = useKineStore();
@@ -100,6 +101,30 @@ export default function DevPanel() {
     toast("Seeded 8 weeks of lift data", "success");
   }
 
+  function loadPersona(p: TestPersona) {
+    // Onboarding slice
+    store.setGoal(p.goal);
+    store.setExp(p.exp);
+    store.setEquip(p.equip);
+    store.setDays(p.days);
+    store.setDuration(p.duration);
+    store.setInjuries(p.injuries);
+    store.setInjuryNotes(p.injuryNotes);
+    store.setConditions(p.conditions); // derives comfortFlags
+    store.setCycleType(p.cycleType);
+    // Profile — preserve any existing optional fields (lifeStage, age)
+    store.setPersonalProfile({
+      ...store.personalProfile,
+      name: p.profile.name,
+      height: p.profile.height,
+      weight: p.profile.weight,
+      trainingAge: p.profile.trainingAge,
+    });
+    // Clear generated week so next visit to /app rebuilds against new inputs
+    store.setWeekData(null);
+    toast(`Loaded persona: ${p.name}`, "success");
+  }
+
   function resetEduFlags() {
     store.setGoal(store.goal); // trigger re-render
     toast("Education flags reset", "success");
@@ -142,6 +167,28 @@ export default function DevPanel() {
       <p className="mt-1 text-xs text-muted2">Development tools. Not visible in production.</p>
 
       <div className="mt-6 flex flex-col gap-3">
+        <Section title="Personas">
+          <p className="mb-3 text-[10px] text-muted2">
+            Loads onboarding state for a test persona. Week data is cleared so{" "}
+            <code className="text-muted">/app</code> rebuilds on next visit.
+          </p>
+          <div className="flex flex-col gap-2">
+            {TEST_PERSONAS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => loadPersona(p)}
+                className="text-left rounded-lg border border-border bg-surface2/50 px-3 py-2 hover:border-accent/30 hover:text-text transition-all"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-xs font-medium text-text">{p.name}</span>
+                  <span className="text-[10px] text-muted2">{p.tagline}</span>
+                </div>
+                <p className="mt-1 text-[10px] text-muted">{p.tests}</p>
+              </button>
+            ))}
+          </div>
+        </Section>
+
         <Section title="Time Override">
           {activeOverride && (
             <div className="mb-3 rounded-lg bg-accent/10 border border-accent/30 px-3 py-2">

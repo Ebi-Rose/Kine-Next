@@ -168,9 +168,9 @@ describe("getCycleEnvelope", () => {
   it("returns neutral envelope when no phase given", () => {
     const env = getCycleEnvelope("Barbell Back Squat", null);
     expect(env.setMultiplier).toBe(1.0);
-    expect(env.intensityCap).toBe(9);
-    expect(env.rmAttempts).toBe(true);
-    expect(env.effortFraming).toBeNull();
+    expect(env.workingLoadCap).toBe(1.0);
+    expect(env.heavyTopSetsAllowed).toBe(true);
+    expect(env.framing).toBeNull();
   });
 
   it("returns neutral envelope for a non-modulated exercise", () => {
@@ -182,15 +182,15 @@ describe("getCycleEnvelope", () => {
   it("modulates a heavy compound during menstrual phase", () => {
     const env = getCycleEnvelope("Barbell Back Squat", "menstrual");
     expect(env.setMultiplier).toBeLessThan(1.0);
-    expect(env.intensityCap).toBeLessThanOrEqual(8);
-    expect(env.rmAttempts).toBe(false);
-    expect(env.effortFraming).not.toBeNull();
+    expect(env.workingLoadCap).toBeLessThanOrEqual(0.9);
+    expect(env.heavyTopSetsAllowed).toBe(false);
+    expect(env.framing).not.toBeNull();
   });
 
   it("respects follicular phase as a peak window", () => {
     const env = getCycleEnvelope("Barbell Back Squat", "follicular");
     expect(env.setMultiplier).toBe(1.0);
-    expect(env.rmAttempts).toBe(true);
+    expect(env.heavyTopSetsAllowed).toBe(true);
   });
 });
 

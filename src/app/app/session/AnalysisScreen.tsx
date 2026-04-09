@@ -36,6 +36,35 @@ export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysi
     <div>
       <h2 className="font-display text-2xl tracking-wide text-accent">Session review</h2>
 
+      {/* Safety alert — deterministic red-flag surfacing. Rendered
+          above PRs and analysis so it's the first thing the user
+          sees. Never LLM-authored; see src/lib/red-flag-scan.ts. */}
+      {analysis?.safetyAlert && (
+        <div
+          role="alert"
+          className="mt-4 rounded-[var(--radius-default)] border border-warning/40 bg-warning/10 p-4"
+        >
+          <p className="font-display text-[11px] tracking-[3px] text-warning uppercase mb-2">
+            Worth a check-in
+          </p>
+          <p className="text-sm leading-relaxed text-text">
+            {analysis.safetyAlert.cta}
+          </p>
+          <ul className="mt-3 flex flex-col gap-1">
+            {analysis.safetyAlert.triggered.map((phrase, i) => (
+              <li key={i} className="text-xs text-muted2">
+                • {phrase}
+              </li>
+            ))}
+          </ul>
+          {analysis.safetyAlert.sources.length > 0 && (
+            <p className="mt-2 text-[11px] text-muted">
+              From your notes on: {analysis.safetyAlert.sources.join(", ")}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* PR cards with share */}
       {prs.length > 0 && (
         <div className="mt-4 flex flex-col gap-2">
@@ -57,7 +86,7 @@ export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysi
         </div>
       )}
 
-      {analysis ? (
+      {analysis && analysis.overallAssessment ? (
         <>
           <div className="mt-4 rounded-[var(--radius-default)] border border-border bg-surface p-4">
             <p className="text-sm leading-relaxed text-text">{analysis.overallAssessment}</p>

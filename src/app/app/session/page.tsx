@@ -760,9 +760,8 @@ export default function SessionPage() {
           cues={(effectiveExercises[eduSheetIdx] as { cues?: string[] }).cues}
           conditions={conditions}
           goal={goal}
-          effortFraming={(effectiveExercises[eduSheetIdx] as { effortFraming?: string }).effortFraming}
-          rmAttempts={(effectiveExercises[eduSheetIdx] as { rmAttempts?: boolean }).rmAttempts}
-          intensityCap={(effectiveExercises[eduSheetIdx] as { intensityCap?: number }).intensityCap}
+          framing={(effectiveExercises[eduSheetIdx] as { framing?: string }).framing}
+          heavyTopSetsAllowed={(effectiveExercises[eduSheetIdx] as { heavyTopSetsAllowed?: boolean }).heavyTopSetsAllowed}
         />
       )}
 

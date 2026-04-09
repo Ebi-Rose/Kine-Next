@@ -275,19 +275,19 @@ export function rankAlternatives(
 export interface CycleModulatedPrescription {
   /** Scaled set count. Integer. */
   setMultiplier: number;
-  /** Target RPE ceiling. */
-  intensityCap: number;
-  /** Whether 1RM attempts are OK in this phase for this lift. */
-  rmAttempts: boolean;
+  /** Working-load cap: 0–1 multiplier on prescribed load for this phase. */
+  workingLoadCap: number;
+  /** Whether a heavy 3–6 rep top set is appropriate in this phase for this lift. */
+  heavyTopSetsAllowed: boolean;
   /** UI copy to surface on the session card, or null if neutral. */
-  effortFraming: string | null;
+  framing: string | null;
 }
 
 const NEUTRAL_ENVELOPE: CycleModulatedPrescription = {
   setMultiplier: 1.0,
-  intensityCap: 9,
-  rmAttempts: true,
-  effortFraming: null,
+  workingLoadCap: 1.0,
+  heavyTopSetsAllowed: true,
+  framing: null,
 };
 
 /**
@@ -306,9 +306,9 @@ export function getCycleEnvelope(
   if (!env) return NEUTRAL_ENVELOPE;
   return {
     setMultiplier: env.volumeMultiplier ?? 1.0,
-    intensityCap: env.intensityCap ?? 9,
-    rmAttempts: env.rmAttempts ?? true,
-    effortFraming: env.effortFraming ?? null,
+    workingLoadCap: env.workingLoadCap ?? 1.0,
+    heavyTopSetsAllowed: env.heavyTopSetsAllowed ?? true,
+    framing: env.framing ?? null,
   };
 }
 

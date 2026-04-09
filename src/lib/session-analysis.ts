@@ -6,6 +6,10 @@ import { useKineStore } from "@/store/useKineStore";
 import { DURATION_OPTIONS } from "@/data/constants";
 import { weightUnit } from "./format";
 import { sanitizeInput } from "./sanitize";
+import { getConditionRedFlagKeywords } from "./condition-context";
+import { scanForRedFlags, type SafetyAlert } from "./red-flag-scan";
+
+export type { SafetyAlert } from "./red-flag-scan";
 
 export interface ExerciseFeedback {
   name: string;
@@ -21,7 +25,14 @@ export interface AnalysisResult {
     title: string;
     coachNote: string;
   };
+  /**
+   * Populated by a deterministic pre-LLM scan of exercise notes
+   * against the user's condition red-flag keywords. Undefined when
+   * no red flag matched. Never authored by the LLM.
+   */
+  safetyAlert?: SafetyAlert;
 }
+
 
 const ANALYSIS_SYSTEM = `You are Kinē — a strength coach reviewing a completed session. Be direct, warm, specific. No jargon. No motivational poster language.
 
@@ -99,9 +110,27 @@ export async function analyseSession(
   soreness: number
 ): Promise<AnalysisResult | null> {
   const store = useKineStore.getState();
-  const { goal, exp, duration, progressDB } = store;
+  const { goal, exp, duration, progressDB, conditions } = store;
 
   const durationLabel = DURATION_OPTIONS.find((d) => d.value === duration)?.label || duration;
+
+  // ── Deterministic pre-LLM red-flag scan ──────────────────────────
+  // Collect raw exercise notes and scan them against the user's
+  // curated condition keywords BEFORE the LLM call. The model is
+  // deliberately unaware of red-flag logic; safety surfacing is not
+  // generated from model output.
+  const notesByExercise: { name: string; note: string }[] = Object.values(
+    sessionLogs,
+  )
+    .map((ex: unknown) => {
+      const e = ex as { name?: string; note?: string };
+      return { name: String(e.name ?? ""), note: String(e.note ?? "") };
+    })
+    .filter((n) => n.name && n.note);
+  const safetyAlert = scanForRedFlags(
+    notesByExercise,
+    getConditionRedFlagKeywords(conditions),
+  );
 
   // Build exercise summary
   const exerciseSummary = Object.values(sessionLogs)
@@ -182,9 +211,23 @@ Return JSON analysis with overallAssessment, exerciseFeedback (per exercise), ch
       validated.nextSession.coachNote = sanitizeInput(validated.nextSession.coachNote, 1000);
     }
 
+    // Attach the deterministic safety alert (if any). Computed
+    // before the LLM call — never derived from model output.
+    if (safetyAlert) validated.safetyAlert = safetyAlert;
+
     return validated;
   } catch (err) {
     console.error("Session analysis failed:", apiErrorMessage(err));
+    // Even if the LLM call fails, we still want a safety alert to
+    // surface if one was detected. Return a minimal result shape.
+    if (safetyAlert) {
+      return {
+        overallAssessment: "",
+        exerciseFeedback: [],
+        changes: [],
+        safetyAlert,
+      };
+    }
     return null;
   }
 }

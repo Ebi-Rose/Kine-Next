@@ -56,12 +56,12 @@ export interface Exercise {
   whyForYou?: string;
   /** Populated by the indication pipeline: top-3 factors from scoring (for the "Why this?" expander). */
   scoringFactors?: string[];
-  /** Populated by the cycle envelope: target RPE ceiling for this phase (6-10). */
-  intensityCap?: number;
-  /** Populated by the cycle envelope: whether 1RM attempts are OK in this phase for this lift. */
-  rmAttempts?: boolean;
-  /** Populated by the cycle envelope: short phase-aware effort message for the session card. */
-  effortFraming?: string;
+  /** Populated by the cycle envelope: working-load cap (0.6–1.0 multiplier on prescribed load) for this phase. */
+  workingLoadCap?: number;
+  /** Populated by the cycle envelope: whether a heavy 3–6 rep top set is appropriate in this phase for this lift. */
+  heavyTopSetsAllowed?: boolean;
+  /** Populated by the cycle envelope: short phase-aware message for the session card. */
+  framing?: string;
 }
 
 export interface WeekDay {
@@ -578,9 +578,9 @@ export function applyIndicationPostProcessing(weekData: WeekData): WeekData {
         ...ex,
         sets: modulatedSets,
         ...(whyForYou !== undefined ? { whyForYou } : {}),
-        intensityCap: env.intensityCap,
-        rmAttempts: env.rmAttempts,
-        ...(env.effortFraming !== null ? { effortFraming: env.effortFraming } : {}),
+        workingLoadCap: env.workingLoadCap,
+        heavyTopSetsAllowed: env.heavyTopSetsAllowed,
+        ...(env.framing !== null ? { framing: env.framing } : {}),
       };
     });
 

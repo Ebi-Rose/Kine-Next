@@ -18,6 +18,7 @@
 //                                   signature; used by week-builder)
 //   - getConditionCoachNote(ids) — user-facing plain-language note
 //   - getConditionRedFlags(ids)  — list of safety phrases
+//   - getConditionRedFlagKeywords(ids) — scan index for note matching
 
 import {
   CONDITION_RULES,
@@ -153,6 +154,7 @@ function emptyRule(): ConditionRule {
     },
     educationTags: [],
     redFlags: [],
+    redFlagKeywords: [],
   };
 }
 
@@ -181,6 +183,7 @@ export function getConditionRule(
  *   - warmupMods.addBlocks → union, dedupe by id
  *   - warmupMods.removeBlocks / cues → union
  *   - redFlags → union
+ *   - redFlagKeywords → union, deduped by phrase
  *   - educationTags → union
  *
  * Unknown ids are silently dropped. Empty input returns the
@@ -250,6 +253,18 @@ export function mergeConditionRules(ids: ConditionId[]): ConditionRule {
     },
     educationTags: uniqueStrings(rules.flatMap((r) => r.educationTags)),
     redFlags: uniqueStrings(rules.flatMap((r) => r.redFlags)),
+    redFlagKeywords: (() => {
+      const seen = new Set<string>();
+      const out: { phrase: string; keywords: string[] }[] = [];
+      for (const r of rules) {
+        for (const entry of r.redFlagKeywords) {
+          if (seen.has(entry.phrase)) continue;
+          seen.add(entry.phrase);
+          out.push(entry);
+        }
+      }
+      return out;
+    })(),
   };
 }
 
@@ -317,4 +332,31 @@ export function getConditionRedFlags(
     if (rule) flags.push(...rule.redFlags);
   }
   return uniqueStrings(flags);
+}
+
+// ── Projection: red-flag keyword scan index ────────────────────────
+
+/**
+ * Scan index for session-analysis: each entry pairs a user-facing
+ * phrase with the curated keywords that should trigger it. Deduped
+ * by phrase across conditions.
+ *
+ * Returns empty array when no conditions apply.
+ */
+export function getConditionRedFlagKeywords(
+  conditions: string[] | null | undefined,
+): { phrase: string; keywords: string[] }[] {
+  if (!conditions || conditions.length === 0) return [];
+  const seen = new Set<string>();
+  const out: { phrase: string; keywords: string[] }[] = [];
+  for (const id of conditions) {
+    const rule = CONDITION_RULES[id as ConditionId];
+    if (!rule) continue;
+    for (const entry of rule.redFlagKeywords) {
+      if (seen.has(entry.phrase)) continue;
+      seen.add(entry.phrase);
+      out.push(entry);
+    }
+  }
+  return out;
 }

@@ -83,6 +83,20 @@ export interface ConditionRule {
   educationTags: string[];
   /** Symptom patterns that should surface "talk to your clinician" in session analysis. */
   redFlags: string[];
+  /**
+   * Scan index for matching user-logged notes against red-flag patterns.
+   * Each entry pairs a surfaced `phrase` with curated `keywords` — the
+   * scanner tests each keyword against exercise notes using a
+   * case-insensitive word-boundary regex. On any match, the paired
+   * phrase is surfaced in the safety alert.
+   *
+   * Kept separate from `redFlags` on purpose: `redFlags` is a free-text
+   * description list for UI/clinical review; `redFlagKeywords` is a
+   * deterministic match index authored per phrase. Keep these
+   * consistent when editing — drift is acceptable short-term but
+   * reviewers should flag it.
+   */
+  redFlagKeywords: { phrase: string; keywords: string[] }[];
   /** Authoring rationale, citations, reviewer initials. Not shown to users. */
   sourceNotes?: string;
 }
@@ -117,6 +131,16 @@ export const CONDITION_RULES: Record<ConditionId, ConditionRule> = {
       "sudden severe pelvic pain",
       "rapid unexplained weight change with fatigue",
       "new cycle irregularity beyond existing pattern",
+    ],
+    redFlagKeywords: [
+      {
+        phrase: "Sudden or severe pelvic pain",
+        keywords: ["pelvic pain", "sharp pain", "stabbing"],
+      },
+      {
+        phrase: "Unusual fatigue with weight changes",
+        keywords: ["exhausted", "wiped out", "drained"],
+      },
     ],
     sourceNotes:
       "PCOS benefits from resistance training for insulin sensitivity; no hard restrictions warranted from condition alone. Individual symptoms may change this — relies on user flagging fatigue/pain separately.",
@@ -171,6 +195,20 @@ export const CONDITION_RULES: Record<ConditionId, ConditionRule> = {
       "sharp pelvic pain during exercise",
       "urinary retention or pressure symptoms",
     ],
+    redFlagKeywords: [
+      {
+        phrase: "New or heavier bleeding than usual",
+        keywords: ["heavy bleed", "flooding", "clots"],
+      },
+      {
+        phrase: "Sharp pelvic pain during lifting",
+        keywords: ["pelvic pain", "sharp pain", "cramping"],
+      },
+      {
+        phrase: "Pressure or urinary symptoms",
+        keywords: ["pressure", "can't pee", "bladder pain"],
+      },
+    ],
     sourceNotes:
       "Conservative authoring — fibroid response to loading varies individually. Moderate working-load cap and avoidance of max valsalva errs on the safe side. Needs clinical review.",
   },
@@ -221,6 +259,20 @@ export const CONDITION_RULES: Record<ConditionId, ConditionRule> = {
       "pain that stops you training mid-session",
       "new referral pain patterns",
       "post-session bleeding changes",
+    ],
+    redFlagKeywords: [
+      {
+        phrase: "Pain that stopped you mid-session",
+        keywords: ["had to stop", "couldn't finish", "too painful"],
+      },
+      {
+        phrase: "New referred pain (back, leg, shoulder)",
+        keywords: ["radiating", "shooting pain", "referred"],
+      },
+      {
+        phrase: "Bleeding changes after training",
+        keywords: ["spotting", "bleeding after", "flare"],
+      },
     ],
     sourceNotes:
       "Auto-scaling driven by cycle phase logic, not self-reported flare state (v0.1). Future: add symptom log integration for day-level scaling. Jump/sprint patterns omitted from caution list — the indication pipeline has no plyometric tagging yet. Revisit when plyometric cataloguing lands.",
@@ -283,6 +335,20 @@ export const CONDITION_RULES: Record<ConditionId, ConditionRule> = {
       "heaviness or bulging sensation during or after lifting",
       "leaking that worsens with training",
       "pain with lifting that wasn't there before",
+    ],
+    redFlagKeywords: [
+      {
+        phrase: "Heaviness or bulging in the pelvic floor",
+        keywords: ["heaviness", "bulge", "bulging", "dragging", "prolapse"],
+      },
+      {
+        phrase: "Leaking during or after training",
+        keywords: ["leak", "leaking", "incontinence", "wet myself"],
+      },
+      {
+        phrase: "New pelvic pain during lifting",
+        keywords: ["pelvic pain", "pubic pain", "tailbone"],
+      },
     ],
     sourceNotes:
       "Conservative v0.1 authoring. Needs pelvic-floor PT review before shipping publicly. Modifiers are cueing-based, not exclusionary — goal is to make the user feel capable, not sidelined. Jump/sprint avoidance is handled via caution on carry/squat/hinge and via warmup removeBlocks; no plyometric tagging exists in the indication pipeline yet.",
@@ -347,6 +413,20 @@ export const CONDITION_RULES: Record<ConditionId, ConditionRule> = {
       "joint subluxation during training",
       "persistent joint pain post-session",
       "new clicking or instability",
+    ],
+    redFlagKeywords: [
+      {
+        phrase: "Joint slipped or subluxed during training",
+        keywords: ["subluxed", "dislocated", "slipped out", "popped out"],
+      },
+      {
+        phrase: "Persistent joint pain after a session",
+        keywords: ["joint pain", "aching joint", "swollen joint"],
+      },
+      {
+        phrase: "New clicking or instability",
+        keywords: ["clicking", "clunking", "giving way", "unstable"],
+      },
     ],
     sourceNotes:
       "Based on standard hypermobility strength training guidance. ~13% volume reduction is a midpoint of the 10-15% range cited in original authoring.",

@@ -23,12 +23,10 @@ interface Props {
   conditions?: string[];
   /** User's goal — used to substitute {goal} tokens in whyForYou. */
   goal?: "muscle" | "strength" | "general" | null;
-  /** Phase-aware effort copy from the indication pipeline (cycle envelope). */
-  effortFraming?: string;
-  /** Whether 1RM attempts are appropriate for this lift in the current phase. */
-  rmAttempts?: boolean;
-  /** Target RPE ceiling for the current phase. */
-  intensityCap?: number;
+  /** Phase-aware framing copy from the indication pipeline (cycle envelope). */
+  framing?: string;
+  /** Whether a heavy 3–6 rep top set is appropriate for this lift in the current phase. */
+  heavyTopSetsAllowed?: boolean;
 }
 
 const GOAL_LABELS: Record<string, string> = {
@@ -53,7 +51,7 @@ function findEduData(name: string, library: EduLibrary): EduEntry | undefined {
 /** Lazy-loaded edu library — only fetched when the sheet opens */
 let eduCache: EduLibrary | null = null;
 
-export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp, conditions = [], goal, effortFraming, rmAttempts, intensityCap }: Props) {
+export default function ExerciseEduSheet({ open, onClose, exerciseName, why: whyProp, feel: feelProp, context: contextProp, cues: cuesProp, conditions = [], goal, framing, heavyTopSetsAllowed }: Props) {
   const [eduLibrary, setEduLibrary] = useState<EduLibrary | null>(eduCache);
 
   useEffect(() => {
@@ -98,7 +96,7 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
   // Cycle-aware envelope content — only render when the pipeline has
   // actually populated it (i.e. the user is in a tracked phase and
   // this exercise carries modulation).
-  const showCycleSection = Boolean(effortFraming) || (rmAttempts === false);
+  const showCycleSection = Boolean(framing) || (heavyTopSetsAllowed === false);
 
   return (
     <BottomSheet open={open} onClose={onClose} title={exerciseName}>
@@ -141,21 +139,14 @@ export default function ExerciseEduSheet({ open, onClose, exerciseName, why: why
           </p>
         </div>
 
-        {/* Cycle-phase envelope (only when pipeline populated it) */}
+        {/* Cycle-phase envelope (only when pipeline populated it).
+            Plain-language only — never expose numeric caps or RPE. */}
         {showCycleSection && (
           <div className="rounded-lg border border-accent/25 bg-accent/8 p-3">
             <p className="text-[10px] text-accent font-display tracking-wider mb-1">THIS WEEK</p>
-            {effortFraming && (
-              <p className="text-xs text-muted2 font-light leading-relaxed italic">{effortFraming}</p>
+            {framing && (
+              <p className="text-xs text-muted2 font-light leading-relaxed italic">{framing}</p>
             )}
-            <div className="flex gap-3 mt-2 text-[10px] text-muted2">
-              {typeof intensityCap === "number" && (
-                <span>Cap: RPE {intensityCap}</span>
-              )}
-              {rmAttempts === false && (
-                <span>No max attempts</span>
-              )}
-            </div>
           </div>
         )}
 

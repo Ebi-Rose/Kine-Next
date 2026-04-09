@@ -2,6 +2,7 @@ import {
   getConditionContext,
   getConditionCoachNote,
   getConditionRedFlags,
+  getConditionRedFlagKeywords,
   getConditionRule,
   mergeConditionRules,
 } from "@/lib/condition-context";
@@ -124,6 +125,59 @@ describe("getConditionRedFlags", () => {
   });
 });
 
+// ── getConditionRedFlagKeywords ────────────────────────────────────
+
+describe("getConditionRedFlagKeywords", () => {
+  it("returns empty array for no conditions", () => {
+    expect(getConditionRedFlagKeywords([])).toEqual([]);
+    expect(getConditionRedFlagKeywords(null)).toEqual([]);
+    expect(getConditionRedFlagKeywords(undefined)).toEqual([]);
+  });
+
+  it("returns keyword entries for a single condition", () => {
+    const entries = getConditionRedFlagKeywords(["pelvic_floor"]);
+    expect(entries.length).toBeGreaterThan(0);
+    // Each entry should carry a phrase and non-empty keyword list.
+    for (const e of entries) {
+      expect(typeof e.phrase).toBe("string");
+      expect(e.phrase.length).toBeGreaterThan(0);
+      expect(Array.isArray(e.keywords)).toBe(true);
+      expect(e.keywords.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("unions entries across multiple conditions", () => {
+    const single = getConditionRedFlagKeywords(["pelvic_floor"]);
+    const both = getConditionRedFlagKeywords(["pelvic_floor", "hypermobility"]);
+    expect(both.length).toBeGreaterThan(single.length);
+  });
+
+  it("dedupes entries by phrase", () => {
+    const entries = getConditionRedFlagKeywords(["pelvic_floor", "pelvic_floor"]);
+    const phrases = entries.map((e) => e.phrase);
+    expect(phrases.length).toBe(new Set(phrases).size);
+  });
+
+  it("ignores unknown condition ids", () => {
+    expect(getConditionRedFlagKeywords(["not_a_condition"])).toEqual([]);
+  });
+
+  it("every condition has at least one authored entry", () => {
+    // Catches the failure mode where a new condition is added to
+    // condition-rules.ts with an empty redFlagKeywords field.
+    for (const id of [
+      "pcos",
+      "fibroids",
+      "endometriosis",
+      "pelvic_floor",
+      "hypermobility",
+    ]) {
+      const entries = getConditionRedFlagKeywords([id]);
+      expect(entries.length).toBeGreaterThan(0);
+    }
+  });
+});
+
 // ── getConditionRule ───────────────────────────────────────────────
 
 describe("getConditionRule", () => {
@@ -241,6 +295,21 @@ describe("mergeConditionRules", () => {
       "heaviness or bulging sensation during or after lifting",
     );
     expect(merged.redFlags).toContain("joint subluxation during training");
+  });
+
+  it("unions redFlagKeywords deduped by phrase", () => {
+    const merged = mergeConditionRules(["pelvic_floor", "hypermobility"]);
+    const phrases = merged.redFlagKeywords.map((e) => e.phrase);
+    // Both conditions contribute entries.
+    expect(phrases.some((p) => p.toLowerCase().includes("pelvic"))).toBe(true);
+    expect(phrases.some((p) => p.toLowerCase().includes("joint"))).toBe(true);
+    // No duplicate phrases after merging.
+    expect(phrases.length).toBe(new Set(phrases).size);
+  });
+
+  it("empty rule carries an empty redFlagKeywords array", () => {
+    const empty = mergeConditionRules([]);
+    expect(empty.redFlagKeywords).toEqual([]);
   });
 
   it("joins globalFraming with double-newline separator", () => {

@@ -102,9 +102,9 @@ export type ExperienceLevel = "new" | "developing" | "intermediate";
 
 export interface PhaseEnvelope {
   volumeMultiplier?: number; // 0.6–1.1, default 1.0
-  intensityCap?: number; // RPE 6–10, default 9
-  rmAttempts?: boolean; // default true
-  effortFraming?: string; // UI copy template
+  workingLoadCap?: number; // 0.6–1.0 multiplier on prescribed load, default 1.0
+  heavyTopSetsAllowed?: boolean; // default true
+  framing?: string; // UI copy template
 }
 
 export interface ExerciseIndication {
@@ -139,8 +139,8 @@ export interface ExerciseIndication {
 //
 // The rule of thumb: only HIGH-fatigue compound lifts carry a cycle
 // envelope. Low-fatigue accessory, isolation, and mobility work run
-// neutral across all phases (default 1.0 volume, RPE 9 cap, no change
-// to RM attempts).
+// neutral across all phases (default 1.0 volume, 1.0 working-load cap,
+// heavy top sets allowed).
 //
 // If a category template doesn't include cycleModulation, the engine
 // applies the neutral envelope by default.
@@ -148,41 +148,41 @@ export interface ExerciseIndication {
 const HEAVY_COMPOUND_ENVELOPE: Partial<Record<CyclePhase, PhaseEnvelope>> = {
   follicular: {
     volumeMultiplier: 1.0,
-    intensityCap: 9,
-    rmAttempts: true,
-    effortFraming: "Peak output phase. Push if it's there.",
+    workingLoadCap: 1.0,
+    heavyTopSetsAllowed: true,
+    framing: "You'll likely feel strong here — push if it's there.",
   },
   ovulatory: {
     volumeMultiplier: 1.0,
-    intensityCap: 9,
-    rmAttempts: true,
-    effortFraming: "You'll likely feel strong today — a good day to test the ceiling.",
+    workingLoadCap: 1.0,
+    heavyTopSetsAllowed: true,
+    framing: "Peak output phase. A good day for a heavy top set.",
   },
   luteal: {
     volumeMultiplier: 0.9,
-    intensityCap: 8,
-    rmAttempts: false,
-    effortFraming: "Keep it tight and controlled — save the max effort for next week.",
+    workingLoadCap: 0.9,
+    heavyTopSetsAllowed: false,
+    framing: "Keep it tight and controlled — save the heavy top set for next week.",
   },
   menstrual: {
     volumeMultiplier: 0.8,
-    intensityCap: 8,
-    rmAttempts: false,
-    effortFraming: "Back off a little today. Volume over intensity.",
+    workingLoadCap: 0.85,
+    heavyTopSetsAllowed: false,
+    framing: "Back off the top end today. Volume over load.",
   },
 };
 
 const MODERATE_COMPOUND_ENVELOPE: Partial<Record<CyclePhase, PhaseEnvelope>> = {
   luteal: {
     volumeMultiplier: 0.95,
-    intensityCap: 9,
-    rmAttempts: true,
+    workingLoadCap: 0.95,
+    heavyTopSetsAllowed: true,
   },
   menstrual: {
     volumeMultiplier: 0.9,
-    intensityCap: 8,
-    rmAttempts: false,
-    effortFraming: "Controlled effort today.",
+    workingLoadCap: 0.9,
+    heavyTopSetsAllowed: false,
+    framing: "Controlled effort today.",
   },
 };
 
@@ -1401,10 +1401,10 @@ export function validateIndications(): string[] {
             );
           }
         }
-        if (env?.intensityCap !== undefined) {
-          if (env.intensityCap < 6 || env.intensityCap > 10) {
+        if (env?.workingLoadCap !== undefined) {
+          if (env.workingLoadCap < 0.6 || env.workingLoadCap > 1.0) {
             errors.push(
-              `${ex.name}.${phase}: intensityCap ${env.intensityCap} out of RPE range (6–10)`
+              `${ex.name}.${phase}: workingLoadCap ${env.workingLoadCap} out of range (0.6–1.0)`
             );
           }
         }
