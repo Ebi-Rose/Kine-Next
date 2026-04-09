@@ -20,14 +20,14 @@ function reloadAfterPersist() {
  * Renders as a draggable pill that expands into a compact overlay.
  */
 // ── Dev gate ───────────────────────────────────────────────────────
-// The dev overlay is hidden from beta testers. To unlock for a session
-// the user must:
-//   1. Visit any /app route with ?dev=unlock in the URL, then
-//   2. Enter the passcode (NEXT_PUBLIC_DEV_PASSCODE, default "kine2026")
-// Unlock is session-scoped via sessionStorage. Clearing the tab re-locks.
+// The DEV pill is visible to everyone so beta testers who've been given
+// the passcode can opt in. Tapping the pill when locked shows a passcode
+// modal; unlock is session-scoped via sessionStorage and persists until
+// the tab closes. Visiting ?dev=unlock also opens the modal directly.
 //
-// This is not real security (client-side bundles are public). It's a
-// visibility gate to keep the pill off non-technical users' screens.
+// This is a visibility/opt-in gate, not real security — the passcode
+// ships in the client bundle. Good enough to keep non-technical users
+// from accidentally opening the developer tool.
 const DEV_PASSCODE = process.env.NEXT_PUBLIC_DEV_PASSCODE || "kine2026";
 const DEV_UNLOCK_KEY = "kine_dev_unlocked";
 
@@ -311,26 +311,36 @@ export default function DevOverlay() {
     );
   }
 
-  // Gate: if not unlocked, render nothing at all. Beta testers don't see
-  // the DEV pill. To unlock, visit any /app route with ?dev=unlock.
-  if (!unlocked) return null;
-
-  // Floating pill when closed
+  // Floating pill — always visible. Tap opens the panel if unlocked,
+  // otherwise prompts for the passcode.
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (unlocked) setOpen(true);
+          else setShowPasscodePrompt(true);
+        }}
+        aria-label={unlocked ? "Open dev tools" : "Unlock dev tools"}
         className="fixed bottom-[140px] right-4 z-[999] flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg/90 backdrop-blur-sm px-3 py-1.5 shadow-lg transition-all hover:border-accent hover:scale-105 active:scale-95"
         style={{ paddingRight: 'max(12px, env(safe-area-inset-right))' }}
       >
         <span className="text-[10px] font-medium text-accent">DEV</span>
-        {activeOverride && (
+        {!unlocked && (
+          <span className="text-[9px] text-muted2">🔒</span>
+        )}
+        {unlocked && activeOverride && (
           <span className="text-[9px] text-muted2">
             {appNow().toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </span>
         )}
       </button>
     );
+  }
+
+  // Safety: if something opened the panel while still locked, force lock.
+  if (!unlocked) {
+    setOpen(false);
+    return null;
   }
 
   return (
