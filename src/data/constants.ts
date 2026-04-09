@@ -155,7 +155,7 @@ export const INJURY_OPTIONS: { value: string; label: string }[] = [
 ];
 
 export const CONDITION_OPTIONS: { value: string; label: string; description: string }[] = [
-  { value: "pcos", label: "PCOS", description: "We adjust intensity cycling and prioritise resistance training that supports metabolic health." },
+  { value: "pcos", label: "PCOS", description: "We frame programming around compound movement patterns and steady, sustainable progression." },
   { value: "fibroids", label: "Fibroids", description: "We manage intra-abdominal pressure, moderate high-impact movements, and adapt around flare days." },
   { value: "endometriosis", label: "Endometriosis", description: "We pace volume across the month, reduce load on high-pain days, and avoid aggravating movements." },
   { value: "pelvic_floor", label: "Pelvic floor", description: "We modify bracing cues, swap high-pressure exercises, and progress loading gradually." },

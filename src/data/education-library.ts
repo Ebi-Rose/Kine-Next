@@ -53,7 +53,7 @@ You don't need to do anything differently. The programming already reflects this
     gentle: true,
     body: `Two things are true at once in perimenopause: you can absolutely keep getting stronger, and the rhythm of how that strength shows up changes.
 
-The headline change is recovery. Estrogen plays a role in muscle repair and inflammation control, and as it fluctuates and trends down, the same session takes longer to bounce back from. Sleep often gets noisier in the same window, which compounds it. None of this is a wall — it's a different tempo.
+The headline change is recovery. Hormonal shifts in this window are associated with longer recovery times for many women, and the same session can take longer to bounce back from than it used to. Sleep often gets noisier in the same window, which compounds it. None of this is a wall — it's a different tempo.
 
 Three things tend to help:
 
@@ -63,7 +63,9 @@ Protect the heavy days. You don't need more sessions. You need the heavy ones to
 
 Don't read body weight as a verdict. Body composition shifts in this window for reasons that have nothing to do with how hard you're training. The scale was always a noisy signal; in perimenopause it's noise on noise.
 
-What hasn't changed: lifting builds bone, builds muscle, and protects you against the things that get harder in the next decade. This is the window where it matters most. Keep going.`,
+What hasn't changed: resistance training in this stage of life is one of the most well-supported forms of movement for long-term strength and mobility. Keep going.
+
+(General wellness information — not medical advice. Talk to your clinician about anything specific to your health.)`,
   },
   {
     id: "returning-after-baby-first-twelve-weeks",
@@ -81,7 +83,9 @@ What hasn't changed: lifting builds bone, builds muscle, and protects you agains
     },
     surfaces_at: ["anytime"],
     gentle: true,
-    body: `The internet wants you to "bounce back". Don't. Bouncing isn't a thing your body is set up to do right now, and the chase is what causes most of the injuries we see in post-partum lifters.
+    body: `Before anything in this article: if you haven't been cleared to return to exercise by your healthcare provider yet, wait. The timeline below assumes you've had your postnatal check and been told you're good to start loading again. If you haven't, that's the first step — not this.
+
+The internet wants you to "bounce back". Don't. Bouncing isn't a thing your body is set up to do right now, and the chase is what causes most of the injuries we see in post-partum lifters.
 
 Here's what the first twelve weeks back actually look like.
 

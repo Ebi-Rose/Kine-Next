@@ -13,7 +13,7 @@
 // Conditions are context, not identity — the programme adapts silently.
 
 const CONDITION_CONTEXT: Record<string, string> = {
-  pcos: "PCOS — prioritise compound movements for insulin sensitivity. Metabolic conditioning beneficial. Higher metabolic demand programming.",
+  pcos: "PCOS — frame programming around compound movement patterns the user enjoys. Steady, sustainable progression. Avoid medical/treatment language.",
   fibroids: "Fibroids — low-impact alternatives preferred. Avoid excessive intra-abdominal pressure during heavy loading. Flag high-impact exercises for swap.",
   endometriosis: "Endometriosis — low-impact alternatives on symptomatic days. Anti-inflammatory movement beneficial. Flag high-impact exercises. Late-luteal may need auto-scaling.",
   pelvic_floor: "Pelvic floor — no max-effort Valsalva loading. Exhale-on-exertion, not breath-holding. Pelvic floor-friendly alternatives for high-impact movements.",

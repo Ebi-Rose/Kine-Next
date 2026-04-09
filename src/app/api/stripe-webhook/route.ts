@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { logAudit, getRequestIp } from "../_lib/audit";
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Webhook signature verification failed:", message);
+    Sentry.captureException(err, { tags: { route: "stripe-webhook", phase: "signature" } });
     logAudit({ event: "webhook_signature_failed", ip: getRequestIp(request.headers) });
     return Response.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -341,6 +343,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Webhook processing error:", message);
+    Sentry.captureException(err, { tags: { route: "stripe-webhook", phase: "processing", event_type: event.type } });
     return Response.json({ error: "Processing failed" }, { status: 500 });
   }
 

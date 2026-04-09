@@ -104,19 +104,26 @@ export default function ExerciseCard({
       )}
 
       {/* Header */}
-      <button onClick={onToggle} className="flex w-full items-center gap-3 p-4 pt-2 text-left">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+        className="flex w-full items-center gap-3 p-4 pt-2 text-left cursor-pointer"
+      >
         {/* Thumbnail placeholder */}
         {videoThumb ? (
-          <div
+          <button
+            type="button"
             className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-border cursor-pointer"
             onClick={(e) => { e.stopPropagation(); setShowVideoInline((v) => !v); }}
             aria-label={showVideoInline ? `Hide ${exercise.name} video` : `Play ${exercise.name} video inline`}
           >
             <img src={videoThumb} alt="" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <span className="absolute inset-0 flex items-center justify-center bg-black/30">
               <span className="text-white text-[10px]">{showVideoInline ? "✕" : "▶"}</span>
-            </div>
-          </div>
+            </span>
+          </button>
         ) : (
           <div className="h-10 w-10 shrink-0 rounded-lg border border-border flex items-center justify-center"
             style={{ background: `${catColor}10` }}>
@@ -205,7 +212,7 @@ export default function ExerciseCard({
           </button>
         )}
         <span className="text-muted text-[10px] shrink-0">{expanded ? "▾" : "▸"}</span>
-      </button>
+      </div>
 
       {showVideoInline && vidUrl && (
         <div className="mx-auto mb-3 w-full max-w-[240px] aspect-[9/16] rounded-lg overflow-hidden border border-border bg-black relative">
@@ -349,7 +356,7 @@ export default function ExerciseCard({
                         <button aria-label={`Decrease reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseInt(set.reps) || 0;
                           if (cur > 0) onUpdateSet(index, setIdx, "reps", String(cur - 1));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+                        }} className="rounded bg-surface2 min-h-[44px] min-w-[44px] px-3 py-2 text-sm text-muted2 hover:text-text flex items-center justify-center">−</button>
                         <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
                           aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
                           onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
@@ -357,14 +364,14 @@ export default function ExerciseCard({
                         <button aria-label={`Increase reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseInt(set.reps) || 0;
                           onUpdateSet(index, setIdx, "reps", String(cur + 1));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+                        }} className="rounded bg-surface2 min-h-[44px] min-w-[44px] px-3 py-2 text-sm text-muted2 hover:text-text flex items-center justify-center">+</button>
                       </div>
                       <span className="text-muted">×</span>
                       <div className="flex items-center gap-1">
                         <button aria-label={`Decrease weight for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseFloat(set.weight) || 0;
                           if (cur >= inc) onUpdateSet(index, setIdx, "weight", String(cur - inc));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+                        }} className="rounded bg-surface2 min-h-[44px] min-w-[44px] px-3 py-2 text-sm text-muted2 hover:text-text flex items-center justify-center">−</button>
                         <input type="number" inputMode="decimal" placeholder={unit} value={set.weight}
                           aria-label={`Set ${setIdx + 1} weight for ${exercise.name}`}
                           onChange={(e) => onUpdateSet(index, setIdx, "weight", e.target.value)}
@@ -372,7 +379,7 @@ export default function ExerciseCard({
                         <button aria-label={`Increase weight for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseFloat(set.weight) || 0;
                           onUpdateSet(index, setIdx, "weight", String(cur + inc));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+                        }} className="rounded bg-surface2 min-h-[44px] min-w-[44px] px-3 py-2 text-sm text-muted2 hover:text-text flex items-center justify-center">+</button>
                       </div>
                       <span className="text-[10px] text-muted">{logType === "weighted_unilateral" ? unitPerSide : unit}</span>
                     </>
@@ -386,7 +393,7 @@ export default function ExerciseCard({
                         <button aria-label={`Decrease reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseInt(set.reps) || 0;
                           if (cur > 0) onUpdateSet(index, setIdx, "reps", String(cur - 1));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">−</button>
+                        }} className="rounded bg-surface2 min-h-[44px] min-w-[44px] px-3 py-2 text-sm text-muted2 hover:text-text flex items-center justify-center">−</button>
                         <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
                           aria-label={`Set ${setIdx + 1} reps for ${exercise.name}`}
                           onChange={(e) => onUpdateSet(index, setIdx, "reps", e.target.value)}
@@ -394,7 +401,7 @@ export default function ExerciseCard({
                         <button aria-label={`Increase reps for ${exercise.name} set ${setIdx + 1}`} onClick={() => {
                           const cur = parseInt(set.reps) || 0;
                           onUpdateSet(index, setIdx, "reps", String(cur + 1));
-                        }} className="rounded bg-surface2 px-1.5 py-0.5 text-xs text-muted2 hover:text-text">+</button>
+                        }} className="rounded bg-surface2 min-h-[44px] min-w-[44px] px-3 py-2 text-sm text-muted2 hover:text-text flex items-center justify-center">+</button>
                       </div>
                       <span className="text-xs text-muted">{logType === "bodyweight_unilateral" ? "reps/side" : "reps"}</span>
                     </>

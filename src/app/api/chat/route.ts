@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthenticatedUser } from "../_lib/auth";
 import { createRatelimit } from "../_lib/rate-limit";
 import { verifyCsrf } from "../_lib/csrf";
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errData = await response.text();
       console.error("Anthropic API error:", response.status, errData.slice(0, 500));
+      Sentry.captureMessage("Anthropic API non-OK response", { level: "error", tags: { status: String(response.status) }, extra: { body: errData.slice(0, 500) } });
       return Response.json(
         { error: "AI service error" },
         { status: response.status }
@@ -174,8 +176,8 @@ export async function POST(request: NextRequest) {
               stopReason = evt.delta?.stop_reason || stopReason;
               usage = evt.usage || usage;
             }
-          } catch {
-            // Skip malformed SSE events
+          } catch (sseErr) {
+            Sentry.addBreadcrumb({ category: "anthropic.sse", level: "warning", message: "malformed SSE event", data: { error: String(sseErr) } });
           }
         }
       }
@@ -190,7 +192,8 @@ export async function POST(request: NextRequest) {
         usage,
       });
     }
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, { tags: { route: "api/chat" } });
     return Response.json(
       { error: { type: "proxy_error", message: "Service unavailable" } },
       { status: 502 }

@@ -47,7 +47,7 @@ export default function LandingPage() {
           content: '';
           position: absolute;
           inset: 0;
-          background: url('/hero-bg.JPG') center/cover no-repeat;
+          background: url('/hero-bg-opt.jpg') center/cover no-repeat;
           opacity: 0.05;
           pointer-events: none;
         }
