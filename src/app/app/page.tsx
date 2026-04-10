@@ -681,24 +681,51 @@ function WeekView({
             return null;
           })()}
 
-          {/* Week overview strip */}
+          {/* Running week overview — written summary */}
           {(() => {
             const curWeek = progressDB.currentWeek || 1;
-            const ws = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+            const ws = (progressDB.sessions as import("@/store/useKineStore").SessionRecord[])
               .filter((s) => s.weekNum === curWeek);
+            if (ws.length === 0) return null;
+            const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
+            const efforts = ws.map((s) => s.effort).filter((e): e is number => e != null);
+            const avgEffort = efforts.length > 0 ? Math.round(efforts.reduce((a, b) => a + b, 0) / efforts.length) : null;
+            const soreness = ws.map((s) => s.soreness).filter((s): s is number => s != null);
+            const lastSoreness = soreness.length > 0 ? soreness[soreness.length - 1] : null;
+            const totalPRs = ws.reduce((sum, s) => sum + (s.prs?.length || 0), 0);
+
+            // Build a written summary
+            const parts: string[] = [];
+
+            // Session progress
+            if (ws.length >= trainingDayCount) {
+              parts.push(`All ${ws.length} sessions done this week.`);
+            } else {
+              parts.push(`${ws.length} of ${trainingDayCount} sessions done so far.`);
+            }
+
+            // Effort
+            if (avgEffort != null) {
+              const effortWords = ["", "light", "moderate", "hard", "all-out"];
+              parts.push(`Effort has been ${effortWords[avgEffort]}.`);
+            }
+
+            // Soreness
+            if (lastSoreness != null && lastSoreness >= 3) {
+              parts.push(lastSoreness >= 4 ? "Soreness is high — recovery matters today." : "Some soreness building up.");
+            }
+
+            // PRs
+            if (totalPRs > 0) {
+              parts.push(totalPRs === 1 ? "1 personal record hit." : `${totalPRs} personal records hit.`);
+            }
+
             return (
-              <div className="mb-4 flex items-center justify-center gap-3">
-                {displayWeek.days.map((day, i) => {
-                  if (day.isRest) return null;
-                  const done = ws.some((s) => s.dayIdx === i);
-                  const isCurrent = i === todayIdx;
-                  return (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                      <div className={`h-2.5 w-2.5 rounded-full ${done ? "bg-accent" : isCurrent ? "ring-1 ring-accent bg-transparent" : "bg-muted/20"}`} />
-                      <span className="text-[8px] text-muted2">{DAY_LABELS[i]}</span>
-                    </div>
-                  );
-                })}
+              <div className="mb-4 rounded-[14px] border border-border/50 bg-surface/50 p-4">
+                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">Week {curWeek} so far</p>
+                <p className="text-[11px] text-muted2 font-light leading-relaxed">
+                  {parts.join(" ")}
+                </p>
               </div>
             );
           })()}
