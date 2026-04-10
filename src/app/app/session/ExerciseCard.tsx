@@ -325,22 +325,8 @@ export default function ExerciseCard({
               </div>
             )}
 
-            {/* Pre-fill indicator — hidden when progression strip already explains the weight */}
-            {log.prefilled && !progression && (
-              <div className="mb-3 rounded-lg border border-accent/20 bg-accent-dim/15 px-3 py-2 flex items-center justify-between" role="status" aria-live="polite">
-                <p className="text-[10px] text-muted2 font-light">
-                  Pre-filled from your last session
-                </p>
-                {onClearPrefill && (
-                  <button
-                    onClick={() => onClearPrefill(index)}
-                    className="text-[10px] text-accent hover:text-text transition-colors ml-2 shrink-0"
-                  >
-                    Start fresh
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Pre-fill indicator removed — progression strip or the
+                pre-filled values themselves are self-explanatory */}
 
             <p className="mb-3 text-[10px] tracking-wider text-muted uppercase">Log your sets</p>
             <div className="flex flex-col gap-2">
