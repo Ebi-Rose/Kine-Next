@@ -98,6 +98,16 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
     }
   }
 
+  // Clearly exceeded the rep range — weight is too light, suggest increase now
+  if (latestReps >= topOfRange + 2) {
+    return {
+      ...base,
+      suggestedWeight: displayWeight + increment,
+      confidence: "ready",
+      reason: `Hit ${latestReps} reps at ${displayWeight}${unit} — weight is light, ready to move up`,
+    };
+  }
+
   // Single session at top of range — acknowledge but hold
   if (latestReps >= topOfRange) {
     return {
