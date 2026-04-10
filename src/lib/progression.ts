@@ -94,7 +94,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
         ...base,
         suggestedWeight: next,
         confidence: "ready",
-        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps twice at ${displayWeight}${unit}`,
+        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps at ${displayWeight}${unit} two sessions in a row`,
       };
     }
   }
@@ -106,7 +106,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
       ...base,
       suggestedWeight: next,
       confidence: "ready",
-      reason: `Increased to ${next}${unit} — you hit ${latestReps} reps at ${displayWeight}${unit}`,
+      reason: `Increased to ${next}${unit} — you hit ${latestReps} reps at ${displayWeight}${unit} last session`,
     };
   }
 
@@ -116,7 +116,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
       ...base,
       suggestedWeight: displayWeight,
       confidence: "hold",
-      reason: `Staying at ${displayWeight}${unit} — hit ${latestReps} reps, one more session to confirm`,
+      reason: `Staying at ${displayWeight}${unit} — you hit ${latestReps} reps last session, one more to confirm`,
     };
   }
 
