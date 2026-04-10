@@ -38,17 +38,17 @@ export default function LandingPage() {
           padding: 16px 20px;
           position: relative;
           overflow: hidden;
-          background: #13110f;
+          background: #FAFAFA;
           font-family: 'DM Sans', sans-serif;
           font-weight: 300;
-          color: #f0ebe6;
+          color: #1A1A1A;
         }
         .landing-page::before {
           content: '';
           position: absolute;
           inset: 0;
           background: url('/hero-bg-opt.jpg') center/cover no-repeat;
-          opacity: 0.05;
+          opacity: 0.03;
           pointer-events: none;
         }
         .lp-layout {
@@ -85,28 +85,28 @@ export default function LandingPage() {
           font-weight: 400;
         }
         .lp-logo .lp-k { color: #c49098; }
-        .lp-logo .lp-rest { color: #f0ebe6; }
+        .lp-logo .lp-rest { color: #1A1A1A; }
         .lp-headline {
           font-family: 'Cormorant Garamond', serif;
           font-size: 22px;
           line-height: 1.5;
-          color: #c4bdb5;
+          color: #666;
           max-width: 380px;
         }
         .lp-headline strong {
-          color: #f0ebe6;
+          color: #1A1A1A;
           font-weight: 500;
         }
         .lp-subline {
           font-size: 17px;
           line-height: 1.6;
-          color: #8a847d;
+          color: #777;
           max-width: 380px;
         }
         .lp-body {
           font-size: 14px;
           line-height: 1.6;
-          color: #8a847d;
+          color: #777;
           max-width: 360px;
         }
         .lp-body em {
@@ -125,20 +125,20 @@ export default function LandingPage() {
           max-width: 360px;
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid #2a2722;
-          background: #1a1815;
+          border: 1px solid #E0E0E0;
+          background: #FFFFFF;
           transition: border-color 0.3s, box-shadow 0.3s;
         }
         .lp-waitlist-form:focus-within {
-          border-color: rgba(196, 144, 152, 0.3);
-          box-shadow: 0 0 24px rgba(196, 144, 152, 0.04);
+          border-color: rgba(196, 144, 152, 0.4);
+          box-shadow: 0 0 24px rgba(196, 144, 152, 0.08);
         }
         .lp-waitlist-form input {
           flex: 1;
           padding: 14px 16px;
           background: transparent;
           border: none;
-          color: #f0ebe6;
+          color: #1A1A1A;
           font-family: 'DM Sans', sans-serif;
           font-size: 14px;
           font-weight: 300;
@@ -149,12 +149,12 @@ export default function LandingPage() {
           outline-offset: -2px;
           border-radius: 4px;
         }
-        .lp-waitlist-form input::placeholder { color: #808080; }
+        .lp-waitlist-form input::placeholder { color: #AAAAAA; }
         .lp-waitlist-form button {
           padding: 14px 28px;
           background: #c49098;
           border: none;
-          color: #13110f;
+          color: #FFFFFF;
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           font-weight: 500;
@@ -178,7 +178,7 @@ export default function LandingPage() {
         }
         .lp-waitlist-note {
           font-size: 11px;
-          color: #8a847d;
+          color: #999;
           max-width: 300px;
         }
         .lp-access {
@@ -186,7 +186,7 @@ export default function LandingPage() {
         }
         .lp-access a {
           font-size: 12px;
-          color: #a09a93;
+          color: #999;
           text-decoration: none;
           transition: color 0.2s;
           letter-spacing: 0.3px;
@@ -209,8 +209,8 @@ export default function LandingPage() {
           width: 30px;
           height: 30px;
           border-radius: 50%;
-          border: 1px solid #2a2722;
-          color: #a09a93;
+          border: 1px solid #E0E0E0;
+          color: #999;
           transition: border-color 0.2s, color 0.2s;
           text-decoration: none;
         }
@@ -225,7 +225,7 @@ export default function LandingPage() {
         }
         .lp-footer-text {
           font-size: 10px;
-          color: #8a847d;
+          color: #999;
         }
 
         /* Phone */
@@ -242,9 +242,9 @@ export default function LandingPage() {
           overflow: hidden;
           position: relative;
           box-shadow:
-            0 0 0 1px rgba(255,255,255,0.02),
-            0 24px 80px rgba(0,0,0,0.5),
-            0 0 40px rgba(196, 144, 152, 0.04);
+            0 0 0 1px rgba(0,0,0,0.05),
+            0 24px 80px rgba(0,0,0,0.15),
+            0 0 40px rgba(196, 144, 152, 0.06);
         }
         .lp-phone::before {
           content: '';
@@ -465,7 +465,7 @@ export default function LandingPage() {
           transform: translate(-50%, -50%);
           width: 340px;
           height: 440px;
-          background: radial-gradient(circle, rgba(196, 144, 152, 0.06) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(196, 144, 152, 0.08) 0%, transparent 70%);
           pointer-events: none;
           z-index: -1;
         }
@@ -570,13 +570,11 @@ export default function LandingPage() {
               </a>
             </div>
             <div className="lp-footer-text">
-              <a href="/why-kine" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Why Kine</a>
+              <a href="/why-kine" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#CCC' }}>Why Kine</a>
               {' · '}
-              <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Terms</a>
+              <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#CCC' }}>Terms</a>
               {' · '}
-              <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Privacy</a>
-              {' · '}
-              <a href="/internal" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Internal</a>
+              <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#CCC' }}>Privacy</a>
               {' · '}
               &copy; 2026 Kinē
             </div>
