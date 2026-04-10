@@ -398,12 +398,16 @@ export default function SessionPage() {
     const result = await analyseSession(logs, day?.sessionTitle || "", effort, soreness);
     setAnalysis(result);
 
-    // Persist analysis changes to the saved session record
-    if (result?.changes?.length) {
+    // Persist analysis to the saved session record
+    if (result?.changes?.length || result?.exerciseFeedback?.length) {
       const latestStore = useKineStore.getState();
       const sessions = [...latestStore.progressDB.sessions] as import("@/store/useKineStore").SessionRecord[];
       if (sessions.length > 0) {
-        sessions[sessions.length - 1] = { ...sessions[sessions.length - 1], changes: result.changes };
+        sessions[sessions.length - 1] = {
+          ...sessions[sessions.length - 1],
+          changes: result.changes,
+          exerciseFeedback: result.exerciseFeedback,
+        };
         latestStore.setProgressDB({ ...latestStore.progressDB, sessions });
       }
     }
@@ -541,6 +545,16 @@ export default function SessionPage() {
             index={i}
             exercise={ex}
             log={logs[i]}
+            lastFeedback={(() => {
+              const curWeek = progressDB.currentWeek || 1;
+              const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+              for (let j = sessions.length - 1; j >= 0; j--) {
+                if (sessions[j].weekNum === curWeek) continue;
+                const fb = sessions[j].exerciseFeedback?.find((f) => f.name === ex.name);
+                if (fb) return { verdict: fb.verdict, note: fb.note };
+              }
+              return undefined;
+            })()}
             expanded={expandedEx === i}
             onToggle={() => setExpandedEx(expandedEx === i ? null : i)}
             onUpdateSet={updateSet}

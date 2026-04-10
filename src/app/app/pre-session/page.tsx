@@ -836,6 +836,21 @@ export default function PreSessionPage() {
                     ))}
                   </div>
                 )}
+                {/* Per-exercise feedback from a previous session */}
+                {(() => {
+                  const curWeek = progressDB.currentWeek || 1;
+                  const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+                  for (let j = sessions.length - 1; j >= 0; j--) {
+                    if (sessions[j].weekNum === curWeek) continue;
+                    const fb = sessions[j].exerciseFeedback?.find((f) => f.name === ex.name);
+                    if (fb) return (
+                      <p className="mt-1.5 text-[11px] text-accent/80 font-light leading-snug">
+                        Last time: {fb.note}
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             );
           })}

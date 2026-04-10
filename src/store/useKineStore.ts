@@ -110,6 +110,7 @@ export interface SessionRecord {
   logs?: Record<string, unknown>;
   prs?: { name: string; weight: number; reps: number }[];
   changes?: { icon: string; title: string; detail: string }[];
+  exerciseFeedback?: { name: string; verdict: string; note: string }[];
 }
 
 interface KineState {

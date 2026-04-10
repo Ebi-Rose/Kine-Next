@@ -730,28 +730,40 @@ function WeekView({
             );
           })()}
 
-          {/* Feedback from matching past session */}
+          {/* Per-exercise feedback from past sessions, filtered to today's exercises */}
           {(() => {
-            const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
             const todayDay = displayWeek.days[todayIdx];
             if (todayDay?.isRest) return null;
+            const todayExNames = new Set(todayDay.exercises.map((e) => e.name));
             const curWeek = progressDB.currentWeek || 1;
-            const match = sessions
-              .filter((s) => s.dayIdx === todayIdx && s.weekNum !== curWeek)
-              .at(-1);
-            if (!match?.changes?.length) return null;
+            const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+
+            // Collect the most recent feedback for each of today's exercises
+            const feedbackItems: { name: string; verdict: string; note: string }[] = [];
+            const seen = new Set<string>();
+            for (let i = sessions.length - 1; i >= 0; i--) {
+              if (sessions[i].weekNum === curWeek) continue;
+              for (const fb of sessions[i].exerciseFeedback || []) {
+                if (todayExNames.has(fb.name) && !seen.has(fb.name)) {
+                  seen.add(fb.name);
+                  feedbackItems.push(fb);
+                }
+              }
+              if (seen.size >= todayExNames.size) break;
+            }
+            if (feedbackItems.length === 0) return null;
+
+            const verdictIcons: Record<string, string> = { strong: "💪", solid: "✓", building: "↗", adjust: "⚠" };
             return (
               <div className="mb-4 rounded-[14px] border border-white/[0.06] bg-surface/50 p-4">
-                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">
-                  From your last {match.title || "session"}
-                </p>
+                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">From last session</p>
                 <div className="flex flex-col gap-1.5">
-                  {match.changes.map((c, i) => (
+                  {feedbackItems.map((fb, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <span className="text-xs shrink-0 mt-0.5">{c.icon}</span>
+                      <span className="text-xs shrink-0 mt-0.5">{verdictIcons[fb.verdict] || "→"}</span>
                       <div className="min-w-0">
-                        <p className="text-xs text-text">{c.title}</p>
-                        <p className="text-[10px] text-muted2 font-light">{c.detail}</p>
+                        <p className="text-xs text-text">{fb.name}</p>
+                        <p className="text-[10px] text-muted2 font-light">{fb.note}</p>
                       </div>
                     </div>
                   ))}

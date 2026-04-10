@@ -14,7 +14,7 @@ import { weightUnit, weightUnitPerSide } from "@/lib/format";
 import Button from "@/components/Button";
 
 export default function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, onQuickSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [],
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, onQuickSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [], lastFeedback,
 }: {
   index: number;
   exercise: {
@@ -52,6 +52,7 @@ export default function ExerciseCard({
   onClearPrefill?: (exIdx: number) => void;
   eduMode?: string;
   conditions?: string[];
+  lastFeedback?: { verdict: string; note: string };
 }) {
   const system = useKineStore((s) => s.measurementSystem) || "metric";
   const unit = weightUnit(system);
@@ -265,6 +266,13 @@ export default function ExerciseCard({
             {/* Breathing cue */}
             {breathCue && (
               <p className="mb-3 text-[10px] text-accent italic">{breathCue}</p>
+            )}
+
+            {/* Per-exercise coach feedback from last time */}
+            {lastFeedback && (
+              <p className="mb-3 text-[10px] text-accent/80 font-light italic">
+                Last time: {lastFeedback.note}
+              </p>
             )}
 
             {/* Progression suggestion — user always has final say */}
