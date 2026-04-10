@@ -454,6 +454,14 @@ function WeekView({
   const weekStart = getWeekDateRange(progressDB.currentWeek, progressDB.programStartDate);
   const trainingPhase = getCurrentPhaseInfo(progressDB.currentWeek, progressDB.phaseOffset);
 
+  // Detect if the programme week is ahead of the calendar week (e.g. built week 2 mid-week-1)
+  const programmeMonday = getProgrammeWeekMonday(progressDB.currentWeek || 1, progressDB.programStartDate);
+  const calendarNow = appNow();
+  const calendarDow = calendarNow.getDay() === 0 ? 6 : calendarNow.getDay() - 1;
+  const calendarMonday = new Date(calendarNow);
+  calendarMonday.setDate(calendarNow.getDate() - calendarDow);
+  const isNextWeek = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
+
   // Week navigation: past weeks from history, current week is live
   const isViewingPast = viewingPastIdx !== null;
   const displayWeek = isViewingPast
@@ -564,7 +572,7 @@ function WeekView({
               viewTab === "week" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
             }`}
           >
-            Week
+            {isNextWeek ? "Next Week" : "Week"}
           </button>
         </div>
       )}
@@ -814,16 +822,16 @@ function WeekView({
                 {displayWeek.days.map((day, i) => {
                   const hasSession = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
                     .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
-                  const isCompleted = hasSession && (isViewingPast || i <= todayIdx);
+                  const isCompleted = hasSession && (isViewingPast || (!isNextWeek && i <= todayIdx));
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
                   const dateLabel = dayDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
-                      isToday={!isViewingPast && i === todayIdx}
+                      isToday={!isViewingPast && !isNextWeek && i === todayIdx}
                       isCompleted={isCompleted}
-                      isPast={isViewingPast || i < todayIdx}
+                      isPast={isViewingPast || (!isNextWeek && i < todayIdx)}
                       expanded={false}
                       readOnly={isViewingPast}
                       dateStr={dateLabel}
