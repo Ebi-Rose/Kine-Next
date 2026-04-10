@@ -72,13 +72,19 @@ export default function WeekCheckinPage() {
   const [scheduleFeeling, setScheduleFeeling] = useState<"too_easy" | "about_right" | "too_much" | null>(null);
   const [notes, setNotes] = useState("");
 
-  const weekNum = progressDB.currentWeek;
   const plannedDays = parseInt(days || "3");
+
+  // Use the most recent session's weekNum — handles time-travel where
+  // currentWeek may not match the sessions that actually exist.
+  const allSessions = progressDB.sessions as SessionRecord[];
+  const latestSessionWeek = allSessions.length > 0
+    ? allSessions[allSessions.length - 1].weekNum || progressDB.currentWeek
+    : progressDB.currentWeek;
+  const weekNum = latestSessionWeek;
 
   // Gate: don't allow check-in if programme hasn't started or no sessions completed
   const programmeStarted = isProgrammeStarted(progressDB.programStartDate);
-  const weekSessCount = (progressDB.sessions as SessionRecord[])
-    .filter((s) => s.weekNum === weekNum).length;
+  const weekSessCount = allSessions.filter((s) => s.weekNum === weekNum).length;
 
   if (!programmeStarted || weekSessCount === 0) {
     return (
