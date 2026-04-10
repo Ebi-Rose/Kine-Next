@@ -478,7 +478,7 @@ function WeekView({
   // Sessions for the current programme week, filtered to those logged up to "now"
   // (respects dev time override so time-travel works correctly)
   const todayISO = appTodayISO();
-  const currentWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string }[])
+  const currentWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
     .filter((s) => s.weekNum === (progressDB.currentWeek || 1) && (!s.date || s.date <= todayISO));
 
   // Week navigation: past weeks from history, current week is live
