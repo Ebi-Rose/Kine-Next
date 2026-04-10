@@ -61,6 +61,7 @@ export default function ExerciseCard({
   useExerciseVideosReady();
   const [showVideoInline, setShowVideoInline] = useState(false);
   const [showRationale, setShowRationale] = useState(false);
+  const [reverted, setReverted] = useState(false);
 
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -294,32 +295,33 @@ export default function ExerciseCard({
                   )}
                 </div>
                 <p className="text-[10px] text-text mt-1">{progression.reason}</p>
-                {progression.confidence === "ready" && progression.suggestedWeight !== progression.currentWeight && (
+                {(progression.confidence === "ready" || progression.confidence === "deload") && progression.suggestedWeight !== progression.currentWeight && (
                   <div className="flex items-center gap-2 mt-1.5">
-                    <button
-                      onClick={() => {
-                        log.actual.forEach((_, setIdx) => {
-                          onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
-                        });
-                      }}
-                      className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
-                    >
-                      Use last weight ({progression.currentWeight}{progression.unit})
-                    </button>
-                  </div>
-                )}
-                {progression.confidence === "deload" && (
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <button
-                      onClick={() => {
-                        log.actual.forEach((_, setIdx) => {
-                          onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
-                        });
-                      }}
-                      className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
-                    >
-                      Use last weight ({progression.currentWeight}{progression.unit})
-                    </button>
+                    {!reverted ? (
+                      <button
+                        onClick={() => {
+                          log.actual.forEach((_, setIdx) => {
+                            onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
+                          });
+                          setReverted(true);
+                        }}
+                        className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
+                      >
+                        Use last weight ({progression.currentWeight}{progression.unit})
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          log.actual.forEach((_, setIdx) => {
+                            onUpdateSet(index, setIdx, "weight", String(progression.suggestedWeight));
+                          });
+                          setReverted(false);
+                        }}
+                        className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
+                      >
+                        Use suggested weight ({progression.suggestedWeight}{progression.unit})
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
