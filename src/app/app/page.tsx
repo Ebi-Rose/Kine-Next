@@ -462,6 +462,12 @@ function WeekView({
   calendarMonday.setDate(calendarNow.getDate() - calendarDow);
   const isNextWeek = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
 
+  // Sessions for the current programme week, filtered to those logged up to "now"
+  // (respects dev time override so time-travel works correctly)
+  const todayISO = appTodayISO();
+  const currentWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string }[])
+    .filter((s) => s.weekNum === (progressDB.currentWeek || 1) && (!s.date || s.date <= todayISO));
+
   // Week navigation: past weeks from history, current week is live
   const isViewingPast = viewingPastIdx !== null;
   const displayWeek = isViewingPast
@@ -654,11 +660,8 @@ function WeekView({
 
           {/* Week complete celebration — Today tab only */}
           {(() => {
-            const curWeek = progressDB.currentWeek || 1;
-            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-              .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const WEEK_COMPLETE_MESSAGES = [
                 "Consistency beats intensity. You showed up.",
                 "Another week in the book. That's how progress works.",
@@ -670,7 +673,7 @@ function WeekView({
                 <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
                   <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {progressDB.currentWeek} complete</p>
                   <p className="font-display text-xl tracking-wide text-text">
-                    {weekSessions.length} sessions done
+                    {currentWeekSessions.length} sessions done
                   </p>
                   <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
                     {msg}
@@ -683,9 +686,7 @@ function WeekView({
 
           {/* Running week overview — written summary */}
           {(() => {
-            const curWeek = progressDB.currentWeek || 1;
-            const ws = (progressDB.sessions as import("@/store/useKineStore").SessionRecord[])
-              .filter((s) => s.weekNum === curWeek);
+            const ws = currentWeekSessions as import("@/store/useKineStore").SessionRecord[];
             if (ws.length === 0) return null;
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             const efforts = ws.map((s) => s.effort).filter((e): e is number => e != null);
@@ -784,8 +785,7 @@ function WeekView({
               {/* Today's session card — compact, matches other days */}
               {(() => {
                 const todayDay = displayWeek.days[todayIdx];
-                const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                  .some((s) => s.weekNum === (progressDB.currentWeek || 1) && s.dayIdx === todayIdx);
+                const isCompleted = currentWeekSessions.some((s) => s.dayIdx === todayIdx);
                 return (
                   <DayCard
                     day={todayDay} dayIdx={todayIdx}
@@ -818,20 +818,18 @@ function WeekView({
           {/* Session completion summary — current week only, compact on Week tab */}
           {!isViewingPast && (() => {
             const curWeek = progressDB.currentWeek || 1;
-            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-              .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (weekSessions.length < trainingDayCount && trainingDayCount > 0) {
+            if (currentWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-muted2">
-                  {weekSessions.length}/{trainingDayCount} sessions done this week
+                  {currentWeekSessions.length}/{trainingDayCount} sessions done this week
                 </p>
               );
             }
-            if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-accent/70">
-                  All {weekSessions.length} sessions complete this week
+                  All {currentWeekSessions.length} sessions complete this week
                 </p>
               );
             }
@@ -859,8 +857,10 @@ function WeekView({
             return (
               <div className="flex flex-col gap-2">
                 {displayWeek.days.map((day, i) => {
-                  const hasSession = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                    .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
+                  const hasSession = isViewingPast
+                    ? (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                        .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i)
+                    : currentWeekSessions.some((s) => s.dayIdx === i);
                   const isCompleted = hasSession && (isViewingPast || (!isNextWeek && i <= todayIdx));
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
@@ -884,11 +884,8 @@ function WeekView({
 
           {/* Next week preview */}
           {!isViewingPast && (() => {
-            const curWeek = progressDB.currentWeek || 1;
-            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
-              .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const nextWeekNum = (progressDB.currentWeek || 1) + 1;
               const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
               return (
