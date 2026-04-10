@@ -72,9 +72,9 @@ export default function AdaptationCard() {
 
   if (latestFeedback) {
     if (latestFeedback.effort >= 3) {
-      tags.push({ label: "Effort trending high", variant: "feedback" });
+      tags.push({ label: "High effort", variant: "feedback" });
     } else if (latestFeedback.soreness >= 3) {
-      tags.push({ label: "Soreness elevated", variant: "feedback" });
+      tags.push({ label: "Body is sore", variant: "feedback" });
     } else if (latestFeedback.scheduleFeeling === "too_much") {
       tags.push({ label: "Schedule feeling heavy", variant: "feedback" });
     }

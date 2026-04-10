@@ -763,7 +763,7 @@ function WeekView({
 
             // PRs
             if (totalPRs > 0) {
-              parts.push(totalPRs === 1 ? "1 personal record hit." : `${totalPRs} personal records hit.`);
+              parts.push(totalPRs === 1 ? "Hit 1 new PR." : `Hit ${totalPRs} new PRs.`);
             }
 
             return (

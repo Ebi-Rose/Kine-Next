@@ -101,7 +101,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
         ...base,
         suggestedWeight: next,
         confidence: "ready",
-        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps at ${displayWeight}${unit} two sessions running`,
+        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps at ${displayWeight}${unit} for two sessions straight`,
       };
     }
   }
