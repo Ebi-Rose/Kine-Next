@@ -40,6 +40,39 @@ export default function DevPanel() {
     }
     setDevDateOverride(d);
     setDateOverride(dateStr);
+
+    // When going back in time, strip future-dated data so the app
+    // looks exactly as it would have at that point.
+    const nowISO = new Date().toISOString().split("T")[0];
+    if (dateStr < nowISO) {
+      const { progressDB, setProgressDB, setWeekData, weekData } = store;
+      const sessions = (progressDB.sessions as { date?: string; weekNum?: number }[])
+        .filter((s) => !s.date || s.date <= dateStr);
+      const lifts = { ...progressDB.lifts };
+      for (const key of Object.keys(lifts)) {
+        lifts[key] = lifts[key].filter((e: { date: string }) => e.date <= dateStr);
+      }
+      // Find the highest weekNum still present after filtering
+      const maxWeek = sessions.reduce((m, s) => Math.max(m, s.weekNum || 1), 1);
+      const feedbackHistory = progressDB.weekFeedbackHistory.filter(
+        (f) => f.weekNum <= maxWeek
+      );
+      setProgressDB({
+        ...progressDB,
+        sessions,
+        lifts,
+        currentWeek: maxWeek,
+        weekFeedbackHistory: feedbackHistory,
+      });
+      // If we rewound past the current week, load week data from history
+      if (maxWeek < (progressDB.currentWeek || 1) && store.weekHistory.length > 0) {
+        const histWeek = store.weekHistory.find(
+          (w) => (w as { _weekNum?: number })._weekNum === maxWeek
+        );
+        if (histWeek) setWeekData(histWeek as typeof weekData);
+      }
+    }
+
     toast(`App time set to ${dateStr}`, "success");
   }
 
