@@ -11,7 +11,8 @@ import { apiFetchStreaming } from "@/lib/api";
 import { findExercise, EXERCISE_LIBRARY } from "@/data/exercise-library";
 import { buildWarmup } from "@/lib/warmup-engine";
 import { trimSessionToTime, estimateSessionTime } from "@/lib/time-budget";
-import { displayToKg, kgToDisplay } from "@/lib/format";
+import { displayToKg, kgToDisplay, weightUnit } from "@/lib/format";
+import { getProgressionSuggestion } from "@/lib/progression";
 import { toast } from "@/components/Toast";
 import Button from "@/components/Button";
 import MuscleDiagram from "@/components/MuscleDiagram";
@@ -81,10 +82,13 @@ export default function SessionPage() {
       const numSets = parseInt(ex.sets) || 3;
       const history = lifts[ex.name];
       const lastLift = history && history.length > 0 ? history[history.length - 1] : null;
-      // Convert stored kg to display unit
-      const prefillWeight = lastLift?.weight
-        ? String(kgToDisplay(lastLift.weight, system))
-        : "";
+      // Use progression suggestion if available, otherwise fall back to last weight
+      const progression = getProgressionSuggestion(ex.name);
+      const prefillWeight = progression
+        ? String(progression.suggestedWeight)
+        : lastLift?.weight
+          ? String(kgToDisplay(lastLift.weight, system))
+          : "";
       initial[i] = {
         name: ex.name,
         planned: { sets: ex.sets, reps: ex.reps },

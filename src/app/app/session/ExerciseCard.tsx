@@ -294,18 +294,8 @@ export default function ExerciseCard({
                   )}
                 </div>
                 <p className="text-[10px] text-text mt-1">{progression.reason}</p>
-                {progression.confidence === "ready" && (
+                {progression.confidence === "ready" && progression.suggestedWeight !== progression.currentWeight && (
                   <div className="flex items-center gap-2 mt-1.5">
-                    <button
-                      onClick={() => {
-                        log.actual.forEach((_, setIdx) => {
-                          onUpdateSet(index, setIdx, "weight", String(progression.suggestedWeight));
-                        });
-                      }}
-                      className="rounded bg-accent/15 px-2 py-0.5 text-[10px] text-accent hover:bg-accent/25 transition-colors"
-                    >
-                      Use {progression.suggestedWeight}{progression.unit}
-                    </button>
                     <button
                       onClick={() => {
                         log.actual.forEach((_, setIdx) => {
@@ -314,7 +304,7 @@ export default function ExerciseCard({
                       }}
                       className="text-[10px] text-muted hover:text-text transition-colors"
                     >
-                      Stay at {progression.currentWeight}{progression.unit}
+                      Use last weight ({progression.currentWeight}{progression.unit})
                     </button>
                   </div>
                 )}
@@ -323,22 +313,12 @@ export default function ExerciseCard({
                     <button
                       onClick={() => {
                         log.actual.forEach((_, setIdx) => {
-                          onUpdateSet(index, setIdx, "weight", String(progression.suggestedWeight));
-                        });
-                      }}
-                      className="rounded bg-warning/15 px-2 py-0.5 text-[10px] text-warning hover:bg-warning/25 transition-colors"
-                    >
-                      Start at {progression.suggestedWeight}{progression.unit}
-                    </button>
-                    <button
-                      onClick={() => {
-                        log.actual.forEach((_, setIdx) => {
                           onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
                         });
                       }}
                       className="text-[10px] text-muted hover:text-text transition-colors"
                     >
-                      Resume at {progression.currentWeight}{progression.unit}
+                      Use last weight ({progression.currentWeight}{progression.unit})
                     </button>
                   </div>
                 )}
