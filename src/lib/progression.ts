@@ -56,6 +56,13 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
   // Display weights (stored in kg, convert for display)
   const displayWeight = kgToDisplay(latest.weight, system);
 
+  // Relative time label for the last entry
+  const daysSinceLast = getDaysSinceLastSession(exerciseName) ?? 0;
+  const timeLabel = daysSinceLast <= 3 ? "last session"
+    : daysSinceLast <= 9 ? "last week"
+    : daysSinceLast <= 16 ? "2 weeks ago"
+    : `${Math.round(daysSinceLast / 7)} weeks ago`;
+
   // Volume tracking (use raw kg for consistency)
   const currentVolume = latest.weight * latestReps;
   const previousVolume = history.length >= 2
@@ -94,7 +101,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
         ...base,
         suggestedWeight: next,
         confidence: "ready",
-        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps at ${displayWeight}${unit} two sessions in a row`,
+        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps at ${displayWeight}${unit} two sessions running`,
       };
     }
   }
@@ -106,7 +113,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
       ...base,
       suggestedWeight: next,
       confidence: "ready",
-      reason: `Increased to ${next}${unit} — you hit ${latestReps} reps at ${displayWeight}${unit} last session`,
+      reason: `Increased to ${next}${unit} — you hit ${latestReps} reps at ${displayWeight}${unit} ${timeLabel}`,
     };
   }
 
@@ -116,7 +123,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
       ...base,
       suggestedWeight: displayWeight,
       confidence: "hold",
-      reason: `Staying at ${displayWeight}${unit} — you hit ${latestReps} reps last session, one more to confirm`,
+      reason: `Staying at ${displayWeight}${unit} — you hit ${latestReps} reps ${timeLabel}, one more to confirm`,
     };
   }
 
