@@ -752,8 +752,8 @@ function WeekView({
 
             // Effort
             if (avgEffort != null) {
-              const effortWords = ["", "light", "moderate", "hard", "all-out"];
-              parts.push(`Effort has been ${effortWords[avgEffort]}.`);
+              const effortPhrases = ["", "Sessions felt light.", "Solid effort across sessions.", "You've been pushing hard.", "All-out intensity this week."];
+              parts.push(effortPhrases[avgEffort]);
             }
 
             // Soreness
