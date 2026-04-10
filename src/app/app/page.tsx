@@ -911,9 +911,9 @@ function WeekView({
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
-                      isToday={!isViewingPast && !isNextWeek && i === todayIdx}
+                      isToday={!isViewingPast && i === todayIdx}
                       isCompleted={isCompleted}
-                      isPast={isViewingPast || (!isNextWeek && i < todayIdx)}
+                      isPast={isViewingPast || i < todayIdx}
                       expanded={false}
                       readOnly={isViewingPast}
                       dateStr={dateLabel}
