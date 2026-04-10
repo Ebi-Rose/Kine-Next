@@ -782,7 +782,7 @@ function WeekView({
             const weekSessions = (progressDB.sessions as { weekNum?: number }[])
               .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
+            if (weekSessions.length < trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-muted2">
                   {weekSessions.length}/{trainingDayCount} sessions done this week
