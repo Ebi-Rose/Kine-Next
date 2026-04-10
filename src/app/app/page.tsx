@@ -930,8 +930,6 @@ function WeekView({
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const nextWeekNum = effectiveWeekNum + 1;
-              // Don't show if the next week is already the current programme week (already built)
-              if (nextWeekNum <= (progressDB.currentWeek || 1)) return null;
               const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
               return (
                 <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4 text-center">
