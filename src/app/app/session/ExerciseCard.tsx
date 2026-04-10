@@ -43,7 +43,7 @@ export default function ExerciseCard({
   onSkip: (exIdx: number) => void;
   onUnskip: (exIdx: number) => void;
   onSwap: (exIdx: number) => void;
-  onQuickSwap?: (exIdx: number, newName: string) => void;
+  onQuickSwap?: (exIdx: number, newName: string, meta?: { note?: string; remember?: boolean }) => void;
   swapLoading: boolean;
   onVideoPlay?: (url: string) => void;
   onVideoSheet?: (name: string) => void;
@@ -62,6 +62,9 @@ export default function ExerciseCard({
   const [showVideoInline, setShowVideoInline] = useState(false);
   const [showRationale, setShowRationale] = useState(false);
   const [reverted, setReverted] = useState(false);
+  const [pendingSwap, setPendingSwap] = useState<string | null>(null);
+  const [swapNote, setSwapNote] = useState("");
+  const [swapRemember, setSwapRemember] = useState(false);
 
   if (!log) return null;
   const skipped = log.saved && log.actual.length === 0;
@@ -434,19 +437,7 @@ export default function ExerciseCard({
               <Button size="sm" className="flex-1" onClick={() => onSave(index)}>Save</Button>
             </div>
 
-            {/* Skill path action — video is already playable from the header thumbnail */}
-            {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && onSkillPath && (
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => onSkillPath(exercise.name)}
-                  className="flex items-center gap-1.5 rounded-lg bg-surface2/50 px-2.5 py-1.5 text-[10px] text-muted2 hover:text-accent transition-colors"
-                >
-                  ↕ Adjust difficulty
-                </button>
-              </div>
-            )}
-
-            {/* #17: Exercise stall detection */}
+{/* #17: Exercise stall detection */}
             {(() => {
               const stallWeeks = getExerciseStallWeeks(exercise.name);
               if (stallWeeks >= 3) {
@@ -494,33 +485,81 @@ export default function ExerciseCard({
             )}
             </>)}
 
-            {/* Skill path hint (inline preview) — tap to auto-swap */}
+            {/* Difficulty adjustment — two-step: pick variant, then confirm */}
             {skillPath && (skillPath.easier.length > 0 || skillPath.harder.length > 0) && (
               <div className="mt-3 rounded-lg bg-surface2/50 px-3 py-2">
-                <p className="text-[9px] tracking-wider text-muted uppercase mb-1">Difficulty</p>
-                {skillPath.hint && <p className="text-[10px] text-muted2 mb-1.5">{skillPath.hint}</p>}
-                <div className="flex flex-wrap gap-2 text-[10px]">
-                  {skillPath.easier.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => onQuickSwap?.(index, skillPath.easier.slice(-1)[0])}
-                      disabled={!onQuickSwap}
-                      className="text-success underline underline-offset-2 decoration-success/30 hover:decoration-success transition-colors disabled:no-underline disabled:cursor-default"
-                    >
-                      ← Easier: {skillPath.easier.slice(-1)[0]}
-                    </button>
-                  )}
-                  {skillPath.harder.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => onQuickSwap?.(index, skillPath.harder[0])}
-                      disabled={!onQuickSwap}
-                      className="text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors disabled:no-underline disabled:cursor-default"
-                    >
-                      Harder: {skillPath.harder[0]} →
-                    </button>
-                  )}
-                </div>
+                {!pendingSwap ? (
+                  <>
+                    <p className="text-[9px] tracking-wider text-muted uppercase mb-1">Difficulty</p>
+                    {skillPath.hint && <p className="text-[10px] text-muted2 mb-1.5">{skillPath.hint}</p>}
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      {skillPath.easier.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPendingSwap(skillPath.easier.slice(-1)[0])}
+                          className="text-success underline underline-offset-2 decoration-success/30 hover:decoration-success transition-colors"
+                        >
+                          ← Easier: {skillPath.easier.slice(-1)[0]}
+                        </button>
+                      )}
+                      {skillPath.harder.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPendingSwap(skillPath.harder[0])}
+                          className="text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
+                        >
+                          Harder: {skillPath.harder[0]} →
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[9px] tracking-wider text-muted uppercase mb-1">
+                      Switching to {pendingSwap}
+                    </p>
+                    <textarea
+                      value={swapNote}
+                      onChange={(e) => setSwapNote(e.target.value)}
+                      placeholder="Why this change? (optional)"
+                      className="w-full mt-1 rounded-lg border border-border bg-bg px-2.5 py-1.5 text-[11px] text-text placeholder:text-muted resize-none outline-none focus:border-accent"
+                      rows={2}
+                    />
+                    <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={swapRemember}
+                        onChange={(e) => setSwapRemember(e.target.checked)}
+                        className="rounded border-border accent-accent"
+                      />
+                      <span className="text-[10px] text-muted2">Remember for future sessions</span>
+                    </label>
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onQuickSwap?.(index, pendingSwap, {
+                            note: swapNote.trim() || undefined,
+                            remember: swapRemember || undefined,
+                          });
+                          setPendingSwap(null);
+                          setSwapNote("");
+                          setSwapRemember(false);
+                        }}
+                        className="rounded bg-accent/15 px-2.5 py-1 text-[10px] text-accent hover:bg-accent/25 transition-colors"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setPendingSwap(null); setSwapNote(""); setSwapRemember(false); }}
+                        className="text-[10px] text-muted hover:text-text transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>

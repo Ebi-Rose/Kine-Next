@@ -567,9 +567,7 @@ export default function SessionPage() {
             onSkip={skipExercise}
             onUnskip={unskipExercise}
             onSwap={(idx) => setSwapSheetIdx(idx)}
-            onQuickSwap={(idx, newName) => {
-              // Direct swap from the "Easier/Harder" skill-path buttons.
-              // Mirrors the full ExerciseSwapSheet onSwap handler below.
+            onQuickSwap={(idx, newName, meta) => {
               const store = useKineStore.getState();
               const updatedWeek = { ...week! };
               const updatedDays = [...updatedWeek.days];
@@ -583,7 +581,9 @@ export default function SessionPage() {
                   ...previous,
                   name: newName,
                   swappedFrom: previous.swappedFrom ?? previous.name,
-                  swappedReason: previous.swappedReason ?? "user",
+                  swappedReason: meta?.note ? "user" : (previous.swappedReason ?? "user"),
+                  swapNote: meta?.note,
+                  swapRemember: meta?.remember,
                   useOriginal: false,
                 };
               }
@@ -591,11 +591,16 @@ export default function SessionPage() {
               updatedDays[dayIdx] = updatedDay;
               updatedWeek.days = updatedDays;
               store.setWeekData(updatedWeek);
+              // Persist "remember" preference for future weeks
+              if (meta?.remember && targetName) {
+                const original = updatedExercises[origIdx >= 0 ? origIdx : 0]?.swappedFrom ?? targetName;
+                store.setSkillPreferences({ ...store.skillPreferences, [original]: newName });
+              }
               setLogs((prev) => ({
                 ...prev,
                 [idx]: { ...prev[idx], name: newName, saved: false, actual: prev[idx].actual.map(() => ({ reps: "", weight: "" })) },
               }));
-              toast(`Swapped to ${newName}`, "success");
+              toast(`Switched to ${newName}`, "success");
             }}
             swapLoading={false}
             onVideoPlay={(url) => setVideoUrl(url)}
