@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 export default function WhyKinePage() {
   const check = (
@@ -127,6 +128,12 @@ export default function WhyKinePage() {
         .wk-founder-name span {
           color: #999;
           font-weight: 300;
+        }
+        .wk-founder-img {
+          float: right;
+          margin: 0 0 16px 28px;
+          border-radius: 4px;
+          object-fit: cover;
         }
 
         /* Section labels */
@@ -304,6 +311,13 @@ export default function WhyKinePage() {
           .wk-cta h3 { font-size: 1.8rem; }
           .wk-trust-grid { grid-template-columns: 1fr; }
           .wk-founder { padding: 24px 20px; }
+          .wk-founder-img {
+            float: none;
+            display: block;
+            margin: 0 auto 20px;
+            width: 100% !important;
+            height: auto !important;
+          }
         }
 
         @media print {
@@ -336,6 +350,13 @@ export default function WhyKinePage() {
         {/* Founder */}
         <div className="wk-founder">
           <div className="wk-founder-label">Why I Built This</div>
+          <Image
+            src="/founder-ebi-rose.jpg"
+            alt="Ebi-Rose, founder of Kine"
+            width={220}
+            height={293}
+            className="wk-founder-img"
+          />
           <p>I came into the gym midway through losing 65 kg. That was over a decade ago. The first few years I had no idea what I was doing &mdash; no coach, no program, just showing up and figuring it out. I slipped a disc. Messed up both shoulders. Went through phases where I was overtraining and getting absolutely nowhere. I have PCOS, and not a single app I used even knew what that was.</p>
           <p>I eventually got proper coaching and started learning from everyone I could &mdash; physios, trainers, doctors, other women who&apos;d been through the same thing. And the more I learned, the more I noticed the same pattern. Women around me were stopping training because of conditions nobody was helping them with. Or they were just given the same program as everyone else and told to go lighter. The industry either treats you like a small man or hands you pink dumbbells. That&apos;s it. Those are your options.</p>
           <p>People kept asking me the same questions. Women who wanted to train but didn&apos;t know where to start, or had a condition and didn&apos;t know if they even could. I&apos;d been in there long enough to know the answers, and I realised nobody was building what we actually needed. So I built it. Everything I&apos;ve learned over ten years, shaped by professionals across every discipline this thing needed. I&apos;m a working solution to my own problem.</p>
