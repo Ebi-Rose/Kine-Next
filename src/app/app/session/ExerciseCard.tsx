@@ -302,7 +302,7 @@ export default function ExerciseCard({
                           onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
                         });
                       }}
-                      className="text-[10px] text-muted hover:text-text transition-colors"
+                      className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
                     >
                       Use last weight ({progression.currentWeight}{progression.unit})
                     </button>
@@ -316,7 +316,7 @@ export default function ExerciseCard({
                           onUpdateSet(index, setIdx, "weight", String(progression.currentWeight));
                         });
                       }}
-                      className="text-[10px] text-muted hover:text-text transition-colors"
+                      className="text-[10px] text-accent underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors"
                     >
                       Use last weight ({progression.currentWeight}{progression.unit})
                     </button>
