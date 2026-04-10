@@ -736,7 +736,7 @@ function WeekView({
 
             return (
               <div className="mb-4 rounded-[14px] border border-border/50 bg-surface/50 p-4">
-                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">Week {curWeek} so far</p>
+                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">Week {progressDB.currentWeek || 1} so far</p>
                 <p className="text-[11px] text-muted2 font-light leading-relaxed">
                   {parts.join(" ")}
                 </p>
