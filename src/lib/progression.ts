@@ -78,7 +78,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
       ...base,
       suggestedWeight: deloadWeight,
       confidence: "deload",
-      reason: `${daysSince} days since last session — start lighter to rebuild`,
+      reason: `Set to ${deloadWeight}${unit} — it's been ${daysSince} days, starting lighter to rebuild`,
     };
   }
 
@@ -89,32 +89,34 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
     const sameWeight = latest.weight === prev.weight;
 
     if (sameWeight && latestReps >= topOfRange && prevReps >= topOfRange) {
+      const next = displayWeight + increment;
       return {
         ...base,
-        suggestedWeight: displayWeight + increment,
+        suggestedWeight: next,
         confidence: "ready",
-        reason: `Hit ${topOfRange}+ reps twice at ${displayWeight}${unit} — ready to move up`,
+        reason: `Increased to ${next}${unit} — you hit ${topOfRange}+ reps twice at ${displayWeight}${unit}`,
       };
     }
   }
 
-  // Clearly exceeded the rep range — weight is too light, suggest increase now
+  // Clearly exceeded the rep range — weight is too light, increase now
   if (latestReps >= topOfRange + 2) {
+    const next = displayWeight + increment;
     return {
       ...base,
-      suggestedWeight: displayWeight + increment,
+      suggestedWeight: next,
       confidence: "ready",
-      reason: `Hit ${latestReps} reps at ${displayWeight}${unit} — weight is light, ready to move up`,
+      reason: `Increased to ${next}${unit} — you hit ${latestReps} reps at ${displayWeight}${unit}`,
     };
   }
 
-  // Single session at top of range — acknowledge but hold
+  // Single session at top of range — hold at current weight
   if (latestReps >= topOfRange) {
     return {
       ...base,
       suggestedWeight: displayWeight,
       confidence: "hold",
-      reason: `Hit ${latestReps} reps at ${displayWeight}${unit} — one more session to confirm`,
+      reason: `Staying at ${displayWeight}${unit} — hit ${latestReps} reps, one more session to confirm`,
     };
   }
 
@@ -123,7 +125,7 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
     ...base,
     suggestedWeight: displayWeight,
     confidence: "hold",
-    reason: `Building at ${displayWeight}${unit} — target ${topOfRange} reps before increasing`,
+    reason: `Staying at ${displayWeight}${unit} — target ${topOfRange} reps before increasing`,
   };
 }
 
