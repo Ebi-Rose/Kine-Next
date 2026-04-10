@@ -14,18 +14,30 @@ interface Props {
 }
 
 export default function SessionRearrange({ open, onClose }: Props) {
-  const { weekData, setWeekData } = useKineStore();
+  const { weekData, setWeekData, progressDB } = useKineStore();
   const [selected, setSelected] = useState<number | null>(null);
 
   const week = weekData as WeekData | null;
   if (!week) return null;
 
+  const curWeek = progressDB.currentWeek || 1;
+  const completedDayIdxs = new Set(
+    (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+      .filter((s) => s.weekNum === curWeek)
+      .map((s) => s.dayIdx)
+  );
+
   function handleDayClick(idx: number) {
+    // Don't allow rearranging completed sessions
+    if (completedDayIdxs.has(idx)) return;
     if (selected === null) {
       // First tap — select source
       setSelected(idx);
     } else if (selected === idx) {
       // Deselect
+      setSelected(null);
+    } else if (completedDayIdxs.has(idx)) {
+      // Can't swap into a completed slot
       setSelected(null);
     } else {
       // Second tap — swap the two days
@@ -58,10 +70,13 @@ export default function SessionRearrange({ open, onClose }: Props) {
           <button
             key={i}
             onClick={() => handleDayClick(i)}
+            disabled={completedDayIdxs.has(i)}
             className={`flex items-center justify-between rounded-[var(--radius-default)] border p-3 text-left transition-all ${
-              selected === i
-                ? "border-accent bg-accent-dim"
-                : "border-border bg-surface hover:border-border-active"
+              completedDayIdxs.has(i)
+                ? "border-border/30 bg-surface/30 opacity-50 cursor-not-allowed"
+                : selected === i
+                  ? "border-accent bg-accent-dim"
+                  : "border-border bg-surface hover:border-border-active"
             }`}
           >
             <div>
@@ -71,6 +86,9 @@ export default function SessionRearrange({ open, onClose }: Props) {
               <span className="ml-2 text-sm text-text">
                 {day.isRest ? "Rest" : day.sessionTitle}
               </span>
+              {completedDayIdxs.has(i) && (
+                <span className="ml-2 text-[9px] text-accent">Done</span>
+              )}
             </div>
             {!day.isRest && (
               <span className="text-[10px] text-muted">

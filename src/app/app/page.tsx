@@ -68,6 +68,23 @@ export default function AppHome() {
     const result = await buildWeek();
 
     if (result.weekData) {
+      // Preserve exercises for days that already have a completed session
+      const curWeek = store.progressDB.currentWeek || 1;
+      const completedDayIdxs = new Set(
+        (store.progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+          .filter((s) => s.weekNum === curWeek)
+          .map((s) => s.dayIdx)
+      );
+      const existingWeek = store.weekData as WeekData | null;
+      if (existingWeek && completedDayIdxs.size > 0) {
+        const mergedDays = result.weekData.days.map((newDay: WeekDay, i: number) => {
+          if (completedDayIdxs.has(i) && existingWeek.days[i]) {
+            return existingWeek.days[i]; // keep the original day
+          }
+          return newDay;
+        });
+        result.weekData = { ...result.weekData, days: mergedDays };
+      }
       setWeekData(result.weekData);
     }
 
@@ -887,7 +904,7 @@ function WeekView({
                     ? (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
                         .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i)
                     : currentWeekSessions.some((s) => s.dayIdx === i);
-                  const isCompleted = hasSession && (isViewingPast || (!isNextWeek && i <= todayIdx));
+                  const isCompleted = hasSession;
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
                   const dateLabel = dayDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
