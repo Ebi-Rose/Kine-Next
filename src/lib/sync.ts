@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { getUser, isDevBypass } from "./auth";
 import { useKineStore } from "@/store/useKineStore";
+import { appNow } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -107,6 +108,9 @@ async function doSync(retryCount = 0) {
         duration: store.duration,
         injuries: healthGranted ? store.injuries : [],
         injuryNotes: healthGranted ? store.injuryNotes : "",
+        outsideActivities: store.outsideActivities,
+        outsideActivityNotes: store.outsideActivityNotes,
+        outsideActivityFocus: store.outsideActivityFocus,
         conditions: healthGranted ? store.conditions : [],
         comfortFlags: healthGranted ? store.comfortFlags : {},
         cycleType: cycleToCloud ? store.cycleType : "none",
@@ -156,7 +160,7 @@ async function doSync(retryCount = 0) {
       {
         user_id: user.id,
         data: payload,
-        updated_at: new Date().toISOString(),
+        updated_at: appNow().toISOString(),
       },
       { onConflict: "user_id" }
     );
@@ -175,7 +179,7 @@ async function doSync(retryCount = 0) {
     if (personalName) {
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ name: personalName, updated_at: new Date().toISOString() })
+        .update({ name: personalName, updated_at: appNow().toISOString() })
         .eq("id", user.id);
       if (profileError) {
         console.warn("[sync] profiles.name update failed:", profileError.message);

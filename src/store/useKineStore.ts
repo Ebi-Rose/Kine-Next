@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, type StateStorage } from "zustand/middleware";
 import { encrypt, decrypt } from "@/lib/store-encryption";
+import { appNow } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 import type { CardId, TimeWindow } from "@/lib/progress-engine";
 
@@ -14,6 +15,7 @@ export type LifeStage =
   | "post_menopause"
   | null;
 export type CycleType = "regular" | "irregular" | "hormonal" | "perimenopause" | "na" | null;
+export type OutsideActivity = "running" | "swimming" | "cycling" | "team_sport" | "climbing" | "martial_arts" | "yoga_pilates";
 
 /**
  * User overrides for the Progress page personalization engine.
@@ -121,6 +123,9 @@ interface KineState {
   injuries: string[];
   injuryNotes: string;
   conditions: string[];    // 'pcos' | 'fibroids' | 'endometriosis' | 'pelvic_floor'
+  outsideActivities: OutsideActivity[];
+  outsideActivityNotes: string;
+  outsideActivityFocus: OutsideActivity | null;
   comfortFlags: string[];  // derived: 'impactSensitive' | 'proneSensitive'
   cycleType: CycleType;
   cyclePhase: string | null;
@@ -181,6 +186,9 @@ interface KineState {
   setDuration: (duration: Duration) => void;
   setInjuries: (injuries: string[]) => void;
   setInjuryNotes: (notes: string) => void;
+  setOutsideActivities: (activities: OutsideActivity[]) => void;
+  setOutsideActivityNotes: (notes: string) => void;
+  setOutsideActivityFocus: (focus: OutsideActivity | null) => void;
   setConditions: (conditions: string[]) => void;
   setCycleType: (cycleType: CycleType) => void;
   setCyclePhase: (phase: string | null) => void;
@@ -224,6 +232,9 @@ const initialOnboarding = {
   duration: null as Duration,
   injuries: [] as string[],
   injuryNotes: "",
+  outsideActivities: [] as OutsideActivity[],
+  outsideActivityNotes: "",
+  outsideActivityFocus: null as OutsideActivity | null,
   conditions: [] as string[],
   comfortFlags: [] as string[],
   cycleType: null as CycleType,
@@ -283,7 +294,7 @@ export const useKineStore = create<KineState>()(
       consents: [] as ConsentRecord[],
 
       // Sync metadata
-      _lastModifiedAt: new Date().toISOString(),
+      _lastModifiedAt: appNow().toISOString(),
 
       // Session
       currentDayIdx: null,
@@ -298,14 +309,17 @@ export const useKineStore = create<KineState>()(
       sessionTimeBudgets: {},
 
       // Actions (touch _lastModifiedAt on meaningful changes)
-      setGoal: (goal) => set({ goal, _lastModifiedAt: new Date().toISOString() }),
-      setExp: (exp) => set({ exp, _lastModifiedAt: new Date().toISOString() }),
-      setEquip: (equip) => set({ equip, _lastModifiedAt: new Date().toISOString() }),
-      setDays: (days) => set({ days, _lastModifiedAt: new Date().toISOString() }),
-      setTrainingDays: (days) => set({ trainingDays: days, _lastModifiedAt: new Date().toISOString() }),
-      setDuration: (duration) => set({ duration, _lastModifiedAt: new Date().toISOString() }),
-      setInjuries: (injuries) => set({ injuries, _lastModifiedAt: new Date().toISOString() }),
-      setInjuryNotes: (notes) => set({ injuryNotes: notes, _lastModifiedAt: new Date().toISOString() }),
+      setGoal: (goal) => set({ goal, _lastModifiedAt: appNow().toISOString() }),
+      setExp: (exp) => set({ exp, _lastModifiedAt: appNow().toISOString() }),
+      setEquip: (equip) => set({ equip, _lastModifiedAt: appNow().toISOString() }),
+      setDays: (days) => set({ days, _lastModifiedAt: appNow().toISOString() }),
+      setTrainingDays: (days) => set({ trainingDays: days, _lastModifiedAt: appNow().toISOString() }),
+      setDuration: (duration) => set({ duration, _lastModifiedAt: appNow().toISOString() }),
+      setInjuries: (injuries) => set({ injuries, _lastModifiedAt: appNow().toISOString() }),
+      setInjuryNotes: (notes) => set({ injuryNotes: notes, _lastModifiedAt: appNow().toISOString() }),
+      setOutsideActivities: (activities) => set({ outsideActivities: activities, _lastModifiedAt: appNow().toISOString() }),
+      setOutsideActivityNotes: (notes) => set({ outsideActivityNotes: notes, _lastModifiedAt: appNow().toISOString() }),
+      setOutsideActivityFocus: (focus) => set({ outsideActivityFocus: focus, _lastModifiedAt: appNow().toISOString() }),
       setConditions: (conditions) => {
         // Derive comfortFlags from conditions
         const comfortFlags: string[] = [];
@@ -315,22 +329,22 @@ export const useKineStore = create<KineState>()(
           comfortFlags.push("proneSensitive");
         if (conditions.includes("hypermobility"))
           comfortFlags.push("stabilityRequired");
-        set({ conditions, comfortFlags, _lastModifiedAt: new Date().toISOString() });
+        set({ conditions, comfortFlags, _lastModifiedAt: appNow().toISOString() });
       },
-      setCycleType: (cycleType) => set({ cycleType, _lastModifiedAt: new Date().toISOString() }),
-      setCyclePhase: (phase) => set({ cyclePhase: phase, _lastModifiedAt: new Date().toISOString() }),
-      setCycleLocalOnly: (val) => set({ cycleLocalOnly: val, _lastModifiedAt: new Date().toISOString() }),
-      setCycle: (cycle) => set({ cycle, _lastModifiedAt: new Date().toISOString() }),
-      setDayDurations: (durations) => set({ dayDurations: durations, _lastModifiedAt: new Date().toISOString() }),
-      setProgressDB: (db) => set({ progressDB: db, _lastModifiedAt: new Date().toISOString() }),
-      setEduMode: (mode) => set({ eduMode: mode, _lastModifiedAt: new Date().toISOString() }),
-      setUnits: (units) => set({ units, _lastModifiedAt: new Date().toISOString() }),
+      setCycleType: (cycleType) => set({ cycleType, _lastModifiedAt: appNow().toISOString() }),
+      setCyclePhase: (phase) => set({ cyclePhase: phase, _lastModifiedAt: appNow().toISOString() }),
+      setCycleLocalOnly: (val) => set({ cycleLocalOnly: val, _lastModifiedAt: appNow().toISOString() }),
+      setCycle: (cycle) => set({ cycle, _lastModifiedAt: appNow().toISOString() }),
+      setDayDurations: (durations) => set({ dayDurations: durations, _lastModifiedAt: appNow().toISOString() }),
+      setProgressDB: (db) => set({ progressDB: db, _lastModifiedAt: appNow().toISOString() }),
+      setEduMode: (mode) => set({ eduMode: mode, _lastModifiedAt: appNow().toISOString() }),
+      setUnits: (units) => set({ units, _lastModifiedAt: appNow().toISOString() }),
       setMeasurementSystem: (system) => set({
         measurementSystem: system,
         units: system === "imperial" ? "lbs" : "kg",
-        _lastModifiedAt: new Date().toISOString(),
+        _lastModifiedAt: appNow().toISOString(),
       }),
-      setCurrency: (currency) => set({ currency, _lastModifiedAt: new Date().toISOString() }),
+      setCurrency: (currency) => set({ currency, _lastModifiedAt: appNow().toISOString() }),
       setWeekData: (data) => set((state) => {
         // Archive current week only when replaced by a *different* week (new week built).
         // In-session updates (logging sets, rearranging) reuse the same _weekNum and
@@ -351,20 +365,20 @@ export const useKineStore = create<KineState>()(
         }
         // Cap at 26 weeks (6 months) to prevent localStorage bloat
         const trimmed = history.length > 26 ? history.slice(-26) : history;
-        return { weekData: data, weekHistory: trimmed, _lastModifiedAt: new Date().toISOString() };
+        return { weekData: data, weekHistory: trimmed, _lastModifiedAt: appNow().toISOString() };
       }),
       setWeekHistory: (history) => set({ weekHistory: history }),
       setCurrentDayIdx: (idx) => set({ currentDayIdx: idx }),
       setSessionLogs: (logs) => set({ sessionLogs: logs }),
       setFeedbackState: (state) => set({ feedbackState: state }),
-      setPersonalProfile: (profile) => set({ personalProfile: profile, _lastModifiedAt: new Date().toISOString() }),
+      setPersonalProfile: (profile) => set({ personalProfile: profile, _lastModifiedAt: appNow().toISOString() }),
       setLifeStage: (lifeStage) => set((state) => ({
         personalProfile: { ...state.personalProfile, lifeStage: lifeStage ?? undefined },
-        _lastModifiedAt: new Date().toISOString(),
+        _lastModifiedAt: appNow().toISOString(),
       })),
       setAge: (age) => set((state) => ({
         personalProfile: { ...state.personalProfile, age },
-        _lastModifiedAt: new Date().toISOString(),
+        _lastModifiedAt: appNow().toISOString(),
       })),
       setProgressPreference: (id, action) => set((state) => {
         const next = { ...state.progressPreferences.overrides };
@@ -372,27 +386,27 @@ export const useKineStore = create<KineState>()(
         else next[id] = action;
         return {
           progressPreferences: { ...state.progressPreferences, overrides: next },
-          _lastModifiedAt: new Date().toISOString(),
+          _lastModifiedAt: appNow().toISOString(),
         };
       }),
       setProgressTimeWindow: (window) => set((state) => ({
         progressPreferences: { ...state.progressPreferences, timeWindowOverride: window },
-        _lastModifiedAt: new Date().toISOString(),
+        _lastModifiedAt: appNow().toISOString(),
       })),
       resetProgressPreferences: () => set({
         progressPreferences: { overrides: {}, timeWindowOverride: null },
-        _lastModifiedAt: new Date().toISOString(),
+        _lastModifiedAt: appNow().toISOString(),
       }),
       setSessionTimeBudgets: (budgets) => set({ sessionTimeBudgets: budgets }),
-      setSessionMode: (mode) => set({ sessionMode: mode, _lastModifiedAt: new Date().toISOString() }),
-      setRestConfig: (config) => set({ restConfig: config, _lastModifiedAt: new Date().toISOString() }),
-      setEduFlags: (flags) => set({ eduFlags: flags, _lastModifiedAt: new Date().toISOString() }),
-      setSkillPreferences: (prefs) => set({ skillPreferences: prefs, _lastModifiedAt: new Date().toISOString() }),
-      setTrackingModes: (modes) => set({ trackingModes: modes, _lastModifiedAt: new Date().toISOString() }),
-      setCheckinFields: (fields) => set({ checkinFields: fields, _lastModifiedAt: new Date().toISOString() }),
-      setConsents: (consents) => set({ consents, _lastModifiedAt: new Date().toISOString() }),
+      setSessionMode: (mode) => set({ sessionMode: mode, _lastModifiedAt: appNow().toISOString() }),
+      setRestConfig: (config) => set({ restConfig: config, _lastModifiedAt: appNow().toISOString() }),
+      setEduFlags: (flags) => set({ eduFlags: flags, _lastModifiedAt: appNow().toISOString() }),
+      setSkillPreferences: (prefs) => set({ skillPreferences: prefs, _lastModifiedAt: appNow().toISOString() }),
+      setTrackingModes: (modes) => set({ trackingModes: modes, _lastModifiedAt: appNow().toISOString() }),
+      setCheckinFields: (fields) => set({ checkinFields: fields, _lastModifiedAt: appNow().toISOString() }),
+      setConsents: (consents) => set({ consents, _lastModifiedAt: appNow().toISOString() }),
       recordConsent: (type, granted) => set((state) => {
-        const now = new Date().toISOString();
+        const now = appNow().toISOString();
         const filtered = state.consents.filter((c) => c.type !== type);
         return {
           consents: [...filtered, { type, granted, timestamp: now }],

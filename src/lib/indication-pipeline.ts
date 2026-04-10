@@ -26,6 +26,10 @@ import {
   type PhaseEnvelope,
 } from "@/data/exercise-indications";
 import { EXERCISE_LIBRARY, type Exercise } from "@/data/exercise-library";
+import {
+  OUTSIDE_ACTIVITY_RULES,
+  type OutsideActivityId,
+} from "@/data/outside-activity-rules";
 import type { CyclePhase } from "./cycle";
 
 // ── Context types ──────────────────────────────────────────────────
@@ -40,6 +44,10 @@ export interface UserContext {
   cyclePhase?: CyclePhase;
   /** Exercises programmed in the last 7 days — used for variety bonus. */
   recentlyProgrammed?: Set<string>;
+  /** Outside activities the user does alongside gym training. */
+  outsideActivities?: OutsideActivityId[];
+  /** The activity the user has marked as their primary training goal, if any. */
+  outsideActivityFocus?: OutsideActivityId | null;
 }
 
 export interface SlotRequirement {
@@ -186,6 +194,34 @@ export function scoreExercise(
   if (ind.technicalDemand > comfortCap) {
     score -= 5;
     factors.push({ pts: -5, label: "technically demanding for your level" });
+  }
+
+  // ── Outside activity modifiers (§outside-activity-rules) ──
+  if (ctx.outsideActivities && ctx.outsideActivities.length > 0) {
+    for (const actId of ctx.outsideActivities) {
+      const rule = OUTSIDE_ACTIVITY_RULES[actId];
+      if (!rule) continue;
+      const isFocus = actId === ctx.outsideActivityFocus;
+
+      if (isFocus) {
+        // Boost patterns: exercises that support the focus activity
+        if (rule.focusRules.boostPatterns.includes(ind.movementPattern)) {
+          score += rule.focusRules.boostScore;
+          factors.push({ pts: rule.focusRules.boostScore, label: rule.focusRules.boostRationale });
+        }
+        // Deemphasize patterns: avoid over-fatiguing muscles the activity taxes
+        if (rule.focusRules.deemphasizeScore > 0 && rule.focusRules.deemphasizePatterns.includes(ind.movementPattern)) {
+          score -= rule.focusRules.deemphasizeScore;
+          factors.push({ pts: -rule.focusRules.deemphasizeScore, label: rule.focusRules.deemphasizeRationale });
+        }
+      } else {
+        // Constraint: penalise high-overlap patterns
+        if (rule.constraintRules.fatiguePenalty > 0 && rule.constraintRules.fatiguePatterns.includes(ind.movementPattern)) {
+          score -= rule.constraintRules.fatiguePenalty;
+          factors.push({ pts: -rule.constraintRules.fatiguePenalty, label: rule.constraintRules.fatigueRationale });
+        }
+      }
+    }
   }
 
   // Sort factors highest-absolute first for the "Why this?" reveal

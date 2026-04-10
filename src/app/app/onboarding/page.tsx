@@ -21,6 +21,7 @@ import {
   CONDITION_OPTIONS,
 } from "@/data/constants";
 import LifeStageStep from "./steps/LifeStageStep";
+import OutsideActivityStep from "./steps/OutsideActivityStep";
 import { evaluateSchedule, evaluateDurationContext } from "@/lib/schedule-eval";
 import { detectLocale } from "@/lib/format";
 
@@ -31,6 +32,7 @@ type Step =
   | "experience"
   | "equipment"
   | "schedule"
+  | "outsideActivity"
   | "injuries"
   | "lifeStage"
   | "summary";
@@ -42,6 +44,7 @@ const STEP_ORDER: Step[] = [
   "experience",
   "equipment",
   "schedule",
+  "outsideActivity",
   "injuries",
   "lifeStage",
   "summary",
@@ -88,7 +91,7 @@ export default function OnboardingPage() {
     try {
       const { supabase } = await import("@/lib/supabase");
       await supabase.auth.updateUser({
-        data: { onboarded_at: new Date().toISOString() },
+        data: { onboarded_at: appNow().toISOString() },
       });
     } catch (e) {
       console.warn("[onboarding] failed to persist onboarded_at:", e);
@@ -131,10 +134,11 @@ export default function OnboardingPage() {
         {step === "equipment" && <EquipmentStep onNext={next} numberedStep={numberedStep} />}
         {step === "schedule" && (
           <ScheduleStep
-            onNext={() => goToStep("injuries")}
+            onNext={() => goToStep("outsideActivity")}
             numberedStep={numberedStep}
           />
         )}
+        {step === "outsideActivity" && <OutsideActivityStep onNext={() => goToStep("injuries")} />}
         {step === "injuries" && <InjuriesStep onNext={() => goToStep("lifeStage")} />}
         {step === "lifeStage" && <LifeStageStep onNext={() => goToStep("summary")} />}
         {step === "summary" && <SummaryStep onFinish={finishOnboarding} />}

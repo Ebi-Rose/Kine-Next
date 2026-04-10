@@ -14,6 +14,8 @@ import {
 import { getCycleContext, getCurrentPhase } from "./cycle";
 import { getPhaseContext } from "./periodisation";
 import { getConditionContext } from "./condition-context";
+import { getActivityContext } from "./outside-activity-context";
+import { OUTSIDE_ACTIVITY_RULES } from "@/data/outside-activity-rules";
 import { validateWeek } from "./week-validation";
 import { EXERCISE_LIBRARY } from "@/data/exercise-library";
 // injury-swaps.ts is no longer imported anywhere in the build path.
@@ -122,6 +124,9 @@ function buildUserPrompt(): string {
     injuries,
     injuryNotes,
     conditions,
+    outsideActivities,
+    outsideActivityNotes,
+    outsideActivityFocus,
     cycleType,
     cycle,
     progressDB,
@@ -150,6 +155,20 @@ function buildUserPrompt(): string {
       : "None";
 
   const conditionCtx = getConditionContext(conditions);
+
+  // Outside activity context
+  const activityCtx = outsideActivities.length > 0
+    ? "\n" + getActivityContext(outsideActivities, outsideActivityFocus)
+    : "";
+  const activityStr = outsideActivities.length > 0
+    ? outsideActivities
+        .map((a) => {
+          const label = OUTSIDE_ACTIVITY_RULES[a]?.displayName || a;
+          const intent = a === outsideActivityFocus ? "focus" : "constraint";
+          return `${label} (${intent})`;
+        })
+        .join(", ") + (outsideActivityNotes ? `. <user_notes>${sanitiseUserNotes(outsideActivityNotes.slice(0, 300))}</user_notes>` : "")
+    : "None";
 
   // Exercise count per session based on duration
   let exCount = 6;
@@ -269,6 +288,8 @@ function buildUserPrompt(): string {
     injuries,
     conditions,
     recentlyProgrammed: recentNames,
+    outsideActivities,
+    outsideActivityFocus,
     // lifeStage is deliberately not sourced here — pregnancy / postpartum
     // are out of scope per spec v0.2 §9 until physio review. Peri /
     // post-menopause can be surfaced through cycleType later.
@@ -291,6 +312,7 @@ Trainee:
 - Equipment: ${equipStr}
 - Schedule: ${daysCount} days/week (${dayNames}), ${durationLabel}
 - Injuries: ${injuryStr}${conditionCtx}
+- Outside activities: ${activityStr}${activityCtx}
 - Program: ${prog}
 - Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance — especially upper body (prescribe +1 set on upper body accessories vs lower body). Women recover faster between sets — rest periods can be shorter than male-derived defaults.${bodyCtx}${dayDurCtx}
 ${cycleCtx}
@@ -407,7 +429,7 @@ function parseWeekJSON(text: string): WeekData {
 
 function buildFallbackWeek(): WeekData {
   const store = useKineStore.getState();
-  const { goal, exp, equip, injuries, conditions, trainingDays, duration } = store;
+  const { goal, exp, equip, injuries, conditions, outsideActivities, outsideActivityFocus, trainingDays, duration } = store;
 
   // Build a single user context for the indication pipeline so the
   // template-swap and generic full-body picker share the same logic.
@@ -417,6 +439,8 @@ function buildFallbackWeek(): WeekData {
     equipment: equip,
     injuries,
     conditions,
+    outsideActivities,
+    outsideActivityFocus,
   };
 
   const programName = PROGRAM_MAP[goal || "general"]?.[exp || "new"] || "Custom Program";
@@ -596,6 +620,7 @@ export interface BuildResult {
   success: boolean;
   weekData: WeekData | null;
   error?: string;
+  repairsCount?: number;
 }
 
 /**
@@ -678,7 +703,8 @@ export async function buildWeek(): Promise<BuildResult> {
     // Apply indication post-processing — whyForYou rationale + cycle envelope
     const finalWeek = applyIndicationPostProcessing(withSkills);
 
-    return { success: true, weekData: finalWeek };
+    const repairsCount = validation.issues.filter((i) => i.repaired).length;
+    return { success: true, weekData: finalWeek, repairsCount };
   } catch (err) {
     console.error("buildWeek failed:", err);
     const fallback = buildFallbackWeek();

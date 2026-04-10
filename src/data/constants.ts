@@ -162,6 +162,16 @@ export const CONDITION_OPTIONS: { value: string; label: string; description: str
   { value: "hypermobility", label: "Hypermobility", description: "We cap deep range of motion, prioritise tempo and isometric work, avoid ballistic movements, and emphasise joint stability." },
 ];
 
+export const OUTSIDE_ACTIVITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "running", label: "Running" },
+  { value: "swimming", label: "Swimming" },
+  { value: "cycling", label: "Cycling" },
+  { value: "team_sport", label: "Team sport" },
+  { value: "climbing", label: "Climbing" },
+  { value: "martial_arts", label: "Martial arts" },
+  { value: "yoga_pilates", label: "Yoga / Pilates" },
+];
+
 export const PROGRAM_MAP: Record<string, Record<string, string>> = {
   strength: {
     new: "Starting Strength LP",
