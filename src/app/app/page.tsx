@@ -149,7 +149,20 @@ export default function AppHome() {
   }
 
   async function handleAdvanceWeek() {
-    const nextWeekNum = (progressDB.currentWeek || 1) + 1;
+    // Route through week check-in first if not already done for this week
+    const curWeek = store.progressDB.currentWeek || 1;
+    const alreadyCheckedIn = store.progressDB.weekFeedbackHistory.some(
+      (f) => f.weekNum === curWeek
+    );
+    if (!alreadyCheckedIn) {
+      router.push("/app/week-checkin?advance=1");
+      return;
+    }
+    await doAdvanceWeek();
+  }
+
+  async function doAdvanceWeek() {
+    const nextWeekNum = (store.progressDB.currentWeek || 1) + 1;
     store.setProgressDB({
       ...store.progressDB,
       currentWeek: nextWeekNum,

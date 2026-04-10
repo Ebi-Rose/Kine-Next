@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore, type SessionRecord } from "@/store/useKineStore";
+import { buildWeek } from "@/lib/week-builder";
 import { getPhase, getBlockWeek, getBlockNumber } from "@/lib/periodisation";
 import { isProgrammeStarted } from "@/lib/date-utils";
 import { DAY_LABELS } from "@/data/constants";
@@ -59,10 +60,13 @@ function getSessionInsight(sessions: SessionRecord[], scheduleFeeling: string | 
 
 export default function WeekCheckinPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const shouldAdvance = searchParams.get("advance") === "1";
   const store = useKineStore();
   const { progressDB, setProgressDB, goal, days } = store;
 
-  const [step, setStep] = useState<"summary" | "feelings" | "schedule" | "done">("summary");
+  const [step, setStep] = useState<"summary" | "feelings" | "schedule" | "done" | "building">("summary");
+  const [buildError, setBuildError] = useState<string | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
   const [motivation, setMotivation] = useState<number | null>(null);
   const [scheduleFeeling, setScheduleFeeling] = useState<"too_easy" | "about_right" | "too_much" | null>(null);
@@ -299,9 +303,39 @@ export default function WeekCheckinPage() {
           <p className="mt-2 text-xs text-muted2 max-w-xs">
             {getSessionInsight(weekSessions, scheduleFeeling)}
           </p>
-          <Button className="mt-6" onClick={() => router.push("/app")}>
-            Back to week
-          </Button>
+          {shouldAdvance ? (
+            <Button className="mt-6" onClick={async () => {
+              setStep("building");
+              setBuildError(null);
+              const nextWeekNum = (progressDB.currentWeek || 1) + 1;
+              setProgressDB({ ...progressDB, currentWeek: nextWeekNum });
+              const result = await buildWeek();
+              if (result.weekData) {
+                store.setWeekData(result.weekData);
+              }
+              if (!result.success && result.error) {
+                setBuildError(result.error);
+                setStep("done");
+              } else {
+                router.push("/app");
+              }
+            }}>
+              Build Week {(progressDB.currentWeek || 1) + 1} →
+            </Button>
+          ) : (
+            <Button className="mt-6" onClick={() => router.push("/app")}>
+              Back to week
+            </Button>
+          )}
+          {buildError && <p className="mt-2 text-xs text-warning">{buildError}</p>}
+        </div>
+      )}
+
+      {/* Building state */}
+      {step === "building" && (
+        <div className="animate-fade-up flex min-h-[50vh] flex-col items-center justify-center text-center">
+          <div className="h-8 w-8 mx-auto animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          <p className="mt-4 text-sm text-muted2 animate-pulse">Building your next week…</p>
         </div>
       )}
     </div>
