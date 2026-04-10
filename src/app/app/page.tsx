@@ -961,7 +961,7 @@ function WeekView({
                   {loading ? "Rebuilding…" : "Regenerate"}
                 </Button>
                 <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-                  Design Week
+                  {allDone ? "Design Next Week" : "Design Week"}
                 </Link>
               </div>
             );
