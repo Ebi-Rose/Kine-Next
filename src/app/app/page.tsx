@@ -946,22 +946,26 @@ function WeekView({
           })()}
 
           {/* Actions — hidden when viewing past weeks (read-only) */}
-          {!isViewingPast && (
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-                Check-in
-              </Link>
-              <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)}>
-                Rearrange
-              </Button>
-              <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading}>
-                {loading ? "Rebuilding…" : "Regenerate"}
-              </Button>
-              <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-                Design Week
-              </Link>
-            </div>
-          )}
+          {!isViewingPast && (() => {
+            const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
+            const allDone = trainingDayCount > 0 && currentWeekSessions.length >= trainingDayCount;
+            return (
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+                  Check-in
+                </Link>
+                <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)} disabled={allDone}>
+                  Rearrange
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onRebuild} disabled={loading || allDone}>
+                  {loading ? "Rebuilding…" : "Regenerate"}
+                </Button>
+                <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
+                  Design Week
+                </Link>
+              </div>
+            );
+          })()}
         </div>
       )}
 
