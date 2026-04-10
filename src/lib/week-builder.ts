@@ -326,34 +326,63 @@ function buildUserPrompt(): string {
   // #11: Week check-in feedback for AI adaptation
   let weekFeedbackCtx = "";
   if (progressDB.weekFeedbackHistory.length > 0) {
-    const energyLabels = ["", "Drained", "Low", "Normal", "High"];
-    const bodyFeelLabels = ["", "Fresh", "Mild aches", "Sore", "Beat up"];
-    const recentFeedback = progressDB.weekFeedbackHistory.slice(-2);
-    const feedbackLines = recentFeedback.map((f) => {
-      const schedulePart = (f as { scheduleFeeling?: string }).scheduleFeeling
-        ? `, volume felt: ${(f as { scheduleFeeling?: string }).scheduleFeeling?.replace("_", " ")}`
-        : "";
-      const trimmedNotes = f.notes ? f.notes.slice(0, 200) : "";
-      return `Week ${f.weekNum}: energy=${energyLabels[f.effort] || f.effort}/4, body=${bodyFeelLabels[f.soreness] || f.soreness}/4${schedulePart}${trimmedNotes ? `, notes: <user_notes>${sanitiseUserNotes(trimmedNotes)}</user_notes>` : ""}`;
-    });
-    weekFeedbackCtx = `\n\nWeek check-in feedback (adjust volume/intensity accordingly):\n${feedbackLines.join("\n")}`;
+    const latest = progressDB.weekFeedbackHistory[progressDB.weekFeedbackHistory.length - 1];
 
-    const latest = recentFeedback[recentFeedback.length - 1];
-    const latestSchedule = (latest as { scheduleFeeling?: string }).scheduleFeeling;
+    if (latest.adaptationPlan) {
+      // ── New path: confirmed adaptation plan (user-reviewed) ──
+      const plan = latest.adaptationPlan;
+      const enabledAdaptations = plan.adaptations.filter((a) => a.enabled);
 
-    // Low energy or high soreness — reduce load
-    if (latest.effort <= 2 || latest.soreness >= 3) {
-      weekFeedbackCtx += `\nNote: User reported low energy or high body soreness last week. Consider reducing volume or intensity slightly. Prioritise consistency over progression this week.`;
-    }
-    // Fresh and energised — room to push
-    if (latest.effort >= 4 && latest.soreness <= 2) {
-      weekFeedbackCtx += `\nNote: User feeling fresh and energised — good window to maintain or slightly increase challenge.`;
-    }
-    // Schedule feeling — direct volume guidance
-    if (latestSchedule === "too_easy") {
-      weekFeedbackCtx += `\nNote: User said volume felt too easy. Increase sets or add an exercise.`;
-    } else if (latestSchedule === "too_much") {
-      weekFeedbackCtx += `\nNote: User said volume felt like too much. Reduce sets or remove an accessory.`;
+      if (enabledAdaptations.length > 0) {
+        weekFeedbackCtx = "\n\nConfirmed adaptations for this week (user-reviewed and approved):";
+
+        const enabledInsights = enabledAdaptations.filter((a) => a.source === "insight");
+        if (enabledInsights.length > 0) {
+          weekFeedbackCtx += "\nUser feedback insights:";
+          for (const a of enabledInsights) {
+            weekFeedbackCtx += `\n- ${a.label}`;
+          }
+        }
+
+        const programmeAdaptations = enabledAdaptations.filter((a) => a.source !== "insight");
+        if (programmeAdaptations.length > 0) {
+          weekFeedbackCtx += "\nProgramme directives:";
+          for (const a of programmeAdaptations) {
+            weekFeedbackCtx += `\n- [${a.source}] ${a.label}`;
+          }
+        }
+
+        if (plan.extraNote) {
+          weekFeedbackCtx += `\nAdditional user note: <user_notes>${sanitiseUserNotes(plan.extraNote.slice(0, 200))}</user_notes>`;
+        }
+      }
+    } else {
+      // ── Legacy path: old-style feedback without adaptation plan ──
+      const energyLabels = ["", "Drained", "Low", "Normal", "High"];
+      const bodyFeelLabels = ["", "Fresh", "Mild aches", "Sore", "Beat up"];
+      const recentFeedback = progressDB.weekFeedbackHistory.slice(-2);
+      const feedbackLines = recentFeedback.map((f) => {
+        const schedulePart = (f as { scheduleFeeling?: string }).scheduleFeeling
+          ? `, volume felt: ${(f as { scheduleFeeling?: string }).scheduleFeeling?.replace("_", " ")}`
+          : "";
+        const trimmedNotes = f.notes ? f.notes.slice(0, 200) : "";
+        return `Week ${f.weekNum}: energy=${energyLabels[f.effort] || f.effort}/4, body=${bodyFeelLabels[f.soreness] || f.soreness}/4${schedulePart}${trimmedNotes ? `, notes: <user_notes>${sanitiseUserNotes(trimmedNotes)}</user_notes>` : ""}`;
+      });
+      weekFeedbackCtx = `\n\nWeek check-in feedback (adjust volume/intensity accordingly):\n${feedbackLines.join("\n")}`;
+
+      const latestSchedule = (latest as { scheduleFeeling?: string }).scheduleFeeling;
+
+      if (latest.effort <= 2 || latest.soreness >= 3) {
+        weekFeedbackCtx += `\nNote: User reported low energy or high body soreness last week. Consider reducing volume or intensity slightly. Prioritise consistency over progression this week.`;
+      }
+      if (latest.effort >= 4 && latest.soreness <= 2) {
+        weekFeedbackCtx += `\nNote: User feeling fresh and energised — good window to maintain or slightly increase challenge.`;
+      }
+      if (latestSchedule === "too_easy") {
+        weekFeedbackCtx += `\nNote: User said volume felt too easy. Increase sets or add an exercise.`;
+      } else if (latestSchedule === "too_much") {
+        weekFeedbackCtx += `\nNote: User said volume felt like too much. Reduce sets or remove an accessory.`;
+      }
     }
   }
 

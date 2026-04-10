@@ -66,12 +66,32 @@ export interface SkippedSession {
   movedTo: number | null;
 }
 
+export interface NoteInsight {
+  insight: string;
+  category: "preference" | "discomfort" | "positive" | "request";
+  exerciseRef?: string;
+}
+
+export interface AdaptationItem {
+  id: string;
+  label: string;
+  source: "insight" | "rating" | "periodisation" | "cycle" | "condition" | "activity";
+  enabled: boolean;
+}
+
+export interface AdaptationPlan {
+  insights: NoteInsight[];
+  adaptations: AdaptationItem[];
+  extraNote?: string;
+}
+
 export interface WeekFeedback {
   weekNum: number;
   effort: number;   // energy level: 1=Drained, 2=Low, 3=Normal, 4=High
   soreness: number; // body feel: 1=Fresh, 2=Mild aches, 3=Sore, 4=Beat up
   scheduleFeeling?: "too_easy" | "about_right" | "too_much";
   notes?: string;
+  adaptationPlan?: AdaptationPlan;
 }
 
 export interface PersonalProfile {

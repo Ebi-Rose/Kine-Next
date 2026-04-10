@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useKineStore, type SessionRecord } from "@/store/useKineStore";
+import { useKineStore, type SessionRecord, type NoteInsight, type AdaptationItem, type AdaptationPlan } from "@/store/useKineStore";
 import { buildWeek } from "@/lib/week-builder";
 import { getPhase, getBlockWeek, getBlockNumber } from "@/lib/periodisation";
 import { isProgrammeStarted } from "@/lib/date-utils";
+import { extractInsights } from "@/lib/extract-insights";
+import { computeAdaptations } from "@/lib/compute-adaptations";
 import { DAY_LABELS } from "@/data/constants";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
@@ -58,6 +60,15 @@ function getSessionInsight(sessions: SessionRecord[], scheduleFeeling: string | 
       : "Noted — keeping the balance where it is.";
 }
 
+const SOURCE_COLOURS: Record<AdaptationItem["source"], string> = {
+  insight: "bg-blue-400",
+  rating: "bg-amber-400",
+  periodisation: "bg-purple-400",
+  cycle: "bg-pink-400",
+  condition: "bg-red-400",
+  activity: "bg-green-400",
+};
+
 export default function WeekCheckinPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,12 +76,19 @@ export default function WeekCheckinPage() {
   const store = useKineStore();
   const { progressDB, setProgressDB, goal, days } = store;
 
-  const [step, setStep] = useState<"summary" | "feelings" | "schedule" | "done" | "building">("summary");
+  const [step, setStep] = useState<"summary" | "notes" | "ratings" | "plan" | "done" | "building">("summary");
   const [buildError, setBuildError] = useState<string | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
   const [motivation, setMotivation] = useState<number | null>(null);
   const [scheduleFeeling, setScheduleFeeling] = useState<"too_easy" | "about_right" | "too_much" | null>(null);
   const [notes, setNotes] = useState("");
+
+  // Adaptation plan state
+  const [insights, setInsights] = useState<NoteInsight[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [adaptations, setAdaptations] = useState<AdaptationItem[]>([]);
+  const [planExtraNote, setPlanExtraNote] = useState("");
+  const insightPromiseRef = useRef<Promise<NoteInsight[]> | null>(null);
 
   const plannedDays = parseInt(days || "3");
 
@@ -123,8 +141,6 @@ export default function WeekCheckinPage() {
   const completionRate = plannedDays > 0 ? Math.round((weekSessions.length / plannedDays) * 100) : 0;
   const avgEffort = weekSessions.length
     ? (weekSessions.reduce((a, s) => a + (s.effort || 2), 0) / weekSessions.length).toFixed(1) : "—";
-  const avgSoreness = weekSessions.length
-    ? (weekSessions.reduce((a, s) => a + (s.soreness || 2), 0) / weekSessions.length).toFixed(1) : "—";
   const totalPRs = weekSessions.reduce((a, s) => a + ((s.prs as unknown[])?.length || 0), 0);
 
   // Goal-aware labels
@@ -134,7 +150,50 @@ export default function WeekCheckinPage() {
       ? "Think about the mind-muscle connection this week — did you feel the target muscles working?"
       : "The most important thing is that you showed up. Consistency is the work.";
 
+  function handleNotesSubmit() {
+    if (notes.trim().length >= 5) {
+      setInsightsLoading(true);
+      insightPromiseRef.current = extractInsights(notes).finally(() => setInsightsLoading(false));
+    }
+    setStep("ratings");
+  }
+
+  async function handleRatingsSubmit() {
+    // Compute deterministic adaptations synchronously
+    const deterministicAdaptations = computeAdaptations(energy!, motivation!, scheduleFeeling!);
+
+    // Await insights if still loading
+    let resolvedInsights: NoteInsight[] = [];
+    if (insightPromiseRef.current) {
+      resolvedInsights = await insightPromiseRef.current;
+    }
+    setInsights(resolvedInsights);
+
+    // Convert insights to AdaptationItems
+    const insightAdaptations: AdaptationItem[] = resolvedInsights.map((ins, i) => ({
+      id: `insight-${i}`,
+      label: ins.insight + (ins.exerciseRef ? ` (${ins.exerciseRef})` : ""),
+      source: "insight" as const,
+      enabled: true,
+    }));
+
+    setAdaptations([...insightAdaptations, ...deterministicAdaptations]);
+    setStep("plan");
+  }
+
+  function toggleAdaptation(id: string) {
+    setAdaptations((prev) =>
+      prev.map((a) => a.id === id ? { ...a, enabled: !a.enabled } : a),
+    );
+  }
+
   function submit() {
+    const plan: AdaptationPlan = {
+      insights,
+      adaptations,
+      extraNote: planExtraNote || undefined,
+    };
+
     setProgressDB({
       ...progressDB,
       weekFeedbackHistory: [
@@ -145,11 +204,15 @@ export default function WeekCheckinPage() {
           soreness: motivation || 2,
           scheduleFeeling: scheduleFeeling ?? undefined,
           notes: notes || undefined,
+          adaptationPlan: plan,
         },
       ],
     });
     setStep("done");
   }
+
+  const insightItems = adaptations.filter((a) => a.source === "insight");
+  const programmeItems = adaptations.filter((a) => a.source !== "insight");
 
   return (
     <div>
@@ -215,14 +278,40 @@ export default function WeekCheckinPage() {
             <p className="text-xs text-muted2 font-light italic leading-relaxed">{goalInsight}</p>
           </div>
 
-          <Button className="w-full mt-6" size="lg" onClick={() => setStep("feelings")}>
+          <Button className="w-full mt-6" size="lg" onClick={() => setStep("notes")}>
             Continue
           </Button>
         </div>
       )}
 
-      {/* Step 2: How are you feeling */}
-      {step === "feelings" && (
+      {/* Step 2: Notes (moved to first input step) */}
+      {step === "notes" && (
+        <div className="animate-fade-up">
+          <h2 className="mt-4 font-display text-xl tracking-wide text-text">Anything to note from this week?</h2>
+          <p className="mt-1 text-xs text-muted2">
+            Exercises you liked or didn&apos;t, aches, sleep, stress — anything that should shape next week.
+          </p>
+
+          <div className="mt-6">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              aria-label="Week notes"
+              placeholder="e.g. loved the split squats, shoulder felt off on overhead press, slept badly all week..."
+              rows={4}
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none"
+              autoFocus
+            />
+          </div>
+
+          <Button className="w-full mt-6" size="lg" onClick={handleNotesSubmit}>
+            {notes.trim().length > 0 ? "Continue" : "Skip"}
+          </Button>
+        </div>
+      )}
+
+      {/* Step 3: Ratings (energy + body feel + volume — merged) */}
+      {step === "ratings" && (
         <div className="animate-fade-up">
           <h2 className="mt-4 font-display text-xl tracking-wide text-text">How are you feeling?</h2>
 
@@ -250,58 +339,126 @@ export default function WeekCheckinPage() {
             </div>
           </div>
 
-          <Button className="w-full mt-6" size="lg" disabled={energy === null || motivation === null}
-            onClick={() => setStep("schedule")}>
-            Continue
+          <div className="mt-6">
+            <p className="mb-2 text-xs tracking-wider text-muted uppercase">How did the volume feel?</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => setScheduleFeeling("too_easy")}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  scheduleFeeling === "too_easy" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
+                }`}>
+                <p className="text-sm font-medium text-text">Too easy</p>
+                <p className="text-xs text-muted2 font-light mt-0.5">Could have done more.</p>
+              </button>
+              <button onClick={() => setScheduleFeeling("about_right")}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  scheduleFeeling === "about_right" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
+                }`}>
+                <p className="text-sm font-medium text-text">About right</p>
+                <p className="text-xs text-muted2 font-light mt-0.5">Challenging but manageable.</p>
+              </button>
+              <button onClick={() => setScheduleFeeling("too_much")}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  scheduleFeeling === "too_much" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
+                }`}>
+                <p className="text-sm font-medium text-text">Too much</p>
+                <p className="text-xs text-muted2 font-light mt-0.5">Struggled to recover between sessions.</p>
+              </button>
+            </div>
+          </div>
+
+          <Button
+            className="w-full mt-6"
+            size="lg"
+            disabled={energy === null || motivation === null || scheduleFeeling === null || insightsLoading}
+            onClick={handleRatingsSubmit}
+          >
+            {insightsLoading ? "Processing notes…" : "Continue"}
           </Button>
         </div>
       )}
 
-      {/* Step 3: Schedule adjustment */}
-      {step === "schedule" && (
+      {/* Step 4: Adaptation plan */}
+      {step === "plan" && (
         <div className="animate-fade-up">
-          <h2 className="mt-4 font-display text-xl tracking-wide text-text">How did the volume feel?</h2>
-          <p className="mt-1 text-xs text-muted2">This shapes next week&apos;s programme.</p>
+          <h2 className="mt-4 font-display text-xl tracking-wide text-text">Next week&apos;s plan</h2>
+          <p className="mt-1 text-xs text-muted2">
+            Here&apos;s what will change based on your feedback. Toggle off anything you disagree with.
+          </p>
 
-          <div className="mt-6 flex flex-col gap-3">
-            <button onClick={() => setScheduleFeeling("too_easy")}
-              className={`rounded-xl border p-4 text-left transition-all ${
-                scheduleFeeling === "too_easy" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
-              }`}>
-              <p className="text-sm font-medium text-text">Too easy</p>
-              <p className="text-xs text-muted2 font-light mt-0.5">Could have done more. Sessions felt comfortable.</p>
-            </button>
-            <button onClick={() => setScheduleFeeling("about_right")}
-              className={`rounded-xl border p-4 text-left transition-all ${
-                scheduleFeeling === "about_right" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
-              }`}>
-              <p className="text-sm font-medium text-text">About right</p>
-              <p className="text-xs text-muted2 font-light mt-0.5">Challenging but manageable. Good balance.</p>
-            </button>
-            <button onClick={() => setScheduleFeeling("too_much")}
-              className={`rounded-xl border p-4 text-left transition-all ${
-                scheduleFeeling === "too_much" ? "border-accent bg-accent-dim" : "border-border bg-surface hover:border-border-active"
-              }`}>
-              <p className="text-sm font-medium text-text">Too much</p>
-              <p className="text-xs text-muted2 font-light mt-0.5">Struggled to recover between sessions.</p>
-            </button>
+          {/* Insights from notes */}
+          {insightItems.length > 0 && (
+            <div className="mt-5">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-2">From your notes</p>
+              <div className="flex flex-col gap-2">
+                {insightItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleAdaptation(item.id)}
+                    className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-all ${
+                      item.enabled ? "border-accent/40 bg-accent-dim" : "border-border bg-surface opacity-50"
+                    }`}
+                  >
+                    <span className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${SOURCE_COLOURS[item.source]}`} />
+                    <span className={`text-xs leading-relaxed ${item.enabled ? "text-text" : "text-muted2 line-through"}`}>
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Programme adaptations */}
+          {programmeItems.length > 0 && (
+            <div className="mt-5">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-2">Programme adaptations</p>
+              <div className="flex flex-col gap-2">
+                {programmeItems.map((item) => {
+                  const isInfoOnly = item.source === "periodisation";
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => !isInfoOnly && toggleAdaptation(item.id)}
+                      className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-all ${
+                        isInfoOnly
+                          ? "border-border bg-surface cursor-default"
+                          : item.enabled
+                            ? "border-accent/40 bg-accent-dim"
+                            : "border-border bg-surface opacity-50"
+                      }`}
+                    >
+                      <span className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${SOURCE_COLOURS[item.source]}`} />
+                      <span className={`text-xs leading-relaxed ${
+                        !isInfoOnly && !item.enabled ? "text-muted2 line-through" : "text-text"
+                      }`}>
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Extra note */}
+          <div className="mt-5">
+            <textarea
+              value={planExtraNote}
+              onChange={(e) => setPlanExtraNote(e.target.value)}
+              aria-label="Extra note for next week"
+              placeholder="Anything else for next week?"
+              rows={2}
+              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none"
+            />
           </div>
 
-          <div className="mt-4">
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-              aria-label="Additional notes"
-              placeholder="Anything else? Sleep, stress, life outside training..."
-              rows={3}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none" />
-          </div>
-
-          <Button className="w-full mt-6" size="lg" disabled={scheduleFeeling === null} onClick={submit}>
-            Save check-in
+          <Button className="w-full mt-6" size="lg" onClick={submit}>
+            {shouldAdvance ? `Confirm & build week ${weekNum + 1} →` : "Save check-in"}
           </Button>
         </div>
       )}
 
-      {/* Step 4: Done */}
+      {/* Step 5: Done */}
       {step === "done" && (
         <div className="animate-fade-up flex min-h-[50vh] flex-col items-center justify-center text-center">
           <div className="text-4xl mb-4">✓</div>
