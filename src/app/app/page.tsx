@@ -451,7 +451,7 @@ function WeekView({
   const [viewTab, setViewTab] = useState<"today" | "week">("today");
   const today = appNow().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
-  const weekStart = getWeekDateRange();
+  const weekStart = getWeekDateRange(progressDB.currentWeek, progressDB.programStartDate);
   const trainingPhase = getCurrentPhaseInfo(progressDB.currentWeek, progressDB.phaseOffset);
 
   // Week navigation: past weeks from history, current week is live
@@ -646,8 +646,9 @@ function WeekView({
 
           {/* Week complete celebration — Today tab only */}
           {(() => {
-            const weekSessions = (progressDB.sessions as { date?: string }[])
-              .filter((s) => isInCurrentWeek(s.date));
+            const curWeek = progressDB.currentWeek || 1;
+            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+              .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const WEEK_COMPLETE_MESSAGES = [
@@ -674,8 +675,9 @@ function WeekView({
 
           {/* Week overview strip */}
           {(() => {
-            const ws = (progressDB.sessions as { date?: string; dayIdx?: number }[])
-              .filter((s) => isInCurrentWeek(s.date));
+            const curWeek = progressDB.currentWeek || 1;
+            const ws = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+              .filter((s) => s.weekNum === curWeek);
             return (
               <div className="mb-4 flex items-center justify-center gap-3">
                 {displayWeek.days.map((day, i) => {
@@ -698,8 +700,9 @@ function WeekView({
             const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
             const todayDay = displayWeek.days[todayIdx];
             if (todayDay?.isRest) return null;
+            const curWeek = progressDB.currentWeek || 1;
             const match = sessions
-              .filter((s) => s.dayIdx === todayIdx && !isInCurrentWeek(s.date))
+              .filter((s) => s.dayIdx === todayIdx && s.weekNum !== curWeek)
               .at(-1);
             if (!match?.changes?.length) return null;
             return (
@@ -734,8 +737,8 @@ function WeekView({
               {/* Today's session card — compact, matches other days */}
               {(() => {
                 const todayDay = displayWeek.days[todayIdx];
-                const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number; date?: string }[])
-                  .some((s) => isInCurrentWeek(s.date) && s.dayIdx === todayIdx);
+                const isCompleted = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                  .some((s) => s.weekNum === (progressDB.currentWeek || 1) && s.dayIdx === todayIdx);
                 return (
                   <DayCard
                     day={todayDay} dayIdx={todayIdx}
@@ -767,8 +770,9 @@ function WeekView({
 
           {/* Session completion summary — current week only, compact on Week tab */}
           {!isViewingPast && (() => {
-            const weekSessions = (progressDB.sessions as { date?: string }[])
-              .filter((s) => isInCurrentWeek(s.date));
+            const curWeek = progressDB.currentWeek || 1;
+            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+              .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (weekSessions.length > 0 && weekSessions.length < trainingDayCount) {
               return (
@@ -792,25 +796,24 @@ function WeekView({
 
           {/* All 7 day cards */}
           {(() => {
-            const viewWeekNum = isViewingPast ? displayWeekNum : progressDB.currentWeek;
+            const viewWeekNum = isViewingPast ? displayWeekNum : (progressDB.currentWeek || 1);
             // Calculate Monday of the *viewed* week for date labels
-            const today = appNow();
-            const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
-            const monday = new Date(today);
-            monday.setDate(today.getDate() - dayOfWeek);
-            if (isViewingPast && viewingPastIdx !== null) {
-              // weekHistory is chronological — distance from end = weeks back from current
-              const weeksBack = weekHistory.length - viewingPastIdx;
-              monday.setDate(monday.getDate() - weeksBack * 7);
-            }
+            const monday = isViewingPast && viewingPastIdx !== null
+              ? (() => {
+                  const now = appNow();
+                  const dw = now.getDay() === 0 ? 6 : now.getDay() - 1;
+                  const m = new Date(now);
+                  m.setDate(now.getDate() - dw);
+                  const weeksBack = weekHistory.length - viewingPastIdx;
+                  m.setDate(m.getDate() - weeksBack * 7);
+                  return m;
+                })()
+              : getProgrammeWeekMonday(viewWeekNum, progressDB.programStartDate);
             return (
               <div className="flex flex-col gap-2">
                 {displayWeek.days.map((day, i) => {
-                  const hasSession = isViewingPast
-                    ? (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
-                        .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i)
-                    : (progressDB.sessions as { date?: string; dayIdx?: number }[])
-                        .some((s) => isInCurrentWeek(s.date) && s.dayIdx === i);
+                  const hasSession = (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
+                    .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i);
                   const isCompleted = hasSession && (isViewingPast || i <= todayIdx);
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
@@ -824,6 +827,7 @@ function WeekView({
                       expanded={false}
                       readOnly={isViewingPast}
                       dateStr={dateLabel}
+                      weekNum={viewWeekNum}
                     />
                   );
                 })}
@@ -833,8 +837,9 @@ function WeekView({
 
           {/* Next week preview */}
           {!isViewingPast && (() => {
-            const weekSessions = (progressDB.sessions as { date?: string }[])
-              .filter((s) => isInCurrentWeek(s.date));
+            const curWeek = progressDB.currentWeek || 1;
+            const weekSessions = (progressDB.sessions as { weekNum?: number }[])
+              .filter((s) => s.weekNum === curWeek);
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (weekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const nextWeekNum = (progressDB.currentWeek || 1) + 1;
@@ -901,8 +906,8 @@ function getRestMessage(dayIdx: number): string {
   return REST_DAY_MESSAGES[dayIdx % REST_DAY_MESSAGES.length];
 }
 
-function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false, dateStr }: {
-  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean; dateStr?: string;
+function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false, dateStr, weekNum }: {
+  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean; dateStr?: string; weekNum?: number;
 }) {
   const router = useRouter();
   const { progressDB, setProgressDB } = useKineStore();
@@ -910,9 +915,10 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
   const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
 
   // Find completed session log for this day
+  const wk = weekNum ?? (progressDB.currentWeek || 1);
   const completedSession = isCompleted
     ? (progressDB.sessions as { weekNum?: number; dayIdx?: number; date?: string; logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string }[])
-        .find((s) => isInCurrentWeek(s.date) && s.dayIdx === dayIdx)
+        .find((s) => s.weekNum === wk && s.dayIdx === dayIdx)
     : null;
 
   if (day.isRest) {
@@ -1238,11 +1244,31 @@ function SessionReviewSheet({ open, onClose, session, dayIdx }: {
 
 // ── Helpers ──
 
-function getWeekDateRange(): string {
+/** Monday of a given programme week (1-indexed). Falls back to calendar week if no start date. */
+function getProgrammeWeekMonday(weekNum: number, programStartDate: string | null): Date {
+  if (programStartDate) {
+    const start = new Date(programStartDate);
+    // Find the Monday of the week containing programStartDate
+    const startDay = start.getDay();
+    const startMonday = new Date(start);
+    startMonday.setDate(start.getDate() - (startDay === 0 ? 6 : startDay - 1));
+    // Advance by (weekNum - 1) weeks
+    const monday = new Date(startMonday);
+    monday.setDate(startMonday.getDate() + (weekNum - 1) * 7);
+    return monday;
+  }
+  // Fallback: current calendar week
   const now = appNow();
   const day = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  return monday;
+}
+
+function getWeekDateRange(weekNum?: number, programStartDate?: string | null): string {
+  const monday = weekNum != null
+    ? getProgrammeWeekMonday(weekNum, programStartDate ?? null)
+    : (() => { const now = appNow(); const d = now.getDay(); const m = new Date(now); m.setDate(now.getDate() - (d === 0 ? 6 : d - 1)); return m; })();
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
