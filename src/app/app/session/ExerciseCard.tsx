@@ -325,8 +325,8 @@ export default function ExerciseCard({
               </div>
             )}
 
-            {/* Pre-fill indicator — body trust: explain, don't dictate */}
-            {log.prefilled && (
+            {/* Pre-fill indicator — hidden when progression strip already explains the weight */}
+            {log.prefilled && !progression && (
               <div className="mb-3 rounded-lg border border-accent/20 bg-accent-dim/15 px-3 py-2 flex items-center justify-between" role="status" aria-live="polite">
                 <p className="text-[10px] text-muted2 font-light">
                   Pre-filled from your last session
