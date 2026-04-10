@@ -56,8 +56,9 @@ export default function OnboardingPage() {
   const store = useKineStore();
 
   const stepIndex = STEP_ORDER.indexOf(step);
-  // Steps 1-4 shown as "STEP X OF 4" (goal, experience, equipment, schedule) — name is pre-numbered
-  const numberedStep = ["goal", "experience", "equipment", "schedule"].indexOf(step) + 1;
+  // Steps 1-5 shown as "STEP X OF 5" (goal, experience, equipment, schedule, outsideActivity)
+  const NUMBERED_STEPS: Step[] = ["goal", "experience", "equipment", "schedule", "outsideActivity"];
+  const numberedStep = NUMBERED_STEPS.indexOf(step) + 1;
 
   function next() {
     const nextIdx = stepIndex + 1;
@@ -138,7 +139,7 @@ export default function OnboardingPage() {
             numberedStep={numberedStep}
           />
         )}
-        {step === "outsideActivity" && <OutsideActivityStep onNext={() => goToStep("injuries")} />}
+        {step === "outsideActivity" && <OutsideActivityStep onNext={() => goToStep("injuries")} numberedStep={numberedStep} />}
         {step === "injuries" && <InjuriesStep onNext={() => goToStep("lifeStage")} />}
         {step === "lifeStage" && <LifeStageStep onNext={() => goToStep("summary")} />}
         {step === "summary" && <SummaryStep onFinish={finishOnboarding} />}
@@ -941,11 +942,11 @@ function getNextMonday(): string {
 
 // ── Shared: Step label ──
 
-function StepLabel({ step }: { step: number }) {
+function StepLabel({ step, total = 5 }: { step: number; total?: number }) {
   if (step <= 0) return null;
   return (
     <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
-      Step {step} of 4
+      Step {step} of {total}
     </p>
   );
 }

@@ -7,6 +7,7 @@
 import { findExercise, type MuscleGroup } from "@/data/exercise-library";
 import { INJURY_SWAPS } from "@/data/injury-swaps";
 import { getCurrentPhaseInfo } from "@/lib/periodisation";
+import { appTimestamp } from "@/lib/dev-time";
 import type { LiftEntry, SessionRecord, WeekFeedback } from "@/store/useKineStore";
 import type {
   EngineHistory,
@@ -66,7 +67,7 @@ function bestEntry(entries: LiftEntry[]): LiftEntry | null {
 /** Mean weight across entries within the last `weeks` weeks. */
 function rollingMeanWeight(entries: LiftEntry[], weeks: number): number {
   if (entries.length === 0) return 0;
-  const cutoff = Date.now() - weeks * MS_PER_WEEK;
+  const cutoff = appTimestamp() - weeks * MS_PER_WEEK;
   const recent = entries.filter((e) => {
     const t = new Date(e.date).getTime();
     return !Number.isNaN(t) && t >= cutoff;
@@ -80,8 +81,8 @@ function computePatternBalance(
   sessions: SessionRecord[],
   windowWeeks: number
 ): PatternBalance | null {
-  const cutoff = Date.now() - windowWeeks * MS_PER_WEEK;
-  const baselineCutoff = Date.now() - windowWeeks * 2 * MS_PER_WEEK;
+  const cutoff = appTimestamp() - windowWeeks * MS_PER_WEEK;
+  const baselineCutoff = appTimestamp() - windowWeeks * 2 * MS_PER_WEEK;
   // Buckets keyed by simple muscle category.
   const recent: Record<"push" | "pull" | "legs", number> = { push: 0, pull: 0, legs: 0 };
   const baseline: Record<"push" | "pull" | "legs", number> = { push: 0, pull: 0, legs: 0 };
@@ -138,8 +139,8 @@ function computeCombinedStrengthDelta(
   lifts: Record<string, LiftEntry[]>,
   windowWeeks: number
 ): number | null {
-  const cutoff = Date.now() - windowWeeks * MS_PER_WEEK;
-  const baselineCutoff = Date.now() - windowWeeks * 2 * MS_PER_WEEK;
+  const cutoff = appTimestamp() - windowWeeks * MS_PER_WEEK;
+  const baselineCutoff = appTimestamp() - windowWeeks * 2 * MS_PER_WEEK;
 
   let recentSum = 0;
   let baselineSum = 0;
@@ -199,7 +200,7 @@ function computeTopLifts(
 
 function rollingMeanReps(entries: LiftEntry[], weeks: number): number {
   if (entries.length === 0) return 0;
-  const cutoff = Date.now() - weeks * MS_PER_WEEK;
+  const cutoff = appTimestamp() - weeks * MS_PER_WEEK;
   const recent = entries.filter((e) => {
     const t = new Date(e.date).getTime();
     return !Number.isNaN(t) && t >= cutoff;
@@ -251,7 +252,7 @@ function computeInjuryHiddenLifts(injuries: string[]): string[] {
  * entry. Used by the post-return archetypes (3, 8) to celebrate comeback work.
  */
 function computeReintroducedLifts(lifts: Record<string, LiftEntry[]>): string[] {
-  const now = Date.now();
+  const now = appTimestamp();
   const recentCutoff = now - 14 * 24 * 60 * 60 * 1000;
   const gapThreshold = 4 * 7 * 24 * 60 * 60 * 1000;
   const out: string[] = [];
@@ -357,7 +358,7 @@ function detectReturnToTraining(
     }
   }
   if (returnTime === null) returnTime = dated[0];
-  return Math.max(1, Math.round((Date.now() - returnTime) / MS_PER_WEEK));
+  return Math.max(1, Math.round((appTimestamp() - returnTime) / MS_PER_WEEK));
 }
 
 /**

@@ -108,13 +108,26 @@ describe("validateWeek", () => {
   });
 
   describe("duplicate detection", () => {
-    it("removes duplicate exercises within a session", () => {
+    it("removes exact duplicate exercises within a session", () => {
       const week = makeWeek();
       week.days[0].exercises.push({ name: "Barbell Back Squat", sets: "3", reps: "5", rest: "120s" });
       const result = validateWeek(week, fullEquip, [], "developing", 4);
       const squatCount = result.weekData.days[0].exercises.filter(e => e.name === "Barbell Back Squat").length;
       expect(squatCount).toBe(1);
       expect(result.issues.some(i => i.type === "duplicate_exercise")).toBe(true);
+    });
+
+    it("flags near-duplicate exercises as droppable", () => {
+      const week = makeWeek();
+      // Add a near-duplicate of "Leg Curl" (same movement key)
+      week.days[0].exercises.push({ name: "Seated Leg Curl", sets: "3", reps: "12", rest: "60s" });
+      const result = validateWeek(week, fullEquip, [], "developing", 4);
+      const seated = result.weekData.days[0].exercises.find(e => e.name === "Seated Leg Curl");
+      expect(seated).toBeDefined();
+      expect(seated!.droppable).toBe(true);
+      // Original "Leg Curl" should not be droppable
+      const original = result.weekData.days[0].exercises.find(e => e.name === "Leg Curl");
+      expect(original!.droppable).toBeUndefined();
     });
   });
 
@@ -163,6 +176,87 @@ describe("validateWeek", () => {
     it("flags missing programName", () => {
       const result = validateWeek(makeWeek({ programName: "" }), fullEquip, [], "developing", 4);
       expect(result.issues.some(i => i.detail === "Missing programName")).toBe(true);
+    });
+  });
+
+  describe("volume-aware droppable flagging", () => {
+    it("does not flag exercises under the FWS budget", () => {
+      // Default makeWeek has each movement key only once — well under budget
+      const result = validateWeek(makeWeek(), fullEquip, [], "developing", 4);
+      const droppable = result.weekData.days.flatMap(d => d.exercises.filter(e => e.droppable));
+      expect(droppable).toHaveLength(0);
+    });
+
+    it("flags excess volume when a movement key exceeds budget", () => {
+      const week = makeWeek();
+      // Add heavy leg curls across all 3 training days to push "leg curl" key over budget
+      // Leg Curl already on day 1. Add more on day 3 and day 5 with high sets.
+      week.days[2].exercises.push({ name: "Lying Leg Curl", sets: "4", reps: "12", rest: "60s" });
+      week.days[4].exercises.push({ name: "Seated Leg Curl", sets: "4", reps: "12", rest: "60s" });
+      week.days[4].exercises.push({ name: "Nordic Curl", sets: "4", reps: "8", rest: "90s" });
+      const result = validateWeek(week, fullEquip, [], "developing", 4);
+      // At least one of the later leg curl variants should be droppable
+      const droppableCurls = result.weekData.days.flatMap(d =>
+        d.exercises.filter(e => e.droppable && e.name.toLowerCase().includes("curl"))
+      );
+      expect(droppableCurls.length).toBeGreaterThan(0);
+      expect(droppableCurls[0].droppableReason).toBeDefined();
+    });
+
+    it("tightens thresholds under poor recovery", () => {
+      const week = makeWeek();
+      // Add moderate volume that would be fine at normal but not at poor
+      week.days[2].exercises.push({ name: "Lying Leg Curl", sets: "4", reps: "12", rest: "60s" });
+      week.days[4].exercises.push({ name: "Seated Leg Curl", sets: "4", reps: "12", rest: "60s" });
+
+      const normalResult = validateWeek(week, fullEquip, [], "developing", 4, null);
+      const poorResult = validateWeek(week, fullEquip, [], "developing", 4, { effort: 1, soreness: 4 });
+
+      const normalDroppable = normalResult.weekData.days.flatMap(d => d.exercises.filter(e => e.droppable));
+      const poorDroppable = poorResult.weekData.days.flatMap(d => d.exercises.filter(e => e.droppable));
+
+      // Poor recovery should flag at least as many (likely more) as normal
+      expect(poorDroppable.length).toBeGreaterThanOrEqual(normalDroppable.length);
+    });
+
+    it("uses recovery-aware copy in droppableReason", () => {
+      const week = makeWeek();
+      week.days[2].exercises.push({ name: "Lying Leg Curl", sets: "4", reps: "12", rest: "60s" });
+      week.days[4].exercises.push({ name: "Seated Leg Curl", sets: "4", reps: "12", rest: "60s" });
+      week.days[4].exercises.push({ name: "Nordic Curl", sets: "4", reps: "8", rest: "90s" });
+
+      const result = validateWeek(week, fullEquip, [], "developing", 4, { effort: 1, soreness: 4 });
+      const droppable = result.weekData.days.flatMap(d => d.exercises.filter(e => e.droppable && e.droppableReason));
+      const volumeDroppable = droppable.filter(e => e.droppableReason!.includes("Recovery is low"));
+      expect(volumeDroppable.length).toBeGreaterThan(0);
+    });
+
+    it("protects first exercise of session from volume flagging", () => {
+      const week = makeWeek();
+      // Add lots of hinge volume across days as accessories (not first position).
+      // Romanian Deadlift is already exercise[1] on day 1.
+      week.days[2].exercises.push({ name: "Stiff Leg Deadlift", sets: "4", reps: "10", rest: "90s" });
+      week.days[4].exercises.push({ name: "Good Morning", sets: "4", reps: "10", rest: "90s" });
+      const result = validateWeek(week, fullEquip, [], "developing", 4, { effort: 1, soreness: 4 });
+      // Day 1's Romanian Deadlift is at position [1] (not primary) so it might be flagged,
+      // but the first exercise on each day should never be flagged by volume thresholds.
+      for (const day of result.weekData.days) {
+        if (day.isRest || day.exercises.length === 0) continue;
+        // Volume threshold doesn't flag position 0 (primary compound)
+        const firstEx = day.exercises[0];
+        const volumeFlagged = firstEx.droppable && firstEx.droppableReason?.includes("volume");
+        expect(volumeFlagged).toBeFalsy();
+      }
+    });
+
+    it("treats no feedback as normal tier", () => {
+      const week = makeWeek();
+      const resultNull = validateWeek(week, fullEquip, [], "developing", 4, null);
+      const resultUndefined = validateWeek(week, fullEquip, [], "developing", 4);
+      // Both should produce the same droppable count
+      const nullDroppable = resultNull.weekData.days.flatMap(d => d.exercises.filter(e => e.droppable));
+      const undefDroppable = resultUndefined.weekData.days.flatMap(d => d.exercises.filter(e => e.droppable));
+      expect(nullDroppable.length).toBe(undefDroppable.length);
     });
   });
 

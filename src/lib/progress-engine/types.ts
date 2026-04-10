@@ -78,6 +78,8 @@ export interface EngineProfile {
   cycleTrackingEnabled: boolean;
   cycleType: "regular" | "irregular" | "hormonal" | "perimenopause" | "na" | null;
   equipment: string[];
+  /** Which sections the user wants visible on the Progress screen. */
+  trackingModes: Array<"lifts" | "photos" | "measurements" | "bodyweight" | "feeling">;
 }
 
 /** Top lift entry produced by derive-history. */

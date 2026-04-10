@@ -17,14 +17,15 @@ export function getMondayOfWeek(date: Date = appNow()): Date {
 
 export function getCurrentWeekNum(programStartDate: string | null): number {
   if (!programStartDate) return 1;
-  const start = getMondayOfWeek(new Date(programStartDate));
+  // Parse as local noon to prevent UTC midnight shifting to the previous day in positive-offset timezones
+  const start = getMondayOfWeek(new Date(programStartDate + "T12:00:00"));
   const now = getMondayOfWeek();
   const diff = Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
   return Math.max(1, diff + 1);
 }
 
 export function getDaysSinceDate(dateStr: string): number {
-  const date = new Date(dateStr);
+  const date = new Date(dateStr + "T12:00:00");
   const today = appNow();
   return Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 }

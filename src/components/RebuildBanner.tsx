@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import { buildWeek, type WeekData } from "@/lib/week-builder";
 import { isProgrammeStarted } from "@/lib/date-utils";
@@ -29,9 +29,16 @@ interface Props {
  */
 export default function RebuildBanner({ open, onResolve, changeLabel }: Props) {
   const [rebuilding, setRebuilding] = useState(false);
+  const [rebuildSec, setRebuildSec] = useState(0);
   const store = useKineStore();
   const { progressDB, weekData, setWeekData, setProgressDB } = store;
   const started = isProgrammeStarted(progressDB.programStartDate ?? null);
+
+  useEffect(() => {
+    if (!rebuilding) { setRebuildSec(0); return; }
+    const interval = setInterval(() => setRebuildSec((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [rebuilding]);
 
   if (!open) return null;
 
@@ -72,7 +79,6 @@ export default function RebuildBanner({ open, onResolve, changeLabel }: Props) {
     );
 
     try {
-      setWeekData(null);
       const result = await buildWeek();
       const next: WeekData | null = result.weekData ?? null;
 
@@ -99,6 +105,15 @@ export default function RebuildBanner({ open, onResolve, changeLabel }: Props) {
         toast(`Week rebuilt — kept ${completedDayIdxs.size} completed session${completedDayIdxs.size === 1 ? "" : "s"}`, "success");
       } else {
         toast("Week rebuilt with new settings", "success");
+      }
+
+      if (result.repairsCount && result.repairsCount > 0) {
+        toast(
+          result.repairsCount === 1
+            ? "1 exercise adapted for your setup"
+            : `${result.repairsCount} exercises adapted for your setup`,
+          "info",
+        );
       }
       onResolve();
     } catch (e) {
@@ -142,7 +157,13 @@ export default function RebuildBanner({ open, onResolve, changeLabel }: Props) {
             onClick={rebuildNow}
             disabled={rebuilding}
           >
-            {rebuilding ? "Rebuilding this week…" : "Rebuild this week now"}
+            {rebuilding
+              ? rebuildSec < 15
+                ? "Rebuilding this week…"
+                : rebuildSec < 30
+                  ? "Still building — this takes 15–30s"
+                  : "Almost there…"
+              : "Rebuild this week now"}
           </Button>
           <Button
             className="w-full"

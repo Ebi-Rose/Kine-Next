@@ -85,8 +85,9 @@ export function nearestKettlebell(displayWeight: number, system: MeasurementSyst
 export function calculatePlatesForSystem(
   targetWeight: number,
   system: MeasurementSystem,
+  customBarWeight?: number,
 ): { plate: number; count: number }[] {
-  const barWeight = system === "imperial" ? IMPERIAL_BARBELL : METRIC_BARBELL;
+  const barWeight = customBarWeight ?? (system === "imperial" ? IMPERIAL_BARBELL : METRIC_BARBELL);
   const available = system === "imperial" ? IMPERIAL_PLATES : METRIC_PLATES;
   let remaining = (targetWeight - barWeight) / 2;
 

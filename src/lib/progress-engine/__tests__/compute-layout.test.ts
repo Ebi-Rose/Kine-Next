@@ -33,6 +33,7 @@ function profile(overrides: Partial<EngineProfile> = {}): EngineProfile {
     cycleTrackingEnabled: true,
     cycleType: "regular",
     equipment: ["barbell", "dumbbells"],
+    trackingModes: ["lifts", "photos", "measurements", "bodyweight", "feeling"],
     ...overrides,
   };
 }
@@ -115,9 +116,10 @@ describe("8 archetypes", () => {
       profile({ rawGoal: "muscle", experience: "new" }),
       history({ sessionCountTotal: 12, weeksTraining: 4, recentPRCount: 6, currentPhaseShort: "" })
     );
-    // Beginner override hides strength_trend; promotes exercises_learned
+    // Beginner override hides strength_trend; exercises_learned is suppressed
+    // when top_lifts(absolute) is present since it shows the same data with weights
     expect(layout.strengthCards.find((c) => c.id === "strength_trend")).toBeFalsy();
-    expect(layout.strengthCards.find((c) => c.id === "exercises_learned")).toBeTruthy();
+    expect(layout.strengthCards.find((c) => c.id === "exercises_learned")).toBeFalsy();
     expect(layout.window).toBe("hidden");
     expect(layout.hero.id).toBe("sessions_completed");
     expect(layout.hero.variant).toBe("first_weeks");

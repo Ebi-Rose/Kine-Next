@@ -38,6 +38,7 @@ function buildEngineProfile(state: ReturnType<typeof useKineStore.getState>): En
     cycleTrackingEnabled: state.cycleType !== null && state.cycleType !== "na",
     cycleType: state.cycleType,
     equipment: state.equip ?? [],
+    trackingModes: state.trackingModes,
   };
 }
 

@@ -11,6 +11,7 @@ import { apiFetchStreaming } from "@/lib/api";
 import { findExercise, EXERCISE_LIBRARY } from "@/data/exercise-library";
 import { buildWarmup } from "@/lib/warmup-engine";
 import { trimSessionToTime, estimateSessionTime } from "@/lib/time-budget";
+import { displayToKg, kgToDisplay } from "@/lib/format";
 import { toast } from "@/components/Toast";
 import Button from "@/components/Button";
 import MuscleDiagram from "@/components/MuscleDiagram";
@@ -82,7 +83,7 @@ export default function SessionPage() {
       const lastLift = history && history.length > 0 ? history[history.length - 1] : null;
       // Convert stored kg to display unit
       const prefillWeight = lastLift?.weight
-        ? String(system === "imperial" ? Math.round(lastLift.weight * 2.205 * 2) / 2 : lastLift.weight)
+        ? String(kgToDisplay(lastLift.weight, system))
         : "";
       initial[i] = {
         name: ex.name,
@@ -363,14 +364,15 @@ export default function SessionPage() {
       prs,
     };
 
-    // Extract lift records
+    // Extract lift records — weight-first ranking (matches PR detection)
+    const system = store.measurementSystem || "metric";
     const updatedLifts = { ...store.progressDB.lifts };
     Object.values(logs).forEach((ex) => {
       const bestSet = ex.actual.reduce(
         (best, s) => {
           const w = parseFloat(s.weight) || 0;
           const r = parseInt(s.reps) || 0;
-          if (w * r > (best.w * best.r)) return { w, r };
+          if (w > best.w || (w === best.w && r > best.r)) return { w, r };
           return best;
         },
         { w: 0, r: 0 }
@@ -379,7 +381,7 @@ export default function SessionPage() {
         if (!updatedLifts[ex.name]) updatedLifts[ex.name] = [];
         updatedLifts[ex.name].push({
           date: appTodayISO(),
-          weight: bestSet.w,
+          weight: displayToKg(bestSet.w, system),
           reps: bestSet.r,
         });
       }

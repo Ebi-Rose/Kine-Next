@@ -200,7 +200,7 @@ export function calculatePlates(
   barWeight?: number,
 ): { plate: number; count: number }[] {
   const system = useKineStore.getState().measurementSystem || "metric";
-  return calculatePlatesForSystem(targetWeight, system);
+  return calculatePlatesForSystem(targetWeight, system, barWeight);
 }
 
 export function getDaysSinceLastSession(exerciseName: string): number | null {

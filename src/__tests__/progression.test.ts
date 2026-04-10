@@ -25,11 +25,19 @@ import { suggestNextWeight, getProgressionSuggestion, getLastSessionData, isDetr
 
 const mockGetState = useKineStore.getState as jest.Mock;
 
+/** ISO date string N days ago from today. */
+function daysAgoISO(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+}
+
 function mockStore(overrides: Record<string, unknown> = {}) {
   mockGetState.mockReturnValue({
     goal: "general",
     equip: ["barbell", "dumbbells"],
     units: "kg",
+    measurementSystem: "metric",
     progressDB: {
       lifts: {},
       sessions: [],
@@ -65,6 +73,8 @@ describe("calculateORM", () => {
 });
 
 describe("calculatePlates", () => {
+  beforeEach(() => mockStore());
+
   it("returns empty for bar weight only", () => {
     expect(calculatePlates(20)).toEqual([]);
   });
@@ -121,7 +131,7 @@ describe("getProgressionSuggestion", () => {
   it("returns 'hold' with reason when building at current weight", () => {
     mockStore({
       progressDB: {
-        lifts: { "Barbell Back Squat": [{ date: "2026-03-25", weight: 60, reps: 8 }] },
+        lifts: { "Barbell Back Squat": [{ date: daysAgoISO(2), weight: 60, reps: 8 }] },
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
     });
@@ -135,7 +145,7 @@ describe("getProgressionSuggestion", () => {
     // Week 1 = Accumulation = 10-12 reps. Top of range = 12.
     mockStore({
       progressDB: {
-        lifts: { "Barbell Back Squat": [{ date: "2026-03-25", weight: 60, reps: 12 }] },
+        lifts: { "Barbell Back Squat": [{ date: daysAgoISO(2), weight: 60, reps: 12 }] },
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
     });
@@ -149,8 +159,8 @@ describe("getProgressionSuggestion", () => {
     mockStore({
       progressDB: {
         lifts: { "Barbell Back Squat": [
-          { date: "2026-03-20", weight: 60, reps: 12 },
-          { date: "2026-03-25", weight: 60, reps: 12 },
+          { date: daysAgoISO(5), weight: 60, reps: 12 },
+          { date: daysAgoISO(2), weight: 60, reps: 12 },
         ]},
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
@@ -167,8 +177,8 @@ describe("getProgressionSuggestion", () => {
     mockStore({
       progressDB: {
         lifts: { "Barbell Back Squat": [
-          { date: "2026-03-20", weight: 70, reps: 8 },
-          { date: "2026-03-25", weight: 70, reps: 8 },
+          { date: daysAgoISO(5), weight: 70, reps: 8 },
+          { date: daysAgoISO(2), weight: 70, reps: 8 },
         ]},
         sessions: [], currentWeek: 2, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
@@ -183,8 +193,8 @@ describe("getProgressionSuggestion", () => {
     mockStore({
       progressDB: {
         lifts: { "Barbell Back Squat": [
-          { date: "2026-03-20", weight: 80, reps: 6 },
-          { date: "2026-03-25", weight: 80, reps: 6 },
+          { date: daysAgoISO(5), weight: 80, reps: 6 },
+          { date: daysAgoISO(2), weight: 80, reps: 6 },
         ]},
         sessions: [], currentWeek: 3, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
@@ -198,8 +208,8 @@ describe("getProgressionSuggestion", () => {
     mockStore({
       progressDB: {
         lifts: { "Barbell Back Squat": [
-          { date: "2026-03-20", weight: 55, reps: 12 },
-          { date: "2026-03-25", weight: 60, reps: 12 },
+          { date: daysAgoISO(5), weight: 55, reps: 12 },
+          { date: daysAgoISO(2), weight: 60, reps: 12 },
         ]},
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
@@ -228,8 +238,8 @@ describe("getProgressionSuggestion", () => {
     mockStore({
       progressDB: {
         lifts: { "Barbell Back Squat": [
-          { date: "2026-03-20", weight: 60, reps: 8 },
-          { date: "2026-03-25", weight: 60, reps: 10 },
+          { date: daysAgoISO(5), weight: 60, reps: 8 },
+          { date: daysAgoISO(2), weight: 60, reps: 10 },
         ]},
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
@@ -242,8 +252,9 @@ describe("getProgressionSuggestion", () => {
   it("respects user units preference", () => {
     mockStore({
       units: "lbs",
+      measurementSystem: "imperial",
       progressDB: {
-        lifts: { "Barbell Back Squat": [{ date: "2026-03-25", weight: 135, reps: 8 }] },
+        lifts: { "Barbell Back Squat": [{ date: daysAgoISO(2), weight: 60, reps: 8 }] },
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
     });
@@ -256,8 +267,8 @@ describe("getProgressionSuggestion", () => {
       mockStore({
         progressDB: {
           lifts: { "Dumbbell Row": [
-            { date: "2026-03-20", weight: 20, reps: 12 },
-            { date: "2026-03-25", weight: 20, reps: 12 },
+            { date: daysAgoISO(5), weight: 20, reps: 12 },
+            { date: daysAgoISO(2), weight: 20, reps: 12 },
           ]},
           sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
         },
@@ -271,8 +282,8 @@ describe("getProgressionSuggestion", () => {
       mockStore({
         progressDB: {
           lifts: { "Leg Press": [
-            { date: "2026-03-20", weight: 100, reps: 12 },
-            { date: "2026-03-25", weight: 100, reps: 12 },
+            { date: daysAgoISO(5), weight: 100, reps: 12 },
+            { date: daysAgoISO(2), weight: 100, reps: 12 },
           ]},
           sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
         },
@@ -295,7 +306,7 @@ describe("suggestNextWeight (backwards compat)", () => {
   it("returns a weight string with units", () => {
     mockStore({
       progressDB: {
-        lifts: { "Barbell Back Squat": [{ date: "2026-03-25", weight: 60, reps: 8 }] },
+        lifts: { "Barbell Back Squat": [{ date: daysAgoISO(2), weight: 60, reps: 8 }] },
         sessions: [], currentWeek: 1, weekFeedbackHistory: [], programStartDate: null, skippedSessions: [], phaseOffset: 0,
       },
     });

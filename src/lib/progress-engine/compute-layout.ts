@@ -451,11 +451,15 @@ function applyExperience(draft: Draft, experience: ExperienceLevel, history: Eng
           ? { ...c, variant: "first_prs", reason: c.reason + "→beginner" }
           : c
     );
-    ensureCard(
-      draft,
-      withReason("exercises_learned", "first_weeks", "experience:beginner"),
-      "start"
-    );
+    // Only show exercises_learned if top_lifts isn't already visible —
+    // top_lifts(absolute) already lists the same exercises with weights.
+    if (!draft.cards.some((c) => c.id === "top_lifts")) {
+      ensureCard(
+        draft,
+        withReason("exercises_learned", "first_weeks", "experience:beginner"),
+        "start"
+      );
+    }
   }
 
   if (experience === "advanced") {
@@ -537,6 +541,39 @@ function applyUserOverrides(draft: Draft, prefs?: ProgressPreferences): void {
   }
 }
 
+// ── Tracking-mode filter ─────────────────────────────────────────────────
+
+function applyTrackingModes(draft: Draft, modes: EngineProfile["trackingModes"]): void {
+  if (!modes || modes.length === 0) return;
+
+  // Body-tab cards gated by tracking preferences.
+  if (!modes.includes("photos")) {
+    draft.bodyCards = draft.bodyCards.filter((c) => c.id !== "photos");
+    draft.hidden = draft.hidden.filter((h) => h.id !== "photos");
+    draft.hidden.push({ id: "photos", reason: "tracking_mode:off" });
+  }
+  if (!modes.includes("bodyweight")) {
+    draft.bodyCards = draft.bodyCards.filter((c) => c.id !== "bodyweight");
+    draft.hidden = draft.hidden.filter((h) => h.id !== "bodyweight");
+    draft.hidden.push({ id: "bodyweight", reason: "tracking_mode:off" });
+  }
+  if (!modes.includes("measurements")) {
+    draft.bodyCards = draft.bodyCards.filter((c) => c.id !== "measurements_optin");
+    draft.hidden = draft.hidden.filter((h) => h.id !== "measurements_optin");
+    draft.hidden.push({ id: "measurements_optin", reason: "tracking_mode:off" });
+  }
+
+  // Strength-tab: hide lift-specific cards when lifts tracking is off.
+  if (!modes.includes("lifts")) {
+    removeCards(draft, ["top_lifts", "pr_feed", "pattern_balance"], "tracking_mode:off");
+  }
+
+  // Feeling: hide effort / symptom cards when feeling tracking is off.
+  if (!modes.includes("feeling")) {
+    removeCards(draft, ["effort_observation", "effort_control", "symptom_context"], "tracking_mode:off");
+  }
+}
+
 // ── Header label ──────────────────────────────────────────────────────────
 
 function buildHeaderLabel(
@@ -585,6 +622,7 @@ export function computeProgressLayout(
   applyExperience(draft, experience, history);
   applyCycleLens(draft, profile);
   applyEmptyState(draft, history);
+  applyTrackingModes(draft, profile.trackingModes);
   applyUserOverrides(draft, prefs);
 
   const window = prefs?.timeWindowOverride ?? defaultWindow(profile, experience, history);

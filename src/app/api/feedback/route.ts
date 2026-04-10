@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { verifyCsrf } from "../_lib/csrf";
+import { createRatelimit } from "../_lib/rate-limit";
+import { getAuthenticatedUser } from "../_lib/auth";
 
 // Forwards in-app feedback to the Kine Tools Supabase project
 // (where the admin /inbox lives). Separate project from kine-next's
@@ -13,6 +16,8 @@ const TOOLS_KEY = process.env.KINE_TOOLS_SUPABASE_SERVICE_KEY ?? process.env.KIN
 
 const ALLOWED_CATEGORIES = ["bug", "idea", "confusion", "love", "ux", "onboarding", "general"];
 const ALLOWED_SEVERITIES = ["low", "medium", "high", "critical"];
+
+const ratelimit = createRatelimit("feedback", 10, "60 s");
 
 export const maxDuration = 30;
 
@@ -47,6 +52,22 @@ async function uploadToBucket(
 }
 
 export async function POST(req: NextRequest) {
+  if (!verifyCsrf(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const user = await getAuthenticatedUser(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (ratelimit) {
+    const { success } = await ratelimit.limit(user.id);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+  }
+
   if (!TOOLS_URL || !TOOLS_KEY) {
     return NextResponse.json({ error: "feedback destination not configured" }, { status: 500 });
   }

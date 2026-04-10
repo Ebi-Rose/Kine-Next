@@ -17,7 +17,7 @@ import { getConditionContext } from "./condition-context";
 import { getActivityContext } from "./outside-activity-context";
 import { OUTSIDE_ACTIVITY_RULES } from "@/data/outside-activity-rules";
 import { validateWeek } from "./week-validation";
-import { EXERCISE_LIBRARY } from "@/data/exercise-library";
+import { EXERCISE_LIBRARY, findExercise } from "@/data/exercise-library";
 // injury-swaps.ts is no longer imported anywhere in the build path.
 // Hard filtering and template-time swaps both run through the
 // indication pipeline. The legacy file remains in the repo as a
@@ -64,6 +64,10 @@ export interface Exercise {
   heavyTopSetsAllowed?: boolean;
   /** Populated by the cycle envelope: short phase-aware message for the session card. */
   framing?: string;
+  /** True when this exercise duplicates another in the session or week — user can skip it without losing coverage. */
+  droppable?: boolean;
+  /** Short user-facing explanation of why this exercise is droppable. */
+  droppableReason?: string;
 }
 
 export interface WeekDay {
@@ -229,6 +233,96 @@ function buildUserPrompt(): string {
     }
   }
 
+  // ── Accumulated muscle-group soreness ──
+  // Analyse which muscle groups were trained recently and cross-reference
+  // with reported soreness to build a carryover fatigue map. This helps
+  // the AI avoid stacking volume on muscle groups that are still recovering.
+  let sorenessCtx = "";
+  if (progressDB.sessions.length > 0) {
+    const MUSCLE_LABELS: Record<string, string> = {
+      legs: "Legs (quads/glutes)",
+      hinge: "Posterior chain (hamstrings/glutes/back)",
+      push: "Push (chest/shoulders/triceps)",
+      pull: "Pull (back/biceps)",
+      core: "Core",
+    };
+
+    type SessionWithLogs = {
+      date?: string;
+      dayIdx?: number;
+      soreness?: number;
+      effort?: number;
+      logs?: Record<string, { name: string }>;
+    };
+
+    const recentSessions = (progressDB.sessions as SessionWithLogs[]).slice(-5);
+    const now = new Date();
+
+    // Build per-muscle-group fatigue: { group -> { sessions ago, soreness, days ago } }
+    const muscleFatigue: Record<string, { daysAgo: number; soreness: number; sessionTitle: string }[]> = {};
+
+    for (const session of recentSessions) {
+      const sessionDate = session.date ? new Date(session.date) : null;
+      const daysAgo = sessionDate
+        ? Math.max(0, Math.round((now.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24)))
+        : null;
+
+      if (daysAgo === null || daysAgo > 7) continue; // only care about last 7 days
+
+      const soreness = session.soreness || 0;
+      const exerciseNames: string[] = [];
+
+      // Extract exercise names from session logs
+      if (session.logs && typeof session.logs === "object") {
+        for (const entry of Object.values(session.logs)) {
+          if (entry && typeof entry === "object" && "name" in entry && typeof entry.name === "string") {
+            exerciseNames.push(entry.name);
+          }
+        }
+      }
+
+      // Map exercises to muscle groups
+      const sessionGroups = new Set<string>();
+      for (const name of exerciseNames) {
+        const ex = findExercise(name);
+        if (ex && ex.muscle !== "cardio" && ex.muscle !== "calisthenics") {
+          sessionGroups.add(ex.muscle);
+        }
+      }
+
+      const dayLabel = session.dayIdx !== undefined ? DAY_LABELS[session.dayIdx] : "";
+      for (const group of sessionGroups) {
+        if (!muscleFatigue[group]) muscleFatigue[group] = [];
+        muscleFatigue[group].push({
+          daysAgo,
+          soreness,
+          sessionTitle: dayLabel,
+        });
+      }
+    }
+
+    // Build fatigue summary — only include groups with notable accumulated load
+    const fatigueLines: string[] = [];
+    for (const [group, hits] of Object.entries(muscleFatigue)) {
+      const label = MUSCLE_LABELS[group] || group;
+      const totalHits = hits.length;
+      const avgSoreness = hits.reduce((sum, h) => sum + h.soreness, 0) / totalHits;
+      const mostRecent = Math.min(...hits.map((h) => h.daysAgo));
+
+      // Flag if: trained 2+ times in 7 days, or trained recently with high soreness
+      if (totalHits >= 2 || (mostRecent <= 2 && avgSoreness >= 2.5)) {
+        const recentNote = mostRecent === 0 ? "today" : mostRecent === 1 ? "yesterday" : `${mostRecent} days ago`;
+        const sorenessNote = avgSoreness >= 3 ? "high soreness" : avgSoreness >= 2 ? "moderate soreness" : "low soreness";
+        fatigueLines.push(`- ${label}: trained ${totalHits}x in last 7 days, last hit ${recentNote}, ${sorenessNote}`);
+      }
+    }
+
+    if (fatigueLines.length > 0) {
+      sorenessCtx = `\n\nAccumulated muscle-group fatigue (carryover into this week):\n${fatigueLines.join("\n")}`;
+      sorenessCtx += `\nGuidance: For fatigued groups, reduce volume (fewer sets) or shift emphasis to less-fatigued groups early in the week. Avoid programming high-fatigue compounds for groups that are still recovering. A user starting a session sore from a previous session will perform worse — front-load fresher muscle groups.`;
+    }
+  }
+
   // #11: Week check-in feedback for AI adaptation
   let weekFeedbackCtx = "";
   if (progressDB.weekFeedbackHistory.length > 0) {
@@ -316,7 +410,7 @@ Trainee:
 - Program: ${prog}
 - Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance — especially upper body (prescribe +1 set on upper body accessories vs lower body). Women recover faster between sets — rest periods can be shorter than male-derived defaults.${bodyCtx}${dayDurCtx}
 ${cycleCtx}
-${phaseCtx}${historyCtx}${weekFeedbackCtx}${injuryAvoidCtx}
+${phaseCtx}${historyCtx}${sorenessCtx}${weekFeedbackCtx}${injuryAvoidCtx}
 
 EXERCISE POOL — only use exercises from this list. Each entry is tagged with [role, f=fatigueCost 1-5, L=loadability h/m/l]. Prefer "primary" role exercises for the first slot of each session, "secondary" or "accessory" for follow-ups. High fatigueCost lifts (f4-5) should appear once per session, never twice on consecutive days. Exercises contra-indicated by the user's injuries, conditions, equipment, and experience have already been filtered out — everything below is safe to prescribe:
 ${poolStr}
@@ -682,12 +776,18 @@ export async function buildWeek(): Promise<BuildResult> {
     else if (store.duration === "long") exCount = 6;
     else if (store.duration === "extended") exCount = 7;
 
+    const feedbackHistory = store.progressDB.weekFeedbackHistory;
+    const latestFeedback = feedbackHistory.length > 0
+      ? feedbackHistory[feedbackHistory.length - 1]
+      : null;
+
     const validation = validateWeek(
       weekData,
       store.equip,
       store.injuries,
       store.exp || "new",
       exCount,
+      latestFeedback ? { effort: latestFeedback.effort, soreness: latestFeedback.soreness } : null,
     );
 
     if (validation.issues.length > 0) {

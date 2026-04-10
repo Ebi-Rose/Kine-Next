@@ -1,5 +1,7 @@
 "use client";
 
+import { appNow } from "@/lib/dev-time";
+
 // Lightweight in-memory context tracker for beta feedback.
 // Records recent navigation + JS errors as the user moves around the app,
 // then snapshots everything (plus zustand state, viewport, sentry breadcrumbs)
@@ -159,7 +161,7 @@ export async function collectContext(): Promise<FeedbackContext> {
       devicePixelRatio: typeof window !== "undefined" ? window.devicePixelRatio : 1,
       locale: typeof navigator !== "undefined" ? navigator.language : "",
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      timestampIso: new Date().toISOString(),
+      timestampIso: appNow().toISOString(),
       online: typeof navigator !== "undefined" ? navigator.onLine : true,
       standalone: typeof window !== "undefined"
         && (window.matchMedia?.("(display-mode: standalone)").matches

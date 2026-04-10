@@ -36,7 +36,8 @@ const LOADING_MESSAGES = [
 ];
 
 export default function AppHome() {
-  const { weekData, setWeekData, goal, progressDB } = useKineStore();
+  const store = useKineStore();
+  const { weekData, setWeekData, goal, progressDB } = store;
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(0);
   const router = useRouter();
@@ -46,13 +47,18 @@ export default function AppHome() {
   // here fights with AuthGuard and sends onboarded users who are mid-sync
   // back through onboarding, which overwrites their data.
 
-  // Rotate loading messages
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  // Rotate loading messages + track elapsed time
   useEffect(() => {
-    if (!loading) return;
-    const interval = setInterval(() => {
+    if (!loading) { setElapsedSec(0); return; }
+    const msgInterval = setInterval(() => {
       setLoadingMsg((prev) => (prev + 1) % LOADING_MESSAGES.length);
     }, 3000);
-    return () => clearInterval(interval);
+    const secInterval = setInterval(() => {
+      setElapsedSec((prev) => prev + 1);
+    }, 1000);
+    return () => { clearInterval(msgInterval); clearInterval(secInterval); };
   }, [loading]);
 
   async function handleBuildWeek() {
@@ -67,6 +73,13 @@ export default function AppHome() {
 
     if (!result.success && result.error) {
       toast(result.error, "error");
+    } else if (result.repairsCount && result.repairsCount > 0) {
+      toast(
+        result.repairsCount === 1
+          ? "1 exercise adapted for your setup"
+          : `${result.repairsCount} exercises adapted for your setup`,
+        "info",
+      );
     }
 
     setLoading(false);
@@ -109,6 +122,13 @@ export default function AppHome() {
               <p className="mt-4 text-sm text-muted2 animate-pulse" aria-live="polite">
                 {LOADING_MESSAGES[loadingMsg]}
               </p>
+              {elapsedSec >= 10 && (
+                <p className="mt-2 text-[10px] text-muted font-light">
+                  {elapsedSec < 30
+                    ? "This usually takes 15–30 seconds"
+                    : "Still working — almost there"}
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -128,10 +148,39 @@ export default function AppHome() {
     );
   }
 
+  async function handleAdvanceWeek() {
+    const nextWeekNum = (progressDB.currentWeek || 1) + 1;
+    store.setProgressDB({
+      ...store.progressDB,
+      currentWeek: nextWeekNum,
+    });
+    setLoading(true);
+    setLoadingMsg(0);
+
+    const result = await buildWeek();
+
+    if (result.weekData) {
+      setWeekData(result.weekData);
+    }
+
+    if (!result.success && result.error) {
+      toast(result.error, "error");
+    } else if (result.repairsCount && result.repairsCount > 0) {
+      toast(
+        result.repairsCount === 1
+          ? "1 exercise adapted for your setup"
+          : `${result.repairsCount} exercises adapted for your setup`,
+        "info",
+      );
+    }
+
+    setLoading(false);
+  }
+
   // Show week view
   const week = weekData as WeekData;
 
-  return <WeekView week={week} onRebuild={handleBuildWeek} loading={loading} />;
+  return <WeekView week={week} onRebuild={handleBuildWeek} onAdvanceWeek={handleAdvanceWeek} loading={loading} />;
 }
 
 // ── Pre-Start View (programme starts in the future) ──
@@ -387,10 +436,12 @@ function CycleArc({ cycleDay, cycleLength, logCount }: { cycleDay: number; cycle
 function WeekView({
   week,
   onRebuild,
+  onAdvanceWeek,
   loading,
 }: {
   week: WeekData;
   onRebuild: () => void;
+  onAdvanceWeek: () => void;
   loading: boolean;
 }) {
   const { cycleType, cycle, setCycle, progressDB, weekHistory, exp, personalProfile } = useKineStore();
@@ -440,7 +491,16 @@ function WeekView({
   if (!displayWeek) return null;
 
   return (
-    <div>
+    <div className={loading ? "relative" : ""}>
+      {/* Rebuild overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-30 flex items-start justify-center pt-24 bg-bg/70 rounded-2xl" role="status" aria-label="Rebuilding your week">
+          <div className="text-center">
+            <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-accent border-t-transparent" aria-hidden="true" />
+            <p className="mt-3 text-xs text-muted2 animate-pulse">Rebuilding your week…</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
@@ -612,16 +672,43 @@ function WeekView({
             return null;
           })()}
 
-          {/* Last session's changes — Today tab */}
+          {/* Week overview strip */}
+          {(() => {
+            const ws = (progressDB.sessions as { date?: string; dayIdx?: number }[])
+              .filter((s) => isInCurrentWeek(s.date));
+            return (
+              <div className="mb-4 flex items-center justify-center gap-3">
+                {displayWeek.days.map((day, i) => {
+                  if (day.isRest) return null;
+                  const done = ws.some((s) => s.dayIdx === i);
+                  const isCurrent = i === todayIdx;
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <div className={`h-2.5 w-2.5 rounded-full ${done ? "bg-accent" : isCurrent ? "ring-1 ring-accent bg-transparent" : "bg-muted/20"}`} />
+                      <span className="text-[8px] text-muted2">{DAY_LABELS[i]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Feedback from matching past session */}
           {(() => {
             const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
-            const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
-            if (!lastSession?.changes?.length) return null;
+            const todayDay = displayWeek.days[todayIdx];
+            if (todayDay?.isRest) return null;
+            const match = sessions
+              .filter((s) => s.dayIdx === todayIdx && !isInCurrentWeek(s.date))
+              .at(-1);
+            if (!match?.changes?.length) return null;
             return (
               <div className="mb-4 rounded-[14px] border border-white/[0.06] bg-surface/50 p-4">
-                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">From your last session</p>
+                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">
+                  From your last {match.title || "session"}
+                </p>
                 <div className="flex flex-col gap-1.5">
-                  {lastSession.changes.map((c, i) => (
+                  {match.changes.map((c, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <span className="text-xs shrink-0 mt-0.5">{c.icon}</span>
                       <div className="min-w-0">
@@ -757,7 +844,7 @@ function WeekView({
                   <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Up next</p>
                   <p className="font-display text-lg tracking-wide text-text">Week {nextWeekNum}</p>
                   <p className="mt-1 text-[10px] text-muted2">{nextPhase.label} · {nextPhase.description}</p>
-                  <Button variant="secondary" size="sm" className="mt-3" onClick={onRebuild} disabled={loading}>
+                  <Button variant="secondary" size="sm" className="mt-3" onClick={onAdvanceWeek} disabled={loading}>
                     Build Week {nextWeekNum} →
                   </Button>
                 </div>

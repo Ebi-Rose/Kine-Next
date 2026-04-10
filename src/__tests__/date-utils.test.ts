@@ -58,14 +58,17 @@ describe("getCurrentWeekNum", () => {
 
   it("returns 1 on the start week", () => {
     const monday = getMondayOfWeek();
-    const result = getCurrentWeekNum(monday.toISOString().split("T")[0]);
+    // Format in local time to avoid UTC timezone shift
+    const iso = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+    const result = getCurrentWeekNum(iso);
     expect(result).toBe(1);
   });
 
   it("returns 2 one week later", () => {
     const monday = getMondayOfWeek();
     monday.setDate(monday.getDate() - 7);
-    const result = getCurrentWeekNum(monday.toISOString().split("T")[0]);
+    const iso = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+    const result = getCurrentWeekNum(iso);
     expect(result).toBe(2);
   });
 

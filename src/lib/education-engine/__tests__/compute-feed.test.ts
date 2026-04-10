@@ -30,6 +30,7 @@ function profile(overrides: Partial<EngineProfile> = {}): EngineProfile {
     cycleTrackingEnabled: true,
     cycleType: "regular",
     equipment: ["barbell", "dumbbells"],
+    trackingModes: ["lifts", "photos", "measurements", "bodyweight", "feeling"],
     ...overrides,
   };
 }

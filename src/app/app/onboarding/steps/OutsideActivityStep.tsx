@@ -4,8 +4,9 @@ import { useKineStore } from "@/store/useKineStore";
 import type { OutsideActivity } from "@/store/useKineStore";
 import Button from "@/components/Button";
 import { OUTSIDE_ACTIVITY_OPTIONS } from "@/data/constants";
+import { StepLabel } from "../helpers";
 
-export default function OutsideActivityStep({ onNext }: { onNext: () => void }) {
+export default function OutsideActivityStep({ onNext, numberedStep }: { onNext: () => void; numberedStep: number }) {
   const {
     outsideActivities,
     setOutsideActivities,
@@ -37,9 +38,7 @@ export default function OutsideActivityStep({ onNext }: { onNext: () => void }) 
 
   return (
     <div className="animate-fade-up">
-      <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
-        Outside training
-      </p>
+      <StepLabel step={numberedStep} />
       <h2
         className="font-display tracking-wide text-text"
         style={{ fontSize: "clamp(20px, 6vw, 28px)", lineHeight: 1.1 }}

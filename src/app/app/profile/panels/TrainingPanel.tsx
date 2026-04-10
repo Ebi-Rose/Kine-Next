@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
+import type { OutsideActivity } from "@/store/useKineStore";
 import Button from "@/components/Button";
 import {
   GOAL_OPTIONS,
@@ -11,13 +12,14 @@ import {
   EQUIP_PRESETS,
   DURATION_OPTIONS,
   DAY_LABELS,
+  OUTSIDE_ACTIVITY_OPTIONS,
 } from "@/data/constants";
 import { BackButton, EditableRow } from "./_helpers";
 import RebuildBanner from "@/components/RebuildBanner";
 
 export default function TrainingPanel({ onBack }: { onBack: () => void }) {
   const store = useKineStore();
-  const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration } = store;
+  const { goal, exp, equip, trainingDays, duration, setGoal, setExp, setEquip, setTrainingDays, setDays, setDuration, outsideActivities, setOutsideActivities, outsideActivityNotes, setOutsideActivityNotes, outsideActivityFocus, setOutsideActivityFocus } = store;
   const [editing, setEditing] = useState<string | null>(null);
   const [rebuildOpen, setRebuildOpen] = useState(false);
   const [lastChange, setLastChange] = useState<string | undefined>(undefined);
@@ -139,6 +141,86 @@ export default function TrainingPanel({ onBack }: { onBack: () => void }) {
           <Button size="sm" className="mt-3 w-full" onClick={() => onSettingChanged("Per-day durations")}>Save durations</Button>
         </EditableRow>
       )}
+
+      {/* Outside activities */}
+      <div className="mt-4 rounded-[10px] border border-border bg-surface p-4">
+        <p className="text-[10px] tracking-[0.15em] uppercase text-muted mb-3">Outside activities</p>
+        <div className="flex flex-wrap gap-1.5">
+          {OUTSIDE_ACTIVITY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                const activity = opt.value as OutsideActivity;
+                if (outsideActivities.includes(activity)) {
+                  setOutsideActivities(outsideActivities.filter((a) => a !== activity));
+                  if (outsideActivityFocus === activity) setOutsideActivityFocus(null);
+                } else {
+                  setOutsideActivities([...outsideActivities, activity]);
+                }
+                onSettingChanged("Outside activities");
+              }}
+              className={`rounded-full border px-3 py-1 text-[10px] transition-all ${
+                outsideActivities.includes(opt.value as OutsideActivity)
+                  ? "border-accent bg-accent-dim text-text"
+                  : "border-dashed border-border text-muted2 hover:border-border-active"
+              }`}
+            >
+              {outsideActivities.includes(opt.value as OutsideActivity) ? opt.label : `+ ${opt.label}`}
+            </button>
+          ))}
+        </div>
+
+        {outsideActivities.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border/50">
+            <p className="text-[10px] text-muted mb-2">Main focus</p>
+            <div className="flex flex-wrap gap-1.5">
+              {outsideActivities.map((activity) => {
+                const label = OUTSIDE_ACTIVITY_OPTIONS.find((o) => o.value === activity)?.label ?? activity;
+                return (
+                  <button
+                    key={activity}
+                    onClick={() => { setOutsideActivityFocus(outsideActivityFocus === activity ? null : activity); }}
+                    className={`rounded-full border px-3 py-1 text-[10px] transition-all ${
+                      outsideActivityFocus === activity
+                        ? "border-accent bg-accent-dim text-text"
+                        : "border-border text-muted2 hover:border-border-active"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setOutsideActivityFocus(null)}
+                className={`rounded-full border px-3 py-1 text-[10px] transition-all ${
+                  outsideActivityFocus === null
+                    ? "border-accent bg-accent-dim text-text"
+                    : "border-border text-muted2 hover:border-border-active"
+                }`}
+              >
+                Gym is my main focus
+              </button>
+            </div>
+          </div>
+        )}
+
+        {outsideActivities.length > 0 && (
+          <div className="mt-3">
+            <label className="text-[10px] text-muted">Notes</label>
+            <textarea
+              value={outsideActivityNotes}
+              onChange={(e) => setOutsideActivityNotes(e.target.value)}
+              placeholder="E.g. 'half marathon in September', 'football twice a week'…"
+              rows={2}
+              className="mt-1 w-full rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none"
+            />
+          </div>
+        )}
+
+        <p className="text-[10px] text-muted mt-3 font-light">
+          Kinē adjusts load and adds muscle work that supports what you do outside the gym.
+        </p>
+      </div>
 
       <p className="text-[10px] text-muted text-center mt-4">
         Changes won&apos;t affect past sessions.

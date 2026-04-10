@@ -31,6 +31,8 @@ export default function ExerciseCard({
     workingLoadCap?: number;
     heavyTopSetsAllowed?: boolean;
     framing?: string;
+    droppable?: boolean;
+    droppableReason?: string;
   };
   log: ExerciseLog | undefined;
   expanded: boolean;
@@ -142,8 +144,14 @@ export default function ExerciseCard({
             {skipped && (
               <span className="rounded-full bg-border px-2 py-0.5 text-[9px] text-muted shrink-0">skipped</span>
             )}
-            {exercise.swappedFrom && !skipped && (
+            {exercise.swappedFrom && !skipped && exercise.swappedReason && exercise.swappedReason !== "user" && (
               <span className="rounded-full border border-accent/30 bg-accent-dim px-2 py-0.5 text-[9px] text-accent shrink-0">↻ adapted</span>
+            )}
+            {exercise.swappedFrom && !skipped && (!exercise.swappedReason || exercise.swappedReason === "user") && (
+              <span className="rounded-full border border-border bg-surface2 px-2 py-0.5 text-[9px] text-muted shrink-0">↻ swapped</span>
+            )}
+            {exercise.droppable && !skipped && (
+              <span className="rounded-full border border-muted/30 bg-surface2 px-2 py-0.5 text-[9px] text-muted shrink-0">ok to skip</span>
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
@@ -200,6 +208,11 @@ export default function ExerciseCard({
                 </>
               )}
             </div>
+          )}
+          {expanded && exercise.droppable && exercise.droppableReason && (
+            <p className="mt-1.5 text-[11px] leading-snug text-muted font-light italic">
+              {exercise.droppableReason}
+            </p>
           )}
         </div>
         {/* Education "?" button */}

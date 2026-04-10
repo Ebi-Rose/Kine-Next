@@ -6,6 +6,7 @@ import { isAuthenticated, getSession, getSubscriptionStatus } from "@/lib/auth";
 import { useKineStore } from "@/store/useKineStore";
 import { syncFromSupabase } from "@/lib/sync";
 import { supabase } from "@/lib/supabase";
+import { appNow } from "@/lib/dev-time";
 
 /**
  * Wait until Zustand has finished rehydrating from localStorage. Uses the
@@ -137,7 +138,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               // Backfill the sticky flag so we never have to check again.
               try {
                 await supabase.auth.updateUser({
-                  data: { onboarded_at: new Date().toISOString() },
+                  data: { onboarded_at: appNow().toISOString() },
                 });
               } catch (e) {
                 console.warn("[AuthGuard] failed to backfill onboarded_at:", e);

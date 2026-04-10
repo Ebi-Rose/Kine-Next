@@ -1,4 +1,5 @@
 import { EXERCISE_LIBRARY, type Exercise as LibExercise } from "@/data/exercise-library";
+import { EXERCISE_INDICATIONS } from "@/data/exercise-indications";
 import { INJURY_SWAPS } from "@/data/injury-swaps";
 import type { WeekData, WeekDay, Exercise } from "./week-builder";
 
@@ -30,6 +31,7 @@ export function validateWeek(
   userInjuries: string[],
   userExp: string,
   expectedExCount: number,
+  latestFeedback?: { effort: number; soreness: number } | null,
 ): ValidationResult {
   const issues: ValidationIssue[] = [];
   const repaired = structuredClone(weekData);
@@ -44,6 +46,8 @@ export function validateWeek(
     validateExerciseCount(day, expectedExCount, issues);
   }
 
+  validateCrossDayDuplicates(repaired, issues);
+  validateVolumeThresholds(repaired, latestFeedback ?? null, issues);
   validateStructure(repaired, issues);
 
   return {
@@ -319,10 +323,11 @@ function movementKey(name: string): string {
 function validateDuplicates(day: WeekDay, issues: ValidationIssue[]): void {
   const seenExact = new Set<string>();
   const seenKey = new Map<string, string>(); // movement key -> kept name
+
+  // Reverse pass for exact duplicates (removal) — keeps the first
+  // occurrence and strips later ones which are LLM generation errors.
   for (let i = day.exercises.length - 1; i >= 0; i--) {
     const name = day.exercises[i].name;
-    const key = movementKey(name);
-
     if (seenExact.has(name)) {
       issues.push({
         type: "duplicate_exercise",
@@ -332,23 +337,202 @@ function validateDuplicates(day: WeekDay, issues: ValidationIssue[]): void {
         repaired: true,
       });
       day.exercises.splice(i, 1);
-      continue;
+    } else {
+      seenExact.add(name);
     }
+  }
 
-    if (key && seenKey.has(key) && seenKey.get(key) !== name) {
+  // Forward pass for near-duplicates (same movement pattern, different
+  // equipment variant) — these are real exercises so we flag as droppable
+  // rather than removing, letting the user decide.
+  for (let i = 0; i < day.exercises.length; i++) {
+    const name = day.exercises[i].name;
+    const key = movementKey(name);
+    if (!key) continue;
+
+    if (seenKey.has(key) && seenKey.get(key) !== name) {
+      day.exercises[i].droppable = true;
+      day.exercises[i].droppableReason = `Overlaps with ${seenKey.get(key)} — same movement, different variant`;
       issues.push({
         type: "duplicate_exercise",
         dayNumber: day.dayNumber,
         exercise: name,
-        detail: `"${name}" is a near-duplicate of "${seenKey.get(key)}" (same movement pattern) — removed`,
+        detail: `"${name}" overlaps with "${seenKey.get(key)}" (same movement) — marked as droppable`,
         repaired: true,
       });
-      day.exercises.splice(i, 1);
-      continue;
+    } else if (!seenKey.has(key)) {
+      seenKey.set(key, name);
+    }
+  }
+}
+
+/**
+ * Cross-day duplicate detection: when the exact same exercise appears on
+ * multiple training days as an accessory, the later occurrence is flagged
+ * as droppable. Equipment variations (Barbell Row vs Dumbbell Row) are
+ * fine — only exact name matches are caught.
+ *
+ * Primary compounds (first exercise of each session) are exempt — it's
+ * normal and intentional to squat or bench on multiple days.
+ */
+function validateCrossDayDuplicates(weekData: WeekData, issues: ValidationIssue[]): void {
+  // Map: exact exercise name → { dayNumber } of the first occurrence.
+  const seen = new Map<string, number>();
+
+  for (const day of weekData.days) {
+    if (day.isRest || day.exercises.length === 0) continue;
+
+    for (let i = 0; i < day.exercises.length; i++) {
+      const ex = day.exercises[i];
+      if (ex.droppable) continue; // already flagged within-session
+      const name = ex.name;
+
+      // Exempt the primary compound (first exercise) — repeating squats
+      // or deadlifts across days is expected programming.
+      if (i === 0) {
+        if (!seen.has(name)) seen.set(name, day.dayNumber);
+        continue;
+      }
+
+      const firstDay = seen.get(name);
+      if (firstDay !== undefined && firstDay !== day.dayNumber) {
+        ex.droppable = true;
+        ex.droppableReason = `Already in your day ${firstDay} session`;
+        issues.push({
+          type: "duplicate_exercise",
+          dayNumber: day.dayNumber,
+          exercise: name,
+          detail: `"${name}" already appears on day ${firstDay} — marked as droppable`,
+          repaired: true,
+        });
+      } else if (firstDay === undefined) {
+        seen.set(name, day.dayNumber);
+      }
+    }
+  }
+}
+
+// ── Volume-aware droppable flagging ──────────────────────────────────────
+
+type RecoveryTier = "poor" | "reduced" | "normal" | "good";
+
+function deriveRecoveryTier(
+  feedback: { effort: number; soreness: number } | null,
+): RecoveryTier {
+  if (!feedback) return "normal";
+  if (feedback.effort <= 1 || feedback.soreness >= 4) return "poor";
+  if (feedback.effort <= 2 || feedback.soreness >= 3) return "reduced";
+  if (feedback.effort >= 4 && feedback.soreness <= 1) return "good";
+  return "normal";
+}
+
+const BUDGET_MULTIPLIER: Record<RecoveryTier, number> = {
+  poor: 0.70,
+  reduced: 0.85,
+  normal: 1.00,
+  good: 1.10,
+};
+
+/** Base FWS (fatigue-weighted sets) budget per movement key per week. */
+const BASE_FWS_BUDGET = 30;
+
+/**
+ * Volume-aware droppable flagging. Accumulates fatigue-weighted sets (FWS)
+ * per movement key across the entire week. When a key exceeds its budget
+ * (adjusted by recovery tier), later accessory exercises are flagged
+ * droppable with a user-facing reason.
+ *
+ * An exercise's FWS = parseInt(sets) × fatigueCost. A f5 deadlift at 3
+ * sets = 15 FWS; a f2 curl at 3 sets = 6. This naturally makes heavy
+ * compounds consume budget faster.
+ */
+function validateVolumeThresholds(
+  weekData: WeekData,
+  feedback: { effort: number; soreness: number } | null,
+  issues: ValidationIssue[],
+): void {
+  const tier = deriveRecoveryTier(feedback);
+  const budget = Math.round(BASE_FWS_BUDGET * BUDGET_MULTIPLIER[tier]);
+
+  // Pass 1: accumulate FWS per movementKey, track exercise refs in order.
+  type ExRef = { day: WeekDay; idx: number; key: string; fws: number; isPrimary: boolean };
+  const keyVolume = new Map<string, number>();
+  const exRefs: ExRef[] = [];
+
+  for (const day of weekData.days) {
+    if (day.isRest) continue;
+    for (let i = 0; i < day.exercises.length; i++) {
+      const ex = day.exercises[i];
+      const key = movementKey(ex.name);
+      if (!key) continue;
+
+      const fc = EXERCISE_INDICATIONS[ex.name]?.fatigueCost ?? 3;
+      const sets = parseInt(ex.sets) || 3;
+      const fws = sets * fc;
+
+      keyVolume.set(key, (keyVolume.get(key) || 0) + fws);
+      exRefs.push({ day, idx: i, key, fws, isPrimary: i === 0 });
+    }
+  }
+
+  // Pass 2: flag excess exercises for each over-budget key.
+  // Order: last-in first, accessories before primaries, protect at least one.
+  for (const [key, totalFws] of keyVolume) {
+    if (totalFws <= budget) continue;
+
+    const refs = exRefs.filter((r) => r.key === key);
+    let running = totalFws;
+
+    // First pass: non-primary exercises, reverse order
+    for (let j = refs.length - 1; j >= 0; j--) {
+      if (running <= budget) break;
+      const ref = refs[j];
+      const ex = ref.day.exercises[ref.idx];
+      if (ref.isPrimary || ex.droppable) continue;
+
+      ex.droppable = true;
+      ex.droppableReason =
+        tier === "poor" || tier === "reduced"
+          ? `Recovery is low — reducing ${key} volume this week`
+          : `Plenty of ${key} work this week — skip if short on time`;
+      running -= ref.fws;
+
+      issues.push({
+        type: "duplicate_exercise",
+        dayNumber: ref.day.dayNumber,
+        exercise: ex.name,
+        detail: `"${ex.name}" pushes ${key} to ${totalFws} FWS (budget ${budget}) — droppable`,
+        repaired: true,
+      });
     }
 
-    seenExact.add(name);
-    if (key) seenKey.set(key, name);
+    // Second pass: if still over, flag primary positions (protect the first one)
+    if (running > budget) {
+      let protectedFirst = false;
+      for (let j = refs.length - 1; j >= 0; j--) {
+        if (running <= budget) break;
+        const ref = refs[j];
+        const ex = ref.day.exercises[ref.idx];
+        if (!ref.isPrimary || ex.droppable) continue;
+
+        if (!protectedFirst) { protectedFirst = true; continue; }
+
+        ex.droppable = true;
+        ex.droppableReason =
+          tier === "poor"
+            ? `Your body needs more recovery — consider skipping this`
+            : `${key} volume is high this week`;
+        running -= ref.fws;
+
+        issues.push({
+          type: "duplicate_exercise",
+          dayNumber: ref.day.dayNumber,
+          exercise: ex.name,
+          detail: `"${ex.name}" (primary) pushes ${key} to ${totalFws} FWS (budget ${budget}) — droppable`,
+          repaired: true,
+        });
+      }
+    }
   }
 }
 

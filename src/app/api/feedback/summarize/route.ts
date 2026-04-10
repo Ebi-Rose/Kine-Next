@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyCsrf } from "../../_lib/csrf";
+import { createRatelimit } from "../../_lib/rate-limit";
+import { getAuthenticatedUser } from "../../_lib/auth";
 
 // Cleans up a raw voice-note transcript into a tight, readable feedback message.
 // Uses Claude Haiku for cost. Returns plain text.
@@ -6,9 +9,27 @@ import { NextRequest, NextResponse } from "next/server";
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = "claude-haiku-4-5-20251001";
 
+const ratelimit = createRatelimit("feedback-summarize", 10, "60 s");
+
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
+  if (!verifyCsrf(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const user = await getAuthenticatedUser(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (ratelimit) {
+    const { success } = await ratelimit.limit(user.id);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+  }
+
   if (!ANTHROPIC_KEY) {
     return NextResponse.json({ error: "summarizer not configured" }, { status: 500 });
   }

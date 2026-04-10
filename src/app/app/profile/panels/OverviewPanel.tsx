@@ -4,12 +4,12 @@ import { useKineStore } from "@/store/useKineStore";
 import { weightUnit } from "@/lib/format";
 import { getCurrentPhase } from "@/lib/cycle";
 import { isProgrammeStarted } from "@/lib/date-utils";
-import { GOAL_OPTIONS, EQUIP_LABELS } from "@/data/constants";
+import { GOAL_OPTIONS, EQUIP_LABELS, OUTSIDE_ACTIVITY_OPTIONS } from "@/data/constants";
 import { NavCard, type Panel } from "./_helpers";
 
 export default function OverviewPanel({ onNavigate }: { onNavigate: (p: Panel) => void }) {
   const store = useKineStore();
-  const { personalProfile, progressDB, cycleType, cycle, goal, equip, eduMode, restConfig, measurementSystem } = store;
+  const { personalProfile, progressDB, cycleType, cycle, goal, equip, eduMode, restConfig, measurementSystem, outsideActivities } = store;
   const unit = weightUnit(measurementSystem || "metric");
 
   const phase = cycleType === "regular"
@@ -23,7 +23,8 @@ export default function OverviewPanel({ onNavigate }: { onNavigate: (p: Panel) =
   const goalLabel = GOAL_OPTIONS.find((g) => g.value === goal)?.label || "";
   const dayCount = store.trainingDays.length;
   const equipSummary = equip.slice(0, 3).map((e) => EQUIP_LABELS[e] || e).join(", ");
-  const trainingSub = [goalLabel, dayCount ? `${dayCount} days` : "", equipSummary].filter(Boolean).join(" · ");
+  const activityCount = outsideActivities.length;
+  const trainingSub = [goalLabel, dayCount ? `${dayCount} days` : "", equipSummary, activityCount ? `+${activityCount} activity` : ""].filter(Boolean).join(" · ");
 
   // Build subtitle for lifts
   const lifts = personalProfile.currentLifts || {};

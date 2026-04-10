@@ -4,11 +4,11 @@ import { useKineStore } from "@/store/useKineStore";
 import { weightUnit, detectLocale } from "@/lib/format";
 import { appNow } from "@/lib/dev-time";
 
-export function StepLabel({ step }: { step: number }) {
+export function StepLabel({ step, total = 5 }: { step: number; total?: number }) {
   if (step <= 0) return null;
   return (
     <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-2">
-      Step {step} of 4
+      Step {step} of {total}
     </p>
   );
 }
