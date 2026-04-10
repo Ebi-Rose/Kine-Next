@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ForceLightMode from "@/components/ForceLightMode";
 
 export const metadata: Metadata = {
   title: "Terms of Service — KINĒ",
@@ -7,8 +8,9 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-bg font-body text-text px-6 py-12 max-w-2xl mx-auto">
+      <ForceLightMode />
       <a href="/" className="text-xs text-muted2 hover:text-text transition-colors">
-        ← Back
+        ← Back to homepage
       </a>
 
       <h1 className="mt-8 font-display text-3xl tracking-wide">Terms of Service</h1>

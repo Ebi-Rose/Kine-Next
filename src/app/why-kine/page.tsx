@@ -426,7 +426,7 @@ export default function WhyKinePage() {
         </div>
 
         <p className="wk-closing">
-          Kine replaces the work of a personal trainer &mdash; shaped by the body you&apos;re in,
+          Structured training that adapts to the body you&apos;re in,
           the conditions you have, and what life looks like this week.
         </p>
 
