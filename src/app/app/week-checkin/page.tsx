@@ -313,7 +313,7 @@ export default function WeekCheckinPage() {
             <Button className="mt-6" onClick={async () => {
               setStep("building");
               setBuildError(null);
-              const nextWeekNum = (progressDB.currentWeek || 1) + 1;
+              const nextWeekNum = weekNum + 1;
               setProgressDB({ ...progressDB, currentWeek: nextWeekNum });
               const result = await buildWeek();
               if (result.weekData) {
@@ -326,7 +326,7 @@ export default function WeekCheckinPage() {
                 router.push("/app");
               }
             }}>
-              Build Week {(progressDB.currentWeek || 1) + 1} →
+              Build Week {weekNum + 1} →
             </Button>
           ) : (
             <Button className="mt-6" onClick={() => router.push("/app")}>
