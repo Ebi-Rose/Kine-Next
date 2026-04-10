@@ -12,7 +12,10 @@ const mockGetState = useKineStore.getState as jest.Mock;
 function mockStore(totalSessions: number, currentWeek: number) {
   mockGetState.mockReturnValue({
     progressDB: {
-      sessions: Array.from({ length: totalSessions }, (_, i) => ({ date: "2025-01-01" })),
+      sessions: Array.from({ length: totalSessions }, (_, i) => ({
+        date: "2025-01-01",
+        weekNum: Math.min(Math.floor(i * currentWeek / totalSessions) + 1, currentWeek),
+      })),
       currentWeek,
       lifts: {},
     },

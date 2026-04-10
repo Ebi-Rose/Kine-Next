@@ -138,7 +138,7 @@ describe("getProgressionSuggestion", () => {
     const result = getProgressionSuggestion("Barbell Back Squat")!;
     expect(result.confidence).toBe("hold");
     expect(result.suggestedWeight).toBe(60);
-    expect(result.reason).toContain("Building");
+    expect(result.reason).toContain("target 12 reps before increasing");
   });
 
   it("returns 'hold' after hitting top of range once (needs confirmation)", () => {
@@ -151,7 +151,7 @@ describe("getProgressionSuggestion", () => {
     });
     const result = getProgressionSuggestion("Barbell Back Squat")!;
     expect(result.confidence).toBe("hold");
-    expect(result.reason).toContain("one more session");
+    expect(result.reason).toContain("one more to confirm");
   });
 
   it("returns 'ready' after hitting top of range twice at same weight", () => {
@@ -169,7 +169,7 @@ describe("getProgressionSuggestion", () => {
     expect(result.confidence).toBe("ready");
     expect(result.suggestedWeight).toBe(62.5); // barbell increment
     expect(result.currentWeight).toBe(60);
-    expect(result.reason).toContain("ready to move up");
+    expect(result.reason).toContain("two sessions straight");
   });
 
   it("adapts to phase rep range — Intensification uses 6-8", () => {
@@ -231,7 +231,7 @@ describe("getProgressionSuggestion", () => {
     const result = getProgressionSuggestion("Barbell Back Squat")!;
     expect(result.confidence).toBe("deload");
     expect(result.suggestedWeight).toBeLessThan(60);
-    expect(result.reason).toContain("days since last session");
+    expect(result.reason).toContain("starting lighter to rebuild");
   });
 
   it("includes volume tracking", () => {
