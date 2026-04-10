@@ -24,6 +24,24 @@ export function getCurrentWeekNum(programStartDate: string | null): number {
   return Math.max(1, diff + 1);
 }
 
+/**
+ * Get the effective programme week number based on actual session data.
+ * During time-travel, progressDB.currentWeek may not match sessions
+ * that exist. This returns the highest weekNum from sessions, or
+ * falls back to currentWeek if no sessions exist.
+ */
+export function getEffectiveWeek(
+  sessions: { weekNum?: number }[],
+  currentWeek: number
+): number {
+  if (sessions.length === 0) return currentWeek;
+  const maxFromSessions = sessions.reduce(
+    (m, s) => Math.max(m, s.weekNum || 1),
+    1
+  );
+  return Math.min(maxFromSessions, currentWeek);
+}
+
 export function getDaysSinceDate(dateStr: string): number {
   const date = new Date(dateStr + "T12:00:00");
   const today = appNow();

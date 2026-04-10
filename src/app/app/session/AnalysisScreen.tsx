@@ -5,6 +5,7 @@ import type { AnalysisResult } from "@/lib/session-analysis";
 import { weightUnit } from "@/lib/format";
 import Button from "@/components/Button";
 import { sharePR } from "@/lib/share-card";
+import { getEffectiveWeek } from "@/lib/date-utils";
 
 export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysis: AnalysisResult | null; prs?: { name: string; weight: number; reps: number }[]; onDone: () => void }) {
   const { progressDB, measurementSystem } = useKineStore();
@@ -27,7 +28,7 @@ export default function AnalysisScreen({ analysis, prs = [], onDone }: { analysi
       weight: pr.weight,
       reps: pr.reps,
       prev: prevBest,
-      weekNum: progressDB.currentWeek || 1,
+      weekNum: getEffectiveWeek(progressDB.sessions as { weekNum?: number }[], progressDB.currentWeek || 1),
       totalSessions: progressDB.sessions.length,
     });
   }

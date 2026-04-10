@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS } from "@/data/constants";
+import { getEffectiveWeek } from "@/lib/date-utils";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
@@ -20,7 +21,7 @@ export default function SessionRearrange({ open, onClose }: Props) {
   const week = weekData as WeekData | null;
   if (!week) return null;
 
-  const curWeek = progressDB.currentWeek || 1;
+  const curWeek = getEffectiveWeek(progressDB.sessions as { weekNum?: number }[], progressDB.currentWeek || 1);
   const completedDayIdxs = new Set(
     (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
       .filter((s) => s.weekNum === curWeek)

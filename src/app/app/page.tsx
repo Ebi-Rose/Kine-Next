@@ -481,8 +481,7 @@ function WeekView({
   const [viewTab, setViewTab] = useState<"today" | "week">("today");
   const today = appNow().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
-  const weekStart = getWeekDateRange(progressDB.currentWeek, progressDB.programStartDate);
-  // trainingPhase is computed after effectiveWeekNum below
+  // weekStart and trainingPhase are computed after effectiveWeekNum below
 
   // Detect if the programme week is ahead of the calendar week (e.g. time-travel)
   // Only fall back to previous week if no sessions have been logged for the current

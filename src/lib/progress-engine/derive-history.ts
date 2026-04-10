@@ -376,8 +376,11 @@ export function deriveEngineHistory(
 
   const sessionDates = sessions.map((s) => s.date).filter(isISODate);
   const sessionCountTotal = sessions.length;
+  const effectiveWeek = sessions.length > 0
+    ? sessions.reduce((m, s) => Math.max(m, (s as { weekNum?: number }).weekNum || 1), 1)
+    : progressDB.currentWeek;
   const sessionsThisWeek = sessions.filter(
-    (s) => s.weekNum === progressDB.currentWeek
+    (s) => s.weekNum === effectiveWeek
   ).length;
 
   // Target this week comes from week feedback or just defaults to 3.
@@ -392,7 +395,7 @@ export function deriveEngineHistory(
   // program — including users who started today and binge-logged a dozen
   // sessions — "P1 · wk 1/3" reads as a meaningless timestamp. Show the
   // weeks-trained count instead so the tile says something honest.
-  const programWeek = progressDB.currentWeek ?? 1;
+  const programWeek = effectiveWeek;
   const phaseInfo = sessionCountTotal > 0 && programWeek >= 2
     ? getCurrentPhaseInfo(programWeek, progressDB.phaseOffset ?? 0)
     : null;
@@ -430,10 +433,10 @@ export function deriveEngineHistory(
 
   const injuryHiddenLifts = computeInjuryHiddenLifts(injuries);
   const reintroducedLifts = computeReintroducedLifts(lifts);
-  const rehabSetsThisBlock = computeRehabSetsThisBlock(sessions, progressDB.currentWeek ?? 1);
+  const rehabSetsThisBlock = computeRehabSetsThisBlock(sessions, effectiveWeek);
   const mobilitySessionsThisBlock = computeMobilitySessionsThisBlock(
     sessions,
-    progressDB.currentWeek ?? 1
+    effectiveWeek
   );
 
   return {

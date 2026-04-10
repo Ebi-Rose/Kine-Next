@@ -3,6 +3,7 @@ import { findExercise } from "@/data/exercise-library";
 import { getPhase } from "./periodisation";
 import { kgToDisplay, formatWeight, weightUnit, getIncrementForEquip, calculatePlatesForSystem, type MeasurementSystem } from "./format";
 import { appNow } from "./dev-time";
+import { getEffectiveWeek } from "./date-utils";
 
 // ── Progression Suggestion System ──
 // Returns a structured suggestion the user can accept, adjust, or dismiss.
@@ -50,7 +51,8 @@ export function getProgressionSuggestion(exerciseName: string): ProgressionSugge
   // Get display-unit increment for this equipment type
   const equipType = getEquipTypeFromLibrary(exerciseName);
   const increment = getIncrementForEquip(equipType, system);
-  const topOfRange = getTopOfRange(store.progressDB.currentWeek, store.progressDB.phaseOffset);
+  const effectiveWeek = getEffectiveWeek(store.progressDB.sessions as { weekNum?: number }[], store.progressDB.currentWeek);
+  const topOfRange = getTopOfRange(effectiveWeek, store.progressDB.phaseOffset);
   const latestReps = latest.reps || 0;
 
   // Display weights (stored in kg, convert for display)

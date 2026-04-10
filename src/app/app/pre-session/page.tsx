@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
+import { getEffectiveWeek } from "@/lib/date-utils";
 import { appNow, appTimestamp } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
@@ -451,8 +452,8 @@ export default function PreSessionPage() {
       {/* ── Per-exercise feedback from past sessions ── */}
       {(() => {
         const todayExNames = new Set(exercises.map((e) => e.name));
-        const curWeek = progressDB.currentWeek || 1;
         const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+        const curWeek = getEffectiveWeek(sessions, progressDB.currentWeek || 1);
         const feedbackItems: { name: string; verdict: string; note: string }[] = [];
         const seen = new Set<string>();
         for (let i = sessions.length - 1; i >= 0; i--) {
@@ -852,8 +853,8 @@ export default function PreSessionPage() {
                 )}
                 {/* Per-exercise feedback from a previous session */}
                 {(() => {
-                  const curWeek = progressDB.currentWeek || 1;
                   const sessions = progressDB.sessions as import("@/store/useKineStore").SessionRecord[];
+                  const curWeek = getEffectiveWeek(sessions, progressDB.currentWeek || 1);
                   for (let j = sessions.length - 1; j >= 0; j--) {
                     if (sessions[j].weekNum === curWeek) continue;
                     const fb = sessions[j].exerciseFeedback?.find((f) => f.name === ex.name);

@@ -53,7 +53,10 @@ const MATURITY_LEVELS = ["early", "developing", "established", "mature"] as cons
 export function getProgrammeMaturity(): "early" | "developing" | "established" | "mature" {
   const store = useKineStore.getState();
   const totalSessions = store.progressDB.sessions.length;
-  const weeks = store.progressDB.currentWeek;
+  const sessions = store.progressDB.sessions as { weekNum?: number }[];
+  const weeks = sessions.length > 0
+    ? sessions.reduce((m, s) => Math.max(m, s.weekNum || 1), 1)
+    : store.progressDB.currentWeek;
 
   const sessionLevel = totalSessions < 6 ? 0 : totalSessions < 18 ? 1 : totalSessions < 40 ? 2 : 3;
   const weekLevel = weeks < 3 ? 0 : weeks < 6 ? 1 : weeks < 12 ? 2 : 3;
