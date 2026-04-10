@@ -570,6 +570,8 @@ export default function LandingPage() {
               </a>
             </div>
             <div className="lp-footer-text">
+              <a href="/why-kine" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Why Kine</a>
+              {' · '}
               <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Terms</a>
               {' · '}
               <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#888' }}>Privacy</a>
