@@ -513,13 +513,14 @@ function WeekView({
     .filter((s) => s.weekNum === effectiveWeekNum && (!s.date || s.date <= todayISO));
 
   // Week navigation: past weeks from history, current week is live
+  // When isNextWeek, the Week tab shows the newly built week, Today tab shows effective (previous) week
   const isViewingPast = viewingPastIdx !== null;
   const displayWeek = isViewingPast
     ? (weekHistory[viewingPastIdx] as WeekData)
-    : effectiveWeek;
+    : (isNextWeek && viewTab === "week") ? week : effectiveWeek;
   const displayWeekNum = isViewingPast
     ? (displayWeek?._weekNum || 1)
-    : effectiveWeekNum;
+    : (isNextWeek && viewTab === "week") ? (progressDB.currentWeek || 1) : effectiveWeekNum;
   const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
   const hasNext = isViewingPast; // can always go forward to current
 
@@ -622,7 +623,7 @@ function WeekView({
               viewTab === "week" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
             }`}
           >
-            Week
+            {isNextWeek ? "Next Week" : "Week"}
           </button>
         </div>
       )}
