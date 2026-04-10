@@ -467,16 +467,21 @@ function WeekView({
   const weekStart = getWeekDateRange(progressDB.currentWeek, progressDB.programStartDate);
   // trainingPhase is computed after effectiveWeekNum below
 
-  // Detect if the programme week is ahead of the calendar week (e.g. built week 2 mid-week-1)
+  // Detect if the programme week is ahead of the calendar week (e.g. time-travel)
+  // Only fall back to previous week if no sessions have been logged for the current
+  // programme week — otherwise the user has legitimately started that week.
   const programmeMonday = getProgrammeWeekMonday(progressDB.currentWeek || 1, progressDB.programStartDate);
   const calendarNow = appNow();
   const calendarDow = calendarNow.getDay() === 0 ? 6 : calendarNow.getDay() - 1;
   const calendarMonday = new Date(calendarNow);
   calendarMonday.setDate(calendarNow.getDate() - calendarDow);
-  const isNextWeek = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
+  const programmeAhead = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
+  const hasCurrentWeekSessions = (progressDB.sessions as { weekNum?: number }[])
+    .some((s) => s.weekNum === (progressDB.currentWeek || 1));
+  const isNextWeek = programmeAhead && !hasCurrentWeekSessions;
 
-  // When the programme week is ahead of the calendar (time-travel or built early),
-  // fall back to the previous week so the UI shows what was current at that time.
+  // When time-travelling back before the current programme week started,
+  // fall back to the previous week so the UI shows what was current then.
   const effectiveWeekNum = isNextWeek
     ? Math.max((progressDB.currentWeek || 1) - 1, 1)
     : (progressDB.currentWeek || 1);
