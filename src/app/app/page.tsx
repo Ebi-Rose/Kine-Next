@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKineStore } from "@/store/useKineStore";
 import { appNow, appTodayISO, appTimestamp } from "@/lib/dev-time";
@@ -546,6 +546,17 @@ function WeekView({
   const prevWeekComplete = prevWeekSessionCount >= prevWeekTrainingDays;
   const isNextWeek = programmeAhead && !hasCurrentWeekSessions && prevWeekComplete;
 
+  // Auto-switch to "week" tab when dual-tab mode is active (e.g. after
+  // building next week on the last day and returning from check-in).
+  const didAutoSwitchTab = useRef(false);
+  useEffect(() => {
+    if (isNextWeek && !didAutoSwitchTab.current) {
+      setViewTab("week");
+      didAutoSwitchTab.current = true;
+    }
+    if (!isNextWeek) didAutoSwitchTab.current = false;
+  }, [isNextWeek]);
+
   // When the user has built ahead (all sessions done + check-in + build),
   // show the previous week on the Today tab, the new week on the Week tab.
   // Otherwise, fall back to treating effectiveWeek as currentWeek (no dual-tab).
@@ -557,13 +568,17 @@ function WeekView({
   const effectiveWeek = (isNextWeek || (programmeAhead && !hasCurrentWeekSessions)) && weekHistory.length > 0
     ? (weekHistory[weekHistory.length - 1] as WeekData)
     : week;
-  const effectiveWeekStart = getWeekDateRange(effectiveWeekNum, progressDB.programStartDate);
   // trainingPhase is computed after displayWeekNum below so it
   // reflects whichever week the user is actually viewing.
 
   // Sessions for the effective programme week, filtered to those logged up to "now"
   const currentWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
     .filter((s) => s.weekNum === effectiveWeekNum && (!s.date || s.date <= todayISO));
+  // Sessions for whichever week is currently displayed (switches with tab)
+  const displayWeekSessions = (isNextWeek && viewTab === "week")
+    ? (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
+        .filter((s) => s.weekNum === (progressDB.currentWeek || 1) && (!s.date || s.date <= todayISO))
+    : currentWeekSessions;
 
   // Week navigation: past weeks from history, current week is live
   const isViewingPast = viewingPastIdx !== null;
@@ -573,6 +588,7 @@ function WeekView({
   const displayWeekNum = isViewingPast
     ? (displayWeek?._weekNum || 1)
     : (isNextWeek && viewTab === "week") ? (progressDB.currentWeek || 1) : effectiveWeekNum;
+  const displayWeekStart = getWeekDateRange(displayWeekNum, progressDB.programStartDate);
   const trainingPhase = getCurrentPhaseInfo(displayWeekNum, progressDB.phaseOffset);
   const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
   const hasNext = isViewingPast; // can always go forward to current
@@ -623,7 +639,7 @@ function WeekView({
               </button>
             )}
             <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
-              Week {displayWeekNum}{isViewingPast ? "" : ` · ${effectiveWeekStart}`}
+              Week {displayWeekNum}{isViewingPast ? "" : ` · ${displayWeekStart}`}
             </p>
             {hasNext && (
               <button onClick={goToNextWeek} className="text-muted2 hover:text-accent transition-colors text-sm">
@@ -915,17 +931,17 @@ function WeekView({
           {/* Session completion summary — current week only, compact on Week tab */}
           {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (currentWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
+            if (displayWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-muted2">
-                  {currentWeekSessions.length}/{trainingDayCount} sessions done this week
+                  {displayWeekSessions.length}/{trainingDayCount} sessions done this week
                 </p>
               );
             }
-            if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (displayWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-accent/70">
-                  All {currentWeekSessions.length} sessions complete this week
+                  All {displayWeekSessions.length} sessions complete this week
                 </p>
               );
             }
@@ -937,7 +953,7 @@ function WeekView({
 
           {/* All 7 day cards */}
           {(() => {
-            const viewWeekNum = isViewingPast ? displayWeekNum : effectiveWeekNum;
+            const viewWeekNum = displayWeekNum;
             // Calculate Monday of the *viewed* week for date labels
             const monday = isViewingPast && viewingPastIdx !== null
               ? (() => {
@@ -956,7 +972,7 @@ function WeekView({
                   const hasSession = isViewingPast
                     ? (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
                         .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i)
-                    : currentWeekSessions.some((s) => s.dayIdx === i);
+                    : displayWeekSessions.some((s) => s.dayIdx === i);
                   const isCompleted = hasSession;
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
@@ -964,11 +980,11 @@ function WeekView({
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
-                      isToday={!isViewingPast && i === todayIdx}
+                      isToday={!isViewingPast && !isNextWeek && i === todayIdx}
                       isCompleted={isCompleted}
-                      isPast={isViewingPast || i < todayIdx}
+                      isPast={isViewingPast || (!isNextWeek && i < todayIdx)}
                       expanded={false}
-                      readOnly={isViewingPast}
+                      readOnly={isViewingPast || (isNextWeek && viewTab === "week")}
                       dateStr={dateLabel}
                       weekNum={viewWeekNum}
                     />
@@ -978,10 +994,14 @@ function WeekView({
             );
           })()}
 
-          {/* Next week preview — only when the displayed week's sessions are all done */}
+          {/* Next week preview — only on Sunday (last day of the programme week) or later when all sessions are done */}
           {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            // Show on Sunday or if we've rolled past the programme week into a new calendar week
+            const effectiveMonday = getProgrammeWeekMonday(effectiveWeekNum, progressDB.programStartDate);
+            const daysSinceMonday = Math.floor((appNow().getTime() - effectiveMonday.getTime()) / 86400000);
+            const isEndOfWeekOrLater = daysSinceMonday >= 6; // Sunday (6) or beyond
+            if (isEndOfWeekOrLater && currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const nextWeekNum = effectiveWeekNum + 1;
               const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
               return (
@@ -1001,7 +1021,7 @@ function WeekView({
           {/* Actions — hidden when viewing past weeks (read-only) */}
           {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            const allDone = trainingDayCount > 0 && currentWeekSessions.length >= trainingDayCount;
+            const allDone = trainingDayCount > 0 && displayWeekSessions.length >= trainingDayCount;
             return (
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
