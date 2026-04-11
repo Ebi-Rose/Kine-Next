@@ -14,7 +14,7 @@ import { weightUnit, weightUnitPerSide } from "@/lib/format";
 import Button from "@/components/Button";
 
 export default function ExerciseCard({
-  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onSwap, onQuickSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [], lastFeedback,
+  index, exercise, log, expanded, onToggle, onUpdateSet, onUpdateNote, onSave, onSkip, onUnskip, onEdit, onSwap, onQuickSwap, swapLoading, onVideoPlay, onVideoSheet, onSkillPath, onEduSheet, onClearPrefill, eduMode = "full", conditions = [], lastFeedback,
 }: {
   index: number;
   exercise: {
@@ -42,6 +42,7 @@ export default function ExerciseCard({
   onSave: (exIdx: number) => void;
   onSkip: (exIdx: number) => void;
   onUnskip: (exIdx: number) => void;
+  onEdit: (exIdx: number) => void;
   onSwap: (exIdx: number) => void;
   onQuickSwap?: (exIdx: number, newName: string, meta?: { note?: string; remember?: boolean }) => void;
   swapLoading: boolean;
@@ -574,6 +575,12 @@ export default function ExerciseCard({
             ))}
           </div>
           {log.note && <p className="mt-2 text-xs text-muted italic">{log.note}</p>}
+          <button
+            onClick={() => onEdit(index)}
+            className="mt-3 text-[10px] text-accent hover:text-text transition-colors"
+          >
+            Edit
+          </button>
         </div>
       )}
     </div>

@@ -192,8 +192,12 @@ export default function SessionPage() {
         toast("Log at least one set before saving", "error");
         return prev;
       }
+      // Auto-fill empty weight as "0" (bodyweight) when reps are logged
+      const filled = ex.actual.map((s) =>
+        s.reps && !s.weight ? { ...s, weight: "0" } : s
+      );
       // Stamp each logged set with wall-clock time (intentionally real time)
-      const stamped = ex.actual.map((s) =>
+      const stamped = filled.map((s) =>
         (s.reps || s.weight) && !s.timestamp
           ? { ...s, timestamp: new Date().toISOString() } // eslint-disable-line no-restricted-syntax
           : s
@@ -241,6 +245,14 @@ export default function SessionPage() {
     updatedWeek.days = updatedDays;
     store.setWeekData(updatedWeek);
   }, [week, dayIdx]);
+
+  const editExercise = useCallback((exIdx: number) => {
+    setLogs((prev) => ({
+      ...prev,
+      [exIdx]: { ...prev[exIdx], saved: false },
+    }));
+    setExpandedEx(exIdx);
+  }, []);
 
   const skipExercise = useCallback((exIdx: number) => {
     setLogs((prev) => ({
@@ -566,6 +578,7 @@ export default function SessionPage() {
             onSave={saveExercise}
             onSkip={skipExercise}
             onUnskip={unskipExercise}
+            onEdit={editExercise}
             onSwap={(idx) => setSwapSheetIdx(idx)}
             onQuickSwap={(idx, newName, meta) => {
               const store = useKineStore.getState();
