@@ -134,29 +134,36 @@ export default function DevOverlay() {
       toast("Invalid date", "error");
       return;
     }
+    // Capture previous app time before applying the new override
+    const prevAppISO = appTodayISO();
+
     setDevDateOverride(d);
     setDateOverride(dateStr);
 
-    // When going back in time, strip future-dated data
-    const nowISO = new Date().toISOString().split("T")[0]; // eslint-disable-line no-restricted-syntax
-    if (dateStr < nowISO) {
+    // When going back in time, strip future-dated data.
+    // Compare against the previous app time (dev override or real time),
+    // not just real time — handles rewind from an already-overridden date.
+    if (dateStr < prevAppISO) {
       const store = useKineStore.getState();
       const { progressDB, setProgressDB, setWeekData, weekData } = store;
       const sessions = (progressDB.sessions as { date?: string; weekNum?: number }[])
-        .filter((s) => !s.date || s.date <= dateStr);
+        .filter((s) => !s.date || s.date < dateStr);
       const lifts = { ...progressDB.lifts };
       for (const key of Object.keys(lifts)) {
-        lifts[key] = lifts[key].filter((e: { date: string }) => e.date <= dateStr);
+        lifts[key] = lifts[key].filter((e: { date: string }) => e.date < dateStr);
       }
       const maxWeek = sessions.length > 0
         ? sessions.reduce((m, s) => Math.max(m, s.weekNum || 1), 1)
         : 1;
+      // Clear feedback for the current week (maxWeek) so the user is
+      // prompted to redo the check-in after re-completing sessions.
+      // Keep feedback for all prior weeks.
       setProgressDB({
         ...progressDB,
         sessions,
         lifts,
         currentWeek: maxWeek,
-        weekFeedbackHistory: progressDB.weekFeedbackHistory.filter((f) => f.weekNum <= maxWeek),
+        weekFeedbackHistory: progressDB.weekFeedbackHistory.filter((f) => f.weekNum < maxWeek),
       });
       if (maxWeek < (progressDB.currentWeek || 1) && store.weekHistory.length > 0) {
         const histWeek = store.weekHistory.find((w) => (w as { _weekNum?: number })._weekNum === maxWeek);
