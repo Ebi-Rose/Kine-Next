@@ -1060,7 +1060,7 @@ function WeekView({
                         <p className="mt-1 text-[10px] text-muted2">
                           {getCurrentPhaseInfo(thisWeekNum + 1, progressDB.phaseOffset).label} · {getCurrentPhaseInfo(thisWeekNum + 1, progressDB.phaseOffset).description}
                         </p>
-                        <Button variant="secondary" size="sm" className="mt-3" onClick={onAdvanceWeek} disabled={loading}>
+                        <Button variant="secondary" size="sm" className="mt-3" onClick={() => router.push("/app/build-week")}>
                           Build Week {thisWeekNum + 1} →
                         </Button>
                       </>

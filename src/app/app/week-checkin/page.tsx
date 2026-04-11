@@ -76,18 +76,12 @@ export default function WeekCheckinPage() {
   const store = useKineStore();
   const { progressDB, setProgressDB, goal, days } = store;
 
-  const [step, setStep] = useState<"summary" | "notes" | "ratings" | "plan" | "nextWeek" | "done" | "building">("summary");
+  const [step, setStep] = useState<"summary" | "notes" | "ratings" | "plan" | "done" | "building">("summary");
   const [buildError, setBuildError] = useState<string | null>(null);
   const [energy, setEnergy] = useState<number | null>(null);
   const [motivation, setMotivation] = useState<number | null>(null);
   const [scheduleFeeling, setScheduleFeeling] = useState<"too_easy" | "about_right" | "too_much" | null>(null);
   const [notes, setNotes] = useState("");
-
-  // Next week preferences
-  const [nwDays, setNwDays] = useState<number | null>(null);
-  const [nwSessionLength, setNwSessionLength] = useState<"shorter" | "same" | "longer">("same");
-  const [nwIntensity, setNwIntensity] = useState<"lighter" | "maintain" | "push">("maintain");
-  const [nwFlagNote, setNwFlagNote] = useState("");
 
   // Adaptation plan state
   const [insights, setInsights] = useState<NoteInsight[]>([]);
@@ -200,15 +194,6 @@ export default function WeekCheckinPage() {
       extraNote: planExtraNote || undefined,
     };
 
-    const nextWeekPrefs = (nwDays !== null || nwSessionLength !== "same" || nwIntensity !== "maintain" || nwFlagNote.trim())
-      ? {
-          daysOverride: nwDays ?? undefined,
-          sessionLength: nwSessionLength !== "same" ? nwSessionLength : undefined,
-          intensity: nwIntensity !== "maintain" ? nwIntensity : undefined,
-          flagNote: nwFlagNote.trim() || undefined,
-        }
-      : undefined;
-
     // Remove any existing check-in for this week (amend case), then add new one
     const filtered = progressDB.weekFeedbackHistory.filter((f) => f.weekNum !== weekNum);
 
@@ -223,7 +208,6 @@ export default function WeekCheckinPage() {
           scheduleFeeling: scheduleFeeling ?? undefined,
           notes: notes || undefined,
           adaptationPlan: plan,
-          nextWeekPrefs,
         },
       ],
     });
@@ -471,107 +455,13 @@ export default function WeekCheckinPage() {
             />
           </div>
 
-          <Button className="w-full mt-6" size="lg" onClick={() => setStep("nextWeek")}>
-            Continue
-          </Button>
-        </div>
-      )}
-
-      {/* Step 5: Next week preferences */}
-      {step === "nextWeek" && (
-        <div className="animate-fade-up">
-          <h2 className="mt-4 font-display text-xl tracking-wide text-text">Anything different next week?</h2>
-          <p className="mt-1 text-xs text-muted2">
-            All optional — skip if everything stays the same.
-          </p>
-
-          {/* Training days */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Training days</p>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setNwDays(nwDays === n ? null : n)}
-                  className={`flex-1 rounded-xl border py-3 text-sm font-medium transition-all ${
-                    nwDays === n
-                      ? "border-accent bg-accent-dim text-text"
-                      : n === plannedDays && nwDays === null
-                        ? "border-accent/30 bg-surface text-text"
-                        : "border-border bg-surface text-muted2 hover:border-border-active"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1 text-[10px] text-muted2">
-              {nwDays === null ? `Currently ${plannedDays} days` : nwDays === plannedDays ? `Same as usual (${plannedDays})` : `Changed from ${plannedDays} to ${nwDays}`}
-            </p>
-          </div>
-
-          {/* Session length */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Session length</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([["shorter", "Shorter"], ["same", "Same"], ["longer", "Longer"]] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setNwSessionLength(val)}
-                  className={`rounded-xl border py-3 text-xs transition-all ${
-                    nwSessionLength === val ? "border-accent bg-accent-dim text-text" : "border-border bg-surface text-muted2 hover:border-border-active"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Intensity */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Intensity</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([["lighter", "Lighter"], ["maintain", "Maintain"], ["push", "Push harder"]] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setNwIntensity(val)}
-                  className={`rounded-xl border py-3 text-xs transition-all ${
-                    nwIntensity === val ? "border-accent bg-accent-dim text-text" : "border-border bg-surface text-muted2 hover:border-border-active"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Flag note */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Anything to flag?</p>
-            <textarea
-              value={nwFlagNote}
-              onChange={(e) => setNwFlagNote(e.target.value)}
-              aria-label="Next week notes"
-              placeholder="e.g. travelling Wed–Fri, lower back still tight, 5k race on Saturday..."
-              rows={2}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted outline-none focus:border-accent resize-none"
-            />
-          </div>
-
           <Button className="w-full mt-6" size="lg" onClick={submit}>
             Save check-in
           </Button>
-          <button
-            onClick={submit}
-            className="w-full mt-2 py-2 text-xs text-muted2 hover:text-text transition-colors"
-          >
-            Skip — same as usual
-          </button>
         </div>
       )}
 
-      {/* Step 6: Done */}
+      {/* Step 5: Done */}
       {step === "done" && (
         <div className="animate-fade-up flex min-h-[50vh] flex-col items-center justify-center text-center">
           <div className="text-4xl mb-4">✓</div>
