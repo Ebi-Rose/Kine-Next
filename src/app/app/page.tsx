@@ -495,14 +495,29 @@ function WeekView({
   const programmeAhead = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
   const hasCurrentWeekSessions = (progressDB.sessions as { weekNum?: number }[])
     .some((s) => s.weekNum === (progressDB.currentWeek || 1));
-  const isNextWeek = programmeAhead && !hasCurrentWeekSessions;
+  // Only show the "Next Week" dual-tab when:
+  // 1. Programme is ahead of calendar
+  // 2. No sessions for the new week yet
+  // 3. Previous week's sessions are all complete (user actually finished the week)
+  const prevWeekNum = Math.max((progressDB.currentWeek || 1) - 1, 1);
+  const prevWeekSessionCount = (progressDB.sessions as { weekNum?: number }[])
+    .filter((s) => s.weekNum === prevWeekNum).length;
+  const prevWeekData = weekHistory.find((w) => (w as WeekData)?._weekNum === prevWeekNum) as WeekData | undefined;
+  const prevWeekTrainingDays = prevWeekData
+    ? prevWeekData.days.filter((d) => !d.isRest).length
+    : parseInt(useKineStore.getState().days || "3");
+  const prevWeekComplete = prevWeekSessionCount >= prevWeekTrainingDays;
+  const isNextWeek = programmeAhead && !hasCurrentWeekSessions && prevWeekComplete;
 
   // When the user has built ahead (all sessions done + check-in + build),
   // show the previous week on the Today tab, the new week on the Week tab.
+  // Otherwise, fall back to treating effectiveWeek as currentWeek (no dual-tab).
   const effectiveWeekNum = isNextWeek
-    ? Math.max((progressDB.currentWeek || 1) - 1, 1)
-    : (progressDB.currentWeek || 1);
-  const effectiveWeek = isNextWeek && weekHistory.length > 0
+    ? prevWeekNum
+    : programmeAhead && !hasCurrentWeekSessions
+      ? prevWeekNum  // programme ahead but prev week not complete — show prev week, no dual-tab
+      : (progressDB.currentWeek || 1);
+  const effectiveWeek = (isNextWeek || (programmeAhead && !hasCurrentWeekSessions)) && weekHistory.length > 0
     ? (weekHistory[weekHistory.length - 1] as WeekData)
     : week;
   const effectiveWeekStart = getWeekDateRange(effectiveWeekNum, progressDB.programStartDate);
