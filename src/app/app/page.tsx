@@ -61,6 +61,42 @@ export default function AppHome() {
     return () => { clearInterval(msgInterval); clearInterval(secInterval); };
   }, [loading]);
 
+  // ── Dev time rewind cleanup ──
+  // On mount (and when progressDB changes), check for sessions dated after
+  // the current app time. If found, strip them — this handles the case where
+  // the user rewound dev time and the page reloaded before persist flushed.
+  useEffect(() => {
+    const todayStr = appTodayISO();
+    const sessions = progressDB.sessions as { date?: string; weekNum?: number }[];
+    const hasFutureSessions = sessions.some((s) => s.date && s.date >= todayStr);
+    if (!hasFutureSessions) return;
+
+    const kept = sessions.filter((s) => !s.date || s.date < todayStr);
+    const lifts = { ...progressDB.lifts };
+    for (const key of Object.keys(lifts)) {
+      lifts[key] = lifts[key].filter((e: { date: string }) => e.date < todayStr);
+    }
+    const maxWeek = kept.length > 0
+      ? kept.reduce((m, s) => Math.max(m, (s as { weekNum?: number }).weekNum || 1), 1)
+      : 1;
+
+    store.setProgressDB({
+      ...progressDB,
+      sessions: kept,
+      lifts,
+      currentWeek: maxWeek,
+      weekFeedbackHistory: progressDB.weekFeedbackHistory.filter((f) => f.weekNum < maxWeek),
+    });
+
+    // Restore previous week data from history if we rolled back
+    if (maxWeek < (progressDB.currentWeek || 1) && store.weekHistory.length > 0) {
+      const histWeek = store.weekHistory.find(
+        (w) => (w as WeekData)?._weekNum === maxWeek,
+      );
+      if (histWeek) setWeekData(histWeek as WeekData);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleBuildWeek() {
     setLoading(true);
     setLoadingMsg(0);
