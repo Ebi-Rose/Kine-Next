@@ -202,13 +202,12 @@ export default function AppHome() {
   }
 
   async function handleAdvanceWeek() {
-    // Route through week check-in first if not already done for this week
     const curWeek = store.progressDB.currentWeek || 1;
     const alreadyCheckedIn = store.progressDB.weekFeedbackHistory.some(
       (f) => f.weekNum === curWeek
     );
     if (!alreadyCheckedIn) {
-      router.push("/app/week-checkin?advance=1");
+      toast("Complete your weekly check-in first", "info");
       return;
     }
     await doAdvanceWeek();
@@ -510,87 +509,82 @@ function WeekView({
   onAdvanceWeek: () => void;
   loading: boolean;
 }) {
+  const router = useRouter();
   const store = useKineStore();
   const { cycleType, cycle, setCycle, progressDB, weekHistory, exp, personalProfile } = store;
   const firstName = (personalProfile?.name || "").trim().split(/\s+/)[0];
   const [showRearrange, setShowRearrange] = useState(false);
   const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
-  const [viewTab, setViewTab] = useState<"today" | "week">("today");
+  const [viewTab, setViewTab] = useState<"today" | "thisWeek" | "nextWeek">("today");
   const today = appNow().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
-  // weekStart is computed after effectiveWeekNum, trainingPhase after displayWeekNum
+  const todayISO = appTodayISO();
 
-  // Detect if the programme week is ahead of the calendar week (e.g. time-travel)
-  // Only fall back to previous week if no sessions have been logged for the current
-  // programme week — otherwise the user has legitimately started that week.
-  const programmeMonday = getProgrammeWeekMonday(progressDB.currentWeek || 1, progressDB.programStartDate);
+  // ── Three-tab week resolution ──
+  // Determine whether the programme has been advanced ahead of the calendar.
+  // When it has, "this week" = the previous week (from history) and
+  // "next week" = the newly built week (weekData). Otherwise, "this week"
+  // is just weekData and there is no next week tab.
+  const currentWeekNum = progressDB.currentWeek || 1;
+  const programmeMonday = getProgrammeWeekMonday(currentWeekNum, progressDB.programStartDate);
   const calendarNow = appNow();
   const calendarDow = calendarNow.getDay() === 0 ? 6 : calendarNow.getDay() - 1;
   const calendarMonday = new Date(calendarNow);
   calendarMonday.setDate(calendarNow.getDate() - calendarDow);
   const programmeAhead = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
-  const hasCurrentWeekSessions = (progressDB.sessions as { weekNum?: number }[])
-    .some((s) => s.weekNum === (progressDB.currentWeek || 1));
-  // Only show the "Next Week" dual-tab when:
-  // 1. Programme is ahead of calendar
-  // 2. No sessions for the new week yet
-  // 3. Previous week's sessions are all complete (user actually finished the week)
-  const prevWeekNum = Math.max((progressDB.currentWeek || 1) - 1, 1);
-  const todayISO = appTodayISO();
-  const prevWeekSessionCount = (progressDB.sessions as { weekNum?: number; date?: string }[])
-    .filter((s) => s.weekNum === prevWeekNum && (!s.date || s.date <= todayISO)).length;
-  const prevWeekData = weekHistory.find((w) => (w as WeekData)?._weekNum === prevWeekNum) as WeekData | undefined;
-  const prevWeekTrainingDays = prevWeekData
-    ? prevWeekData.days.filter((d) => !d.isRest).length
-    : parseInt(useKineStore.getState().days || "3");
-  const prevWeekComplete = prevWeekSessionCount >= prevWeekTrainingDays;
-  const isNextWeek = programmeAhead && !hasCurrentWeekSessions && prevWeekComplete;
 
-  // Auto-switch to "week" tab when dual-tab mode is active (e.g. after
-  // building next week on the last day and returning from check-in).
+  let thisWeekNum: number;
+  let thisWeekData: WeekData;
+  let nextWeekNum: number | null = null;
+  let nextWeekData: WeekData | null = null;
+  let showNextWeekTab = false;
+
+  if (programmeAhead && weekHistory.length > 0) {
+    // Programme advanced: "this week" = previous week from history, "next week" = weekData
+    thisWeekNum = currentWeekNum - 1;
+    thisWeekData = weekHistory[weekHistory.length - 1] as WeekData;
+    nextWeekNum = currentWeekNum;
+    nextWeekData = week;
+    showNextWeekTab = true;
+  } else {
+    // Normal: "this week" = weekData, no next week
+    thisWeekNum = currentWeekNum;
+    thisWeekData = week;
+  }
+
+  // Sessions for this week, filtered to those logged up to "now"
+  const thisWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
+    .filter((s) => s.weekNum === thisWeekNum && (!s.date || s.date <= todayISO));
+
+  // Auto-switch to "nextWeek" tab when returning from check-in after building
   const didAutoSwitchTab = useRef(false);
   useEffect(() => {
-    if (isNextWeek && !didAutoSwitchTab.current) {
-      setViewTab("week");
+    if (showNextWeekTab && !didAutoSwitchTab.current) {
+      setViewTab("nextWeek");
       didAutoSwitchTab.current = true;
     }
-    if (!isNextWeek) didAutoSwitchTab.current = false;
-  }, [isNextWeek]);
+    if (!showNextWeekTab) didAutoSwitchTab.current = false;
+  }, [showNextWeekTab]);
 
-  // When the user has built ahead (all sessions done + check-in + build),
-  // show the previous week on the Today tab, the new week on the Week tab.
-  // Otherwise, fall back to treating effectiveWeek as currentWeek (no dual-tab).
-  const effectiveWeekNum = isNextWeek
-    ? prevWeekNum
-    : programmeAhead && !hasCurrentWeekSessions
-      ? prevWeekNum  // programme ahead but prev week not complete — show prev week, no dual-tab
-      : (progressDB.currentWeek || 1);
-  const effectiveWeek = (isNextWeek || (programmeAhead && !hasCurrentWeekSessions)) && weekHistory.length > 0
-    ? (weekHistory[weekHistory.length - 1] as WeekData)
-    : week;
-  // trainingPhase is computed after displayWeekNum below so it
-  // reflects whichever week the user is actually viewing.
+  // Fall back if viewing a tab that no longer exists
+  useEffect(() => {
+    if (viewTab === "nextWeek" && !showNextWeekTab) setViewTab("thisWeek");
+  }, [viewTab, showNextWeekTab]);
 
-  // Sessions for the effective programme week, filtered to those logged up to "now"
-  const currentWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
-    .filter((s) => s.weekNum === effectiveWeekNum && (!s.date || s.date <= todayISO));
-  // Sessions for whichever week is currently displayed (switches with tab)
-  const displayWeekSessions = (isNextWeek && viewTab === "week")
-    ? (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
-        .filter((s) => s.weekNum === (progressDB.currentWeek || 1) && (!s.date || s.date <= todayISO))
-    : currentWeekSessions;
-
-  // Week navigation: past weeks from history, current week is live
+  // Past week navigation (applies to This Week tab only)
   const isViewingPast = viewingPastIdx !== null;
   const displayWeek = isViewingPast
     ? (weekHistory[viewingPastIdx] as WeekData)
-    : (isNextWeek && viewTab === "week") ? week : effectiveWeek;
+    : thisWeekData;
   const displayWeekNum = isViewingPast
     ? (displayWeek?._weekNum || 1)
-    : (isNextWeek && viewTab === "week") ? (progressDB.currentWeek || 1) : effectiveWeekNum;
+    : thisWeekNum;
   const displayWeekStart = getWeekDateRange(displayWeekNum, progressDB.programStartDate);
-  const trainingPhase = getCurrentPhaseInfo(displayWeekNum, progressDB.phaseOffset);
-  const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
+  const trainingPhase = getCurrentPhaseInfo(
+    viewTab === "nextWeek" && nextWeekNum ? nextWeekNum : displayWeekNum,
+    progressDB.phaseOffset,
+  );
+  const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > (showNextWeekTab ? 1 : 0);
   const hasNext = isViewingPast; // can always go forward to current
 
   function goToPrevWeek() {
@@ -616,7 +610,7 @@ function WeekView({
     ? getCurrentPhase(cycle.periodLog, cycle.avgLength)
     : null;
 
-  if (!displayWeek) return null;
+  if (!displayWeek && !nextWeekData) return null;
 
   return (
     <div className={loading ? "relative" : ""}>
@@ -639,7 +633,8 @@ function WeekView({
               </button>
             )}
             <p className="text-[10px] tracking-[0.3em] text-accent uppercase">
-              Week {displayWeekNum}{isViewingPast ? "" : ` · ${displayWeekStart}`}
+              Week {viewTab === "nextWeek" && nextWeekNum ? nextWeekNum : displayWeekNum}
+              {isViewingPast ? "" : ` · ${viewTab === "nextWeek" && nextWeekNum ? getWeekDateRange(nextWeekNum, progressDB.programStartDate) : displayWeekStart}`}
             </p>
             {hasNext && (
               <button onClick={goToNextWeek} className="text-muted2 hover:text-accent transition-colors text-sm">
@@ -660,7 +655,7 @@ function WeekView({
         <h1 className="mt-1 font-display text-2xl tracking-wide text-text">
           {firstName ? `Hi ${firstName}` : "Your Week"}
         </h1>
-        {displayWeek._isFallback && (
+        {displayWeek?._isFallback && (
           <div className="mt-2 rounded-lg border border-[#c49098]/30 bg-[#c49098]/5 px-3 py-2">
             <p className="text-[10px] text-[#c49098] font-display tracking-wider">USING STANDARD PROGRAMME</p>
             <p className="text-[10px] text-muted2 mt-0.5">
@@ -687,13 +682,23 @@ function WeekView({
             Today
           </button>
           <button
-            onClick={() => setViewTab("week")}
+            onClick={() => setViewTab("thisWeek")}
             className={`flex-1 rounded-full py-1.5 text-[11px] font-medium transition-all ${
-              viewTab === "week" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
+              viewTab === "thisWeek" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
             }`}
           >
-            {isNextWeek ? "Next Week" : "Week"}
+            This Week
           </button>
+          {showNextWeekTab && (
+            <button
+              onClick={() => setViewTab("nextWeek")}
+              className={`flex-1 rounded-full py-1.5 text-[11px] font-medium transition-all ${
+                viewTab === "nextWeek" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
+              }`}
+            >
+              Next Week
+            </button>
+          )}
         </div>
       )}
 
@@ -775,19 +780,19 @@ function WeekView({
           {/* Week complete celebration — Today tab only */}
           {(() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (thisWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               const WEEK_COMPLETE_MESSAGES = [
                 "Consistency beats intensity. You showed up.",
                 "Another week in the book. That's how progress works.",
                 "You did the work. Let recovery do the rest.",
                 "Week done. Strength isn't built in a day — it's built in weeks like this.",
               ];
-              const msg = WEEK_COMPLETE_MESSAGES[(effectiveWeekNum - 1) % WEEK_COMPLETE_MESSAGES.length];
+              const msg = WEEK_COMPLETE_MESSAGES[(thisWeekNum - 1) % WEEK_COMPLETE_MESSAGES.length];
               return (
                 <div className="mb-5 rounded-[14px] border border-accent/40 bg-accent-dim p-5 text-center animate-celebrate">
-                  <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {effectiveWeekNum} complete</p>
+                  <p className="font-display text-[11px] tracking-[3px] text-accent uppercase mb-1">Week {thisWeekNum} complete</p>
                   <p className="font-display text-xl tracking-wide text-text">
-                    {currentWeekSessions.length} sessions done
+                    {thisWeekSessions.length} sessions done
                   </p>
                   <p className="mt-2 text-[11px] text-muted2 font-light leading-relaxed max-w-[280px] mx-auto">
                     {msg}
@@ -800,7 +805,7 @@ function WeekView({
 
           {/* Running week overview — written summary */}
           {(() => {
-            const ws = currentWeekSessions as import("@/store/useKineStore").SessionRecord[];
+            const ws = thisWeekSessions as import("@/store/useKineStore").SessionRecord[];
             if (ws.length === 0) return null;
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             const efforts = ws.map((s) => s.effort).filter((e): e is number => e != null);
@@ -837,7 +842,7 @@ function WeekView({
 
             return (
               <div className="mb-4 rounded-[14px] border border-border/50 bg-surface/50 p-4">
-                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">Week {effectiveWeekNum} so far</p>
+                <p className="text-[8px] tracking-widest text-accent/60 uppercase mb-2">Week {thisWeekNum} so far</p>
                 <p className="text-[11px] text-muted2 font-light leading-relaxed">
                   {parts.join(" ")}
                 </p>
@@ -856,7 +861,7 @@ function WeekView({
             const feedbackItems: { name: string; verdict: string; note: string }[] = [];
             const seen = new Set<string>();
             for (let i = sessions.length - 1; i >= 0; i--) {
-              if (sessions[i].weekNum === effectiveWeekNum) continue;
+              if (sessions[i].weekNum === thisWeekNum) continue;
               for (const fb of sessions[i].exerciseFeedback || []) {
                 if (todayExNames.has(fb.name) && !seen.has(fb.name)) {
                   seen.add(fb.name);
@@ -898,7 +903,7 @@ function WeekView({
               {/* Today's session card — compact, matches other days */}
               {(() => {
                 const todayDay = displayWeek.days[todayIdx];
-                const isCompleted = currentWeekSessions.some((s) => s.dayIdx === todayIdx);
+                const isCompleted = thisWeekSessions.some((s) => s.dayIdx === todayIdx);
                 return (
                   <DayCard
                     day={todayDay} dayIdx={todayIdx}
@@ -913,47 +918,14 @@ function WeekView({
             </>
           )}
 
-          {/* Check-in status — show on Today tab when check-in is done for the effective week */}
-          {(() => {
-            const checkin = progressDB.weekFeedbackHistory.find(
-              (f) => f.weekNum === effectiveWeekNum
-            );
-            if (!checkin) return null;
-            const effortLabels = ["", "Drained", "Low energy", "Normal", "High energy"];
-            const sorenessLabels = ["", "Fresh", "Mild aches", "Sore", "Beat up"];
-            const scheduleLabels: Record<string, string> = {
-              too_easy: "Too easy",
-              about_right: "Just right",
-              too_much: "Too much",
-            };
-            const summary = [
-              effortLabels[checkin.effort],
-              sorenessLabels[checkin.soreness],
-              checkin.scheduleFeeling ? scheduleLabels[checkin.scheduleFeeling] : null,
-            ].filter(Boolean).join(" · ");
-            return (
-              <div className="mt-4 rounded-[14px] border border-border/50 bg-surface/50 p-4">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-800/10 text-[11px] text-green-800">✓</span>
-                  <div>
-                    <p className="text-xs font-medium text-green-800">Week {effectiveWeekNum} check-in complete</p>
-                    {summary && <p className="text-[10px] text-muted2 mt-0.5">{summary}</p>}
-                  </div>
-                </div>
-                <Link href="/app/week-checkin" className="mt-2 inline-block text-[11px] text-muted2 hover:text-text transition-colors">
-                  Amend check-in →
-                </Link>
-              </div>
-            );
-          })()}
         </div>
       )}
 
       {/* For-you Education strip — appears on Today view, not while viewing past weeks */}
       {viewTab === "today" && !isViewingPast && <ForYouEducationStrip />}
 
-      {/* ── WEEK TAB (or past week view) ── */}
-      {(viewTab === "week" || isViewingPast) && (
+      {/* ── THIS WEEK TAB (or past week view) ── */}
+      {(viewTab === "thisWeek" || isViewingPast) && (
         <div>
           {/* Past week banner */}
           {isViewingPast && (
@@ -962,20 +934,20 @@ function WeekView({
             </div>
           )}
 
-          {/* Session completion summary — current week only, not on Next Week preview */}
-          {!isViewingPast && !(isNextWeek && viewTab === "week") && (() => {
+          {/* Session completion summary */}
+          {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (displayWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
+            if (thisWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-muted2">
-                  {displayWeekSessions.length}/{trainingDayCount} sessions done this week
+                  {thisWeekSessions.length}/{trainingDayCount} sessions done this week
                 </p>
               );
             }
-            if (displayWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (thisWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-accent/70">
-                  All {displayWeekSessions.length} sessions complete this week
+                  All {thisWeekSessions.length} sessions complete this week
                 </p>
               );
             }
@@ -988,7 +960,6 @@ function WeekView({
           {/* All 7 day cards */}
           {(() => {
             const viewWeekNum = displayWeekNum;
-            // Calculate Monday of the *viewed* week for date labels
             const monday = isViewingPast && viewingPastIdx !== null
               ? (() => {
                   const now = appNow();
@@ -1006,7 +977,7 @@ function WeekView({
                   const hasSession = isViewingPast
                     ? (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
                         .some((s) => s.weekNum === viewWeekNum && s.dayIdx === i)
-                    : displayWeekSessions.some((s) => s.dayIdx === i);
+                    : thisWeekSessions.some((s) => s.dayIdx === i);
                   const isCompleted = hasSession;
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
@@ -1014,11 +985,11 @@ function WeekView({
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
-                      isToday={!isViewingPast && !isNextWeek && i === todayIdx}
+                      isToday={!isViewingPast && i === todayIdx}
                       isCompleted={isCompleted}
-                      isPast={isViewingPast || (!isNextWeek && i < todayIdx)}
+                      isPast={isViewingPast || i < todayIdx}
                       expanded={false}
-                      readOnly={isViewingPast || (isNextWeek && viewTab === "week")}
+                      readOnly={isViewingPast}
                       dateStr={dateLabel}
                       weekNum={viewWeekNum}
                     />
@@ -1028,39 +999,88 @@ function WeekView({
             );
           })()}
 
-          {/* Next week preview — only on Sunday or later, not when already viewing next week */}
-          {!isViewingPast && !(isNextWeek && viewTab === "week") && (() => {
+          {/* Check-in + Build Next Week section */}
+          {!isViewingPast && !showNextWeekTab && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            // Show on Sunday or if we've rolled past the programme week into a new calendar week
-            const effectiveMonday = getProgrammeWeekMonday(effectiveWeekNum, progressDB.programStartDate);
-            const daysSinceMonday = Math.floor((appNow().getTime() - effectiveMonday.getTime()) / 86400000);
-            const isEndOfWeekOrLater = daysSinceMonday >= 6; // Sunday (6) or beyond
-            if (isEndOfWeekOrLater && currentWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
-              const nextWeekNum = effectiveWeekNum + 1;
-              const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
-              return (
-                <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4 text-center">
-                  <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Up next</p>
-                  <p className="font-display text-lg tracking-wide text-text">Week {nextWeekNum}</p>
-                  <p className="mt-1 text-[10px] text-muted2">{nextPhase.label} · {nextPhase.description}</p>
-                  <Button variant="secondary" size="sm" className="mt-3" onClick={onAdvanceWeek} disabled={loading}>
-                    Build Week {nextWeekNum} →
-                  </Button>
-                </div>
-              );
-            }
-            return null;
+            const allDone = trainingDayCount > 0 && thisWeekSessions.length >= trainingDayCount;
+            const checkin = progressDB.weekFeedbackHistory.find(
+              (f) => f.weekNum === thisWeekNum
+            );
+            const hasCheckedIn = !!checkin;
+            const thisMonday = getProgrammeWeekMonday(thisWeekNum, progressDB.programStartDate);
+            const daysSinceMonday = Math.floor((appNow().getTime() - thisMonday.getTime()) / 86400000);
+            const isEndOfWeekOrLater = daysSinceMonday >= 6;
+
+            if (!allDone) return null;
+
+            const effortLabels = ["", "Drained", "Low energy", "Normal", "High energy"];
+            const sorenessLabels = ["", "Fresh", "Mild aches", "Sore", "Beat up"];
+            const scheduleLabels: Record<string, string> = {
+              too_easy: "Too easy",
+              about_right: "Just right",
+              too_much: "Too much",
+            };
+
+            return (
+              <div className="mt-6 rounded-[14px] border border-border/50 bg-surface/50 p-4">
+                {/* Step 1: Check-in */}
+                {hasCheckedIn ? (
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-800/10 text-[11px] text-green-800">✓</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-green-800">Week {thisWeekNum} check-in complete</p>
+                      <p className="text-[10px] text-muted2 mt-0.5">
+                        {[
+                          effortLabels[checkin!.effort],
+                          sorenessLabels[checkin!.soreness],
+                          checkin!.scheduleFeeling ? scheduleLabels[checkin!.scheduleFeeling] : null,
+                        ].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                    <Link href="/app/week-checkin" className="text-[10px] text-muted2 hover:text-text transition-colors">
+                      Amend →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-xs text-muted2 mb-2">All sessions done — how did this week go?</p>
+                    <Button variant="secondary" size="sm" onClick={() => router.push("/app/week-checkin")}>
+                      Check in on Week {thisWeekNum}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Step 2: Build Next Week (requires check-in + end of week) */}
+                {hasCheckedIn && (
+                  <div className="mt-4 pt-4 border-t border-border/30 text-center">
+                    {isEndOfWeekOrLater ? (
+                      <>
+                        <p className="font-display text-[9px] tracking-[2px] text-muted uppercase mb-1">Up next</p>
+                        <p className="font-display text-lg tracking-wide text-text">Week {thisWeekNum + 1}</p>
+                        <p className="mt-1 text-[10px] text-muted2">
+                          {getCurrentPhaseInfo(thisWeekNum + 1, progressDB.phaseOffset).label} · {getCurrentPhaseInfo(thisWeekNum + 1, progressDB.phaseOffset).description}
+                        </p>
+                        <Button variant="secondary" size="sm" className="mt-3" onClick={onAdvanceWeek} disabled={loading}>
+                          Build Week {thisWeekNum + 1} →
+                        </Button>
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-muted2">
+                        Build next week will be available on the last day of the week
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
           })()}
 
-          {/* Actions — hidden when viewing past weeks or next week preview */}
-          {!isViewingPast && !(isNextWeek && viewTab === "week") && (() => {
+          {/* Actions */}
+          {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            const allDone = trainingDayCount > 0 && displayWeekSessions.length >= trainingDayCount;
+            const allDone = trainingDayCount > 0 && thisWeekSessions.length >= trainingDayCount;
             return (
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Link href="/app/week-checkin" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
-                  Check-in
-                </Link>
                 <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)} disabled={allDone}>
                   Rearrange
                 </Button>
@@ -1070,6 +1090,36 @@ function WeekView({
                 <Link href="/app/sandbox" className="inline-flex items-center rounded-[var(--radius-default)] px-3 py-1.5 text-xs text-muted2 hover:text-text hover:bg-surface2 transition-all">
                   {allDone ? "Design Next Week" : "Design Week"}
                 </Link>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ── NEXT WEEK TAB ── */}
+      {viewTab === "nextWeek" && nextWeekData && nextWeekNum && (
+        <div>
+          {(() => {
+            const monday = getProgrammeWeekMonday(nextWeekNum, progressDB.programStartDate);
+            return (
+              <div className="flex flex-col gap-2">
+                {nextWeekData.days.map((day, i) => {
+                  const dayDate = new Date(monday);
+                  dayDate.setDate(monday.getDate() + i);
+                  const dateLabel = dayDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+                  return (
+                    <DayCard
+                      key={i} day={day} dayIdx={i}
+                      isToday={false}
+                      isCompleted={false}
+                      isPast={false}
+                      expanded={false}
+                      readOnly={true}
+                      dateStr={dateLabel}
+                      weekNum={nextWeekNum!}
+                    />
+                  );
+                })}
               </div>
             );
           })()}
