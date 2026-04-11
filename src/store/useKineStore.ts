@@ -85,6 +85,13 @@ export interface AdaptationPlan {
   extraNote?: string;
 }
 
+export interface NextWeekPrefs {
+  daysOverride?: number;            // different number of training days (null = same as usual)
+  sessionLength?: "shorter" | "same" | "longer";
+  intensity?: "lighter" | "maintain" | "push";
+  flagNote?: string;                // free text: travel, injury, event, etc.
+}
+
 export interface WeekFeedback {
   weekNum: number;
   effort: number;   // energy level: 1=Drained, 2=Low, 3=Normal, 4=High
@@ -92,6 +99,7 @@ export interface WeekFeedback {
   scheduleFeeling?: "too_easy" | "about_right" | "too_much";
   notes?: string;
   adaptationPlan?: AdaptationPlan;
+  nextWeekPrefs?: NextWeekPrefs;
 }
 
 export interface PersonalProfile {
