@@ -255,14 +255,46 @@ export default function LandingPage() {
           width: 200px;
           height: 420px;
           border-radius: 30px;
-          overflow: hidden;
+          overflow: visible;
           background: linear-gradient(145deg, #d4a5ad, #c49098, #b8868e);
           padding: 3px;
           box-shadow:
-            0 20px 60px rgba(0,0,0,0.18),
-            0 0 0 1px rgba(196, 144, 152, 0.2),
+            /* depth shadow */
+            -4px 6px 0 -1px #b07880,
+            -5px 7px 0 -1px #a06a72,
+            /* ambient shadow */
+            0 20px 60px rgba(0,0,0,0.22),
+            0 8px 20px rgba(0,0,0,0.12),
+            /* glow */
             0 0 40px rgba(196, 144, 152, 0.08);
           z-index: 1;
+        }
+        /* Side edge highlight — left edge visible from perspective */
+        .lp-phone::before {
+          content: '';
+          position: absolute;
+          left: -4px;
+          top: 8px;
+          bottom: 8px;
+          width: 4px;
+          background: linear-gradient(180deg, #d4a5ad 0%, #b8868e 50%, #a06a72 100%);
+          border-radius: 4px 0 0 4px;
+          z-index: -1;
+        }
+        /* Side buttons on left edge */
+        .lp-phone::after {
+          content: '';
+          position: absolute;
+          left: -5px;
+          top: 100px;
+          width: 3px;
+          height: 28px;
+          background: linear-gradient(180deg, #c49098, #a8747c);
+          border-radius: 2px 0 0 2px;
+          box-shadow:
+            0 36px 0 0 #b8868e,
+            0 36px 0 0 #b8868e;
+          z-index: -1;
         }
         .lp-phone-inner {
           width: 100%; height: 100%;
@@ -270,6 +302,8 @@ export default function LandingPage() {
           overflow: hidden;
           position: relative;
           background: #111;
+          /* Screen bezel depth */
+          box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3);
         }
         .lp-phone-inner::before {
           content: '';
@@ -280,6 +314,15 @@ export default function LandingPage() {
           background: #111;
           border-radius: 10px;
           z-index: 10;
+        }
+        /* Frame highlight — top edge catch light */
+        .lp-phone-inner::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 10%; right: 10%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+          z-index: 11;
         }
         .lp-phone-inner-light { background: #E8E8E8; }
         .lp-phone-inner-light::before { background: #E8E8E8; }
