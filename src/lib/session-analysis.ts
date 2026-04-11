@@ -177,11 +177,11 @@ Return JSON analysis with overallAssessment, exerciseFeedback (per exercise), ch
     const data = await apiFetchStreaming(
       {
         model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
+        max_tokens: 1200,
         system: ANALYSIS_SYSTEM,
         messages: [{ role: "user", content: prompt }],
       },
-      { timeoutMs: 30000 }
+      { timeoutMs: 15000 }
     );
 
     const text = data.content.map((b) => b.text || "").join("").trim();

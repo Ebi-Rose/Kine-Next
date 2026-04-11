@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useKineStore } from "@/store/useKineStore";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS } from "@/data/constants";
-import { getEffectiveWeek } from "@/lib/date-utils";
+import { getEffectiveWeek, isDayInPast } from "@/lib/date-utils";
 import Button from "@/components/Button";
 import BottomSheet from "@/components/BottomSheet";
 import { toast } from "@/components/Toast";
@@ -22,22 +22,27 @@ export default function SessionRearrange({ open, onClose }: Props) {
   if (!week) return null;
 
   const curWeek = getEffectiveWeek(progressDB.sessions as { weekNum?: number }[], progressDB.currentWeek || 1);
+  // Block completed sessions AND past days (including rest days) from rearranging
   const completedDayIdxs = new Set(
     (progressDB.sessions as { weekNum?: number; dayIdx?: number }[])
       .filter((s) => s.weekNum === curWeek)
       .map((s) => s.dayIdx)
   );
+  const lockedDayIdxs = new Set([
+    ...completedDayIdxs,
+    ...week.days.map((_, i) => i).filter((i) => isDayInPast(i)),
+  ]);
 
   function handleDayClick(idx: number) {
     // Don't allow rearranging completed sessions
-    if (completedDayIdxs.has(idx)) return;
+    if (lockedDayIdxs.has(idx)) return;
     if (selected === null) {
       // First tap — select source
       setSelected(idx);
     } else if (selected === idx) {
       // Deselect
       setSelected(null);
-    } else if (completedDayIdxs.has(idx)) {
+    } else if (lockedDayIdxs.has(idx)) {
       // Can't swap into a completed slot
       setSelected(null);
     } else {
@@ -71,9 +76,9 @@ export default function SessionRearrange({ open, onClose }: Props) {
           <button
             key={i}
             onClick={() => handleDayClick(i)}
-            disabled={completedDayIdxs.has(i)}
+            disabled={lockedDayIdxs.has(i)}
             className={`flex items-center justify-between rounded-[var(--radius-default)] border p-3 text-left transition-all ${
-              completedDayIdxs.has(i)
+              lockedDayIdxs.has(i)
                 ? "border-border/30 bg-surface/30 opacity-50 cursor-not-allowed"
                 : selected === i
                   ? "border-accent bg-accent-dim"
@@ -87,8 +92,10 @@ export default function SessionRearrange({ open, onClose }: Props) {
               <span className="ml-2 text-sm text-text">
                 {day.isRest ? "Rest" : day.sessionTitle}
               </span>
-              {completedDayIdxs.has(i) && (
-                <span className="ml-2 text-[9px] text-accent">Done</span>
+              {lockedDayIdxs.has(i) && (
+                <span className="ml-2 text-[9px] text-accent">
+                  {completedDayIdxs.has(i) ? "Done" : "Past"}
+                </span>
               )}
             </div>
             {!day.isRest && (

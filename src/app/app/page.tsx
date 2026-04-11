@@ -1056,6 +1056,8 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
   const router = useRouter();
   const { progressDB, setProgressDB } = useKineStore();
   const [showSessionReview, setShowSessionReview] = useState(false);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+  const [skipReason, setSkipReason] = useState("");
   const dayLabel = DAY_LABELS[(day.dayNumber - 1) % 7];
 
   // Find completed session log for this day
@@ -1064,6 +1066,30 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
     ? (progressDB.sessions as { weekNum?: number; dayIdx?: number; date?: string; logs?: Record<number, { name: string; actual: { reps: string; weight: string }[]; note?: string; saved?: boolean }>; effort?: number; soreness?: number; title?: string }[])
         .find((s) => s.weekNum === wk && s.dayIdx === dayIdx)
     : null;
+
+  const isSkipped = progressDB.skippedSessions.some(
+    (s) => s.weekNum === wk && s.dayIdx === dayIdx,
+  );
+
+  function handleSkip() {
+    const today = appTodayISO();
+    setProgressDB({
+      ...progressDB,
+      skippedSessions: [
+        ...progressDB.skippedSessions,
+        {
+          sessionTitle: day.sessionTitle || "Session",
+          weekNum: wk,
+          dayIdx,
+          date: today,
+          movedTo: null,
+        },
+      ],
+    });
+    setShowSkipConfirm(false);
+    setSkipReason("");
+    toast("Session skipped", "success");
+  }
 
   if (day.isRest) {
     return (
@@ -1152,6 +1178,11 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
               ✓ done
             </span>
           )}
+          {isSkipped && !isCompleted && (
+            <span className="rounded-full bg-muted/20 px-2.5 py-0.5 text-[10px] font-medium text-muted2 tracking-wide">
+              skipped
+            </span>
+          )}
         </div>
         <span className="font-display text-[9px] tracking-[2px] text-muted uppercase">{day.sessionDuration}</span>
       </div>
@@ -1216,9 +1247,11 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             ))}
           </div>
           {!readOnly && (
-            <div className="mt-4 flex gap-2">
-              {isCompleted ? (
-                <>
+            <div className="mt-4 flex flex-col gap-2">
+              {isSkipped ? (
+                <p className="text-xs text-muted2 italic text-center py-1">Session skipped</p>
+              ) : isCompleted ? (
+                <div className="flex gap-2">
                   <Button className="flex-1" size="sm" variant="secondary"
                     onClick={() => setShowSessionReview(true)}>
                     View results
@@ -1227,13 +1260,41 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
                     onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
                     Redo
                   </Button>
-                </>
+                </div>
               ) : (
-                <Button className="w-full" size="sm" variant={isToday ? "primary" : "secondary"}
-                  onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
-                  {isToday ? "Start session" : isPast ? "Start session" : "Preview & edit"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1" size="sm" variant={isToday ? "primary" : "secondary"}
+                    onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}>
+                    {isToday ? "Start session" : isPast ? "Start session" : "Preview & edit"}
+                  </Button>
+                  <Button size="sm" variant="ghost"
+                    onClick={() => setShowSkipConfirm(true)}>
+                    Skip
+                  </Button>
+                </div>
               )}
+            </div>
+          )}
+
+          {/* Skip confirmation */}
+          {showSkipConfirm && (
+            <div className="mt-3 rounded-xl border border-border bg-surface p-3">
+              <p className="text-xs text-text mb-2">Skip this session?</p>
+              <textarea
+                value={skipReason}
+                onChange={(e) => setSkipReason(e.target.value)}
+                placeholder="Reason (optional) — e.g. feeling unwell, schedule conflict..."
+                rows={2}
+                className="w-full rounded-lg border border-border bg-bg px-2 py-1.5 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none mb-2"
+              />
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" className="flex-1" onClick={() => setShowSkipConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" variant="secondary" className="flex-1" onClick={handleSkip}>
+                  Skip session
+                </Button>
+              </div>
             </div>
           )}
         </>
