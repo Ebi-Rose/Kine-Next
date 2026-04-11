@@ -481,7 +481,7 @@ function WeekView({
   const [viewTab, setViewTab] = useState<"today" | "week">("today");
   const today = appNow().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
-  // weekStart and trainingPhase are computed after effectiveWeekNum below
+  // weekStart is computed after effectiveWeekNum, trainingPhase after displayWeekNum
 
   // Detect if the programme week is ahead of the calendar week (e.g. time-travel)
   // Only fall back to previous week if no sessions have been logged for the current
@@ -505,7 +505,8 @@ function WeekView({
     ? (weekHistory[weekHistory.length - 1] as WeekData)
     : week;
   const effectiveWeekStart = getWeekDateRange(effectiveWeekNum, progressDB.programStartDate);
-  const trainingPhase = getCurrentPhaseInfo(effectiveWeekNum, progressDB.phaseOffset);
+  // trainingPhase is computed after displayWeekNum below so it
+  // reflects whichever week the user is actually viewing.
 
   // Sessions for the effective programme week, filtered to those logged up to "now"
   const todayISO = appTodayISO();
@@ -521,6 +522,7 @@ function WeekView({
   const displayWeekNum = isViewingPast
     ? (displayWeek?._weekNum || 1)
     : (isNextWeek && viewTab === "week") ? (progressDB.currentWeek || 1) : effectiveWeekNum;
+  const trainingPhase = getCurrentPhaseInfo(displayWeekNum, progressDB.phaseOffset);
   const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
   const hasNext = isViewingPast; // can always go forward to current
 
