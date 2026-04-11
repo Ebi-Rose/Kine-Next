@@ -264,6 +264,7 @@ export default function LandingPage() {
           border-radius: 30px;
           background: linear-gradient(145deg, #dbb3ba, #c49098, #b8868e);
           padding: 3px;
+          overflow: hidden;
           box-shadow:
             0 20px 60px rgba(0,0,0,0.25),
             0 8px 24px rgba(0,0,0,0.15),
@@ -274,48 +275,43 @@ export default function LandingPage() {
         /* Left side edge — real 3D depth */
         .lp-phone-edge-left {
           position: absolute;
-          top: 8px;
-          bottom: 8px;
-          left: 0;
-          width: 420px;
-          transform-origin: left center;
-          transform: rotateY(-90deg);
+          top: 28px;
+          bottom: 28px;
+          left: -6px;
+          width: 6px;
           background: linear-gradient(180deg, #c49098 0%, #b07880 40%, #9e6a72 100%);
-          border-radius: 2px;
-          width: 8px;
+          border-radius: 4px 0 0 4px;
         }
         /* Bottom edge — visible from angle */
         .lp-phone-edge-bottom {
           position: absolute;
-          bottom: 0;
-          left: 8px;
-          right: 8px;
-          height: 8px;
-          transform-origin: bottom center;
-          transform: rotateX(90deg);
+          bottom: -5px;
+          left: 28px;
+          right: 28px;
+          height: 5px;
           background: linear-gradient(90deg, #b07880, #c49098, #b07880);
-          border-radius: 2px;
+          border-radius: 0 0 4px 4px;
         }
         /* Side buttons — volume + power */
         .lp-phone-buttons {
           position: absolute;
-          left: -3px;
+          left: -4px;
           top: 95px;
           width: 3px;
-          height: 24px;
+          height: 22px;
           background: linear-gradient(180deg, #d4a5ad, #b8868e);
-          border-radius: 2px 0 0 2px;
-          box-shadow: 0 34px 0 0 #c49098, 0 48px 0 0 #c49098;
+          border-radius: 3px 0 0 3px;
+          box-shadow: 0 32px 0 0 #c49098;
         }
         /* Power button — right side */
         .lp-phone-power {
           position: absolute;
-          right: -3px;
-          top: 120px;
+          right: -4px;
+          top: 115px;
           width: 3px;
-          height: 30px;
+          height: 28px;
           background: linear-gradient(180deg, #d4a5ad, #b8868e);
-          border-radius: 0 2px 2px 0;
+          border-radius: 0 3px 3px 0;
         }
         .lp-phone-inner {
           width: 100%; height: 100%;
