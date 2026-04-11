@@ -372,13 +372,22 @@ function buildUserPrompt(): string {
 
       const latestSchedule = (latest as { scheduleFeeling?: string }).scheduleFeeling;
 
-      if (latest.effort <= 2 || latest.soreness >= 3) {
+      // Body signals take priority over subjective volume feel to avoid
+      // contradicting directives (e.g., "reduce volume" + "add exercises").
+      const bodyNeedsRest = latest.effort <= 2 || latest.soreness >= 3;
+      const bodyIsFresh = latest.effort >= 4 && latest.soreness <= 2;
+
+      if (bodyNeedsRest) {
         weekFeedbackCtx += `\nNote: User reported low energy or high body soreness last week. Consider reducing volume or intensity slightly. Prioritise consistency over progression this week.`;
-      }
-      if (latest.effort >= 4 && latest.soreness <= 2) {
+        if (latestSchedule === "too_much") {
+          weekFeedbackCtx += `\nNote: User also said volume felt like too much. Reduce sets or remove an accessory.`;
+        }
+      } else if (bodyIsFresh) {
         weekFeedbackCtx += `\nNote: User feeling fresh and energised — good window to maintain or slightly increase challenge.`;
-      }
-      if (latestSchedule === "too_easy") {
+        if (latestSchedule === "too_easy") {
+          weekFeedbackCtx += `\nNote: User also said volume felt too easy. Increase sets or add an exercise.`;
+        }
+      } else if (latestSchedule === "too_easy") {
         weekFeedbackCtx += `\nNote: User said volume felt too easy. Increase sets or add an exercise.`;
       } else if (latestSchedule === "too_much") {
         weekFeedbackCtx += `\nNote: User said volume felt like too much. Reduce sets or remove an accessory.`;

@@ -26,9 +26,15 @@ export function computeAdaptations(
   let counter = 0;
   const id = (prefix: string) => `${prefix}-${counter++}`;
 
-  // ── Rating-based adaptations (mirrors week-builder lines 344-357) ──
+  // ── Rating-based adaptations ──
+  // Body signals (energy/soreness) take priority over subjective volume
+  // feel. If energy is low but volume "felt easy", the body needs rest
+  // regardless — don't show contradicting recommendations.
 
-  if (energy <= 2 || soreness >= 3) {
+  const bodyNeedsRest = energy <= 2 || soreness >= 3;
+  const bodyIsFresh = energy >= 4 && soreness <= 2;
+
+  if (bodyNeedsRest) {
     items.push({
       id: id("rating"),
       label: energy <= 2
@@ -37,31 +43,47 @@ export function computeAdaptations(
       source: "rating",
       enabled: true,
     });
-  }
-
-  if (energy >= 4 && soreness <= 2) {
+    // Only surface "too much" schedule feeling if it aligns with body signal
+    if (scheduleFeeling === "too_much") {
+      items.push({
+        id: id("rating"),
+        label: "Reduce sets or drop an accessory — volume was too much",
+        source: "rating",
+        enabled: true,
+      });
+    }
+  } else if (bodyIsFresh) {
     items.push({
       id: id("rating"),
       label: "Slightly increase challenge — feeling fresh and energised",
       source: "rating",
       enabled: true,
     });
-  }
-
-  if (scheduleFeeling === "too_easy") {
-    items.push({
-      id: id("rating"),
-      label: "Add sets or an extra exercise — volume felt too easy",
-      source: "rating",
-      enabled: true,
-    });
-  } else if (scheduleFeeling === "too_much") {
-    items.push({
-      id: id("rating"),
-      label: "Reduce sets or drop an accessory — volume was too much",
-      source: "rating",
-      enabled: true,
-    });
+    if (scheduleFeeling === "too_easy") {
+      items.push({
+        id: id("rating"),
+        label: "Add sets or an extra exercise — volume felt too easy",
+        source: "rating",
+        enabled: true,
+      });
+    }
+  } else {
+    // Middle ground — body is fine, let schedule feeling drive
+    if (scheduleFeeling === "too_easy") {
+      items.push({
+        id: id("rating"),
+        label: "Add sets or an extra exercise — volume felt too easy",
+        source: "rating",
+        enabled: true,
+      });
+    } else if (scheduleFeeling === "too_much") {
+      items.push({
+        id: id("rating"),
+        label: "Reduce sets or drop an accessory — volume was too much",
+        source: "rating",
+        enabled: true,
+      });
+    }
   }
 
   // ── Periodisation phase ──
