@@ -518,8 +518,15 @@ function WeekView({
       store.setWeekData(prevWeek);
     }
 
-    // Roll back currentWeek
-    setProgressDB({ ...progressDB, currentWeek: prevWeekNum });
+    // Roll back currentWeek and clear the check-in for that week so
+    // the user goes through the check-in again with updated session data.
+    setProgressDB({
+      ...progressDB,
+      currentWeek: prevWeekNum,
+      weekFeedbackHistory: progressDB.weekFeedbackHistory.filter(
+        (f) => f.weekNum !== prevWeekNum,
+      ),
+    });
   }, [programmeIsAhead]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const effectiveWeekNum = progressDB.currentWeek || 1;
