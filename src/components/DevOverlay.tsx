@@ -146,11 +146,14 @@ export default function DevOverlay() {
     if (dateStr < prevAppISO) {
       const store = useKineStore.getState();
       const { progressDB, setProgressDB, setWeekData, weekData } = store;
+      // Keep sessions up to and including the target date — only strip
+      // sessions strictly after it. The user can redo today's session
+      // naturally through the session flow.
       const sessions = (progressDB.sessions as { date?: string; weekNum?: number }[])
-        .filter((s) => !s.date || s.date < dateStr);
+        .filter((s) => !s.date || s.date <= dateStr);
       const lifts = { ...progressDB.lifts };
       for (const key of Object.keys(lifts)) {
-        lifts[key] = lifts[key].filter((e: { date: string }) => e.date < dateStr);
+        lifts[key] = lifts[key].filter((e: { date: string }) => e.date <= dateStr);
       }
       const maxWeek = sessions.length > 0
         ? sessions.reduce((m, s) => Math.max(m, s.weekNum || 1), 1)

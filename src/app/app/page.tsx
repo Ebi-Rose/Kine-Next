@@ -62,19 +62,19 @@ export default function AppHome() {
   }, [loading]);
 
   // ── Dev time rewind cleanup ──
-  // On mount (and when progressDB changes), check for sessions dated after
-  // the current app time. If found, strip them — this handles the case where
-  // the user rewound dev time and the page reloaded before persist flushed.
+  // On mount, check for sessions dated strictly after the current app time.
+  // If found, strip them — this handles dev time rewind. Sessions from today
+  // are kept (the user may have just logged one).
   useEffect(() => {
     const todayStr = appTodayISO();
     const sessions = progressDB.sessions as { date?: string; weekNum?: number }[];
-    const hasFutureSessions = sessions.some((s) => s.date && s.date >= todayStr);
+    const hasFutureSessions = sessions.some((s) => s.date && s.date > todayStr);
     if (!hasFutureSessions) return;
 
-    const kept = sessions.filter((s) => !s.date || s.date < todayStr);
+    const kept = sessions.filter((s) => !s.date || s.date <= todayStr);
     const lifts = { ...progressDB.lifts };
     for (const key of Object.keys(lifts)) {
-      lifts[key] = lifts[key].filter((e: { date: string }) => e.date < todayStr);
+      lifts[key] = lifts[key].filter((e: { date: string }) => e.date <= todayStr);
     }
     const maxWeek = kept.length > 0
       ? kept.reduce((m, s) => Math.max(m, (s as { weekNum?: number }).weekNum || 1), 1)
