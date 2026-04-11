@@ -7,7 +7,7 @@
 import { findExercise, type MuscleGroup } from "@/data/exercise-library";
 import { INJURY_SWAPS } from "@/data/injury-swaps";
 import { getCurrentPhaseInfo } from "@/lib/periodisation";
-import { appTimestamp } from "@/lib/dev-time";
+import { appTimestamp, appTodayISO } from "@/lib/dev-time";
 import type { LiftEntry, SessionRecord, WeekFeedback } from "@/store/useKineStore";
 import type {
   EngineHistory,
@@ -371,7 +371,10 @@ export function deriveEngineHistory(
 ): EngineHistory {
   const windowWeeks = options.windowWeeks ?? 6;
   const injuries = options.injuries ?? [];
-  const sessions = progressDB.sessions ?? [];
+  const todayCeiling = appTodayISO();
+  const sessions = (progressDB.sessions ?? []).filter(
+    (s) => !s.date || s.date <= todayCeiling,
+  );
   const lifts = progressDB.lifts ?? {};
 
   const sessionDates = sessions.map((s) => s.date).filter(isISODate);
