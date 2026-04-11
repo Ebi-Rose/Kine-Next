@@ -375,7 +375,7 @@ export default function WhyKinePage() {
 
         {/* vs Established */}
         <div className="wk-section-label">vs. Established Fitness Apps</div>
-        <p className="wk-section-desc">Fitbod, Juggernaut, SWEAT, Dr. Muscle &mdash; apps with real engineering, but none built for women&apos;s bodies.</p>
+        <p className="wk-section-desc">Fitbod, Juggernaut, SWEAT, Dr. Muscle &mdash; good apps, real engineering. But they don&apos;t teach you anything, and they weren&apos;t built for your body.</p>
 
         <section className="wk-comparison">
           <div className="wk-comparison-header">
@@ -384,70 +384,78 @@ export default function WhyKinePage() {
           </div>
 
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">No awareness of PCOS, endometriosis, pelvic floor, fibroids, or hypermobility</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Five conditions with hand-authored rules &mdash; contra-indications, volume caps, warmup mods, cueing. Programs adapt silently, without labelling you.</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">You get a workout. No explanation for why those exercises, in that order, at that weight.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Every exercise comes with a reason &mdash; why it&apos;s in your session, what you should feel, form cues, and where to go next. You learn as you train.</div></div>
           </div>
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">No life stage support &mdash; perimenopause and post-menopause ignored entirely</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Perimenopause and post-menopause as first-class life stages &mdash; prioritising strength and power for bone density, not &ldquo;taking it easy&rdquo;</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Miss a session and you&apos;re behind. Miss a week and you&apos;re starting over.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Life happens. Swap exercises, move days around, take time off. When you come back, you get a rebuilding plan &mdash; not a blank slate.</div></div>
           </div>
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Cycle tracking at best &mdash; no impact on actual programming</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Cycle phase adjusts volume, load caps, and intensity &mdash; with distinct logic for combined pill, IUD, implant, and irregular cycles</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Either fully AI-generated or completely static. Nothing in between.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">The engine is rule-based &mdash; rooted in exercise science and years of professional input. AI helps explain things in plain language. It doesn&apos;t write your programme.</div></div>
           </div>
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Black-box decisions &mdash; you get a workout, no reasoning</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Every exercise choice explained in plain language &mdash; coaching that shows its reasoning, not just its answer</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">No awareness of conditions, hormonal cycles, or life stages. One programme fits everyone.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">PCOS, endometriosis, pelvic floor, perimenopause &mdash; each has hand-written rules that shape your programme quietly. Cycle phase adjusts volume and intensity with logic for pill, IUD, and irregular cycles.</div></div>
+          </div>
+          <div className="wk-row">
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Same level of guidance on day one and day one hundred.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Early on, the app explains a lot. As you get stronger, it steps back. Week 1 tells you why. Week 7 just says &ldquo;+2.5 kg.&rdquo;</div></div>
           </div>
         </section>
 
         {/* vs Vibe-Coded */}
         <div className="wk-section-label">vs. Vibe-Coded Fitness Apps</div>
-        <p className="wk-section-desc">The wave of &ldquo;prompt in, workout out&rdquo; apps built in a weekend. No engine, no guardrails, no accountability.</p>
+        <p className="wk-section-desc">The new wave of &ldquo;type a prompt, get a workout&rdquo; apps. No engine behind them, no research, no one checking the output.</p>
 
         <section className="wk-comparison">
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Entire workout generated by a prompt &mdash; no structure, no memory between sessions</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Deterministic engine builds 3-week periodised blocks with guardrails &mdash; it can&apos;t invent exercises, change loads, or add sessions</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">A language model generates your entire workout. No structure, no memory of what you did last week.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">A deterministic engine builds 3-week periodised blocks. Every rule was written by hand and reviewed by professionals. The engine can&apos;t invent exercises or change your loads on a whim.</div></div>
           </div>
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">No contra-indications &mdash; might prescribe box jumps to someone with a prolapse</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Hard-filters dangerous exercises per condition. Pelvic floor removes all impact. Rep range floors prevent unsafe heavy singles. Warmups adapt automatically.</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">You get reps and sets. That&apos;s it. No context, no coaching, nothing to learn from.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Every exercise has a full coaching layer &mdash; why it was chosen for you, what muscles it works, form cues, breathing, condition-specific notes, and where it sits on your progression path.</div></div>
           </div>
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Miss a week? Start over. No memory of who you were.</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Gaps pause progress, never erase it. Every return gets a rebuilding plan &mdash; reduced load, reduced volume &mdash; not a zeroed counter</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">No safety checks. Could prescribe box jumps to someone with a prolapse and not know the difference.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Dangerous exercises are hard-filtered per condition. Pelvic floor removes all impact work. Rep range floors prevent unsafe heavy singles. Warmups adapt automatically.</div></div>
           </div>
           <div className="wk-row">
-            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Same level of hand-holding forever</div></div>
-            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Coaching thins as you grow &mdash; week 1 is explanatory, week 7 is just &ldquo;+2.5 kg.&rdquo; The app gets quieter as you get stronger.</div></div>
+            <div className="wk-cell wk-cell-typical"><div className="wk-icon"><div className="wk-x" /></div><div className="wk-text">Built over a weekend, shipped without review. No professional input at any stage.</div></div>
+            <div className="wk-cell wk-cell-kine"><div className="wk-icon">{check}</div><div className="wk-text">Years of research turned into rules, not prompts. Shaped by professionals across exercise science, women&apos;s health, data privacy, and engineering. AI helps with language &mdash; it never touches the programme itself.</div></div>
           </div>
         </section>
 
-        {/* Privacy & Trust */}
-        <div className="wk-section-label">Privacy &amp; Trust</div>
-        <p className="wk-section-desc">Cycle data is health data. We treat it that way.</p>
+        {/* Built to a Standard */}
+        <div className="wk-section-label">Built to a Standard</div>
+        <p className="wk-section-desc">Most fitness apps ship fast and fix later. Kine was built the way software should be &mdash; tested, reviewed, and held to account.</p>
 
         <div className="wk-trust-grid">
           <div className="wk-trust-card">
-            <div className="wk-trust-title">No Tracking. No Ads. Ever.</div>
-            <p>No tracking cookies, no analytics pixels, no advertising. Revenue comes from subscriptions, not your data. We don&apos;t sell it. We don&apos;t share it with anyone.</p>
+            <div className="wk-trust-title">Every Rule is Tested</div>
+            <p>Hundreds of automated specs verify the engine before anything ships. Condition filters, cycle logic, volume caps, rep ranges &mdash; all tested against real scenarios, not just happy paths.</p>
           </div>
           <div className="wk-trust-card">
-            <div className="wk-trust-title">Your Data Stays Yours</div>
-            <p>Progress photos never leave your device. Health data requires your explicit consent and can be withdrawn at any time. Full data export and one-tap account deletion, always.</p>
+            <div className="wk-trust-title">Compliance Engine</div>
+            <p>A dedicated compliance layer checks every programme the engine produces. If a session violates a condition rule, a volume cap, or a safety boundary, it doesn&apos;t ship. Full stop.</p>
           </div>
           <div className="wk-trust-card">
-            <div className="wk-trust-title">Your Data Has Boundaries</div>
-            <p>Your name, email, and payment info are never sent to the intelligence layer. Only training-relevant data is used, and none of it is used to train third-party models.</p>
+            <div className="wk-trust-title">Spec-Driven Development</div>
+            <p>Every feature starts with a specification, not a prompt. Conditions, life stages, cycle logic &mdash; each one has a written spec reviewed by professionals before a single line of code is written.</p>
+          </div>
+          <div className="wk-trust-card">
+            <div className="wk-trust-title">AI Has Boundaries</div>
+            <p>AI writes coaching text in plain language. It never generates exercises, sets loads, or makes programme decisions. The engine is deterministic &mdash; same inputs always produce the same output.</p>
+          </div>
+          <div className="wk-trust-card">
+            <div className="wk-trust-title">Privacy by Default</div>
+            <p>No tracking, no ads, no data sales. Health data is GDPR special-category with explicit opt-in. Progress photos never leave your device. Your data is yours to export or delete at any time.</p>
           </div>
           <div className="wk-trust-card">
             <div className="wk-trust-title">Closed Loop by Design</div>
-            <p>No integrations, no social feeds, no wearable imports. Self-report is the signal. External data creates noise and anxiety without improving your programming.</p>
-          </div>
-          <div className="wk-trust-card">
-            <div className="wk-trust-title">GDPR Compliant</div>
-            <p>Health data is treated as a special category with explicit opt-in. Encrypted in transit and at rest. Your data is yours to export or delete at any time.</p>
+            <p>No wearable imports, no social feeds. Self-report is the signal. External data creates noise without improving your training. Everything the engine needs, it asks you directly.</p>
           </div>
         </div>
 
