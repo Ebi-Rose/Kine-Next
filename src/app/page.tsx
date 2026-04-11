@@ -227,6 +227,32 @@ export default function LandingPage() {
           font-size: 10px;
           color: #999;
         }
+        .lp-why-kine-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          font-weight: 400;
+          color: #c49098;
+          text-decoration: none;
+          letter-spacing: 0.5px;
+          padding: 6px 0;
+          border-bottom: 1px solid rgba(196, 144, 152, 0.3);
+          transition: color 0.2s, border-color 0.2s;
+        }
+        .lp-why-kine-link:hover {
+          color: #b07880;
+          border-color: #b07880;
+        }
+        .lp-why-kine-link svg {
+          width: 14px;
+          height: 14px;
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 1.5;
+          transition: transform 0.2s;
+        }
+        .lp-why-kine-link:hover svg { transform: translateX(2px); }
 
         /* Phone */
         .lp-phone-wrapper {
@@ -236,36 +262,37 @@ export default function LandingPage() {
         .lp-phone {
           width: 210px;
           height: 460px;
-          background: #13110f;
+          background: #111;
           border-radius: 32px;
-          border: 2px solid #2a2722;
+          border: 3px solid #1a1a1a;
           overflow: hidden;
           position: relative;
           box-shadow:
-            0 0 0 1px rgba(0,0,0,0.05),
-            0 24px 80px rgba(0,0,0,0.15),
+            0 0 0 1px rgba(0,0,0,0.1),
+            inset 0 0 0 1px rgba(255,255,255,0.04),
+            0 24px 80px rgba(0,0,0,0.2),
             0 0 40px rgba(196, 144, 152, 0.06);
         }
         .lp-phone::before {
           content: '';
           position: absolute;
-          top: 0;
+          top: 6px;
           left: 50%;
           transform: translateX(-50%);
-          width: 100px;
-          height: 24px;
-          background: #13110f;
-          border-radius: 0 0 16px 16px;
+          width: 72px;
+          height: 18px;
+          background: #111;
+          border-radius: 12px;
           z-index: 10;
         }
         .lp-phone-screen {
           width: 100%;
           height: 100%;
-          padding: 42px 14px 14px;
+          padding: 36px 14px 14px;
           display: flex;
           flex-direction: column;
           gap: 8px;
-          background: #13110f;
+          background: #FAFAFA;
         }
         .lp-phone-top {
           display: flex;
@@ -280,7 +307,7 @@ export default function LandingPage() {
           font-weight: 400;
         }
         .lp-ph-logo .lpk { color: #c49098; }
-        .lp-ph-logo .lpr { color: #f0ebe6; }
+        .lp-ph-logo .lpr { color: #1A1A1A; }
         .lp-ph-phase {
           font-size: 7px;
           color: #8a847d;
@@ -290,13 +317,13 @@ export default function LandingPage() {
           font-size: 7px;
           letter-spacing: 1.5px;
           text-transform: uppercase;
-          color: #8a847d;
+          color: #999;
           font-weight: 400;
         }
         .lp-ph-title {
           font-family: 'Cormorant Garamond', serif;
           font-size: 18px;
-          color: #f0ebe6;
+          color: #1A1A1A;
           font-weight: 300;
           font-style: italic;
           margin: -2px 0 4px;
@@ -307,16 +334,17 @@ export default function LandingPage() {
           letter-spacing: 1px;
           text-transform: uppercase;
           color: #6a9a7a;
-          border: 1px solid rgba(106,154,122,0.3);
+          border: 1px solid rgba(106,154,122,0.25);
           border-radius: 6px;
           padding: 2px 6px;
           margin-bottom: 4px;
+          background: rgba(106,154,122,0.06);
         }
         .lp-ph-toggle {
           display: flex;
           border-radius: 10px;
           overflow: hidden;
-          border: 1px solid #2a2722;
+          border: 1px solid #E0E0E0;
           margin-bottom: 2px;
         }
         .lp-ph-toggle-btn {
@@ -324,16 +352,16 @@ export default function LandingPage() {
           text-align: center;
           font-size: 8px;
           padding: 4px 0;
-          color: #8a847d;
+          color: #999;
           letter-spacing: 0.3px;
         }
         .lp-ph-toggle-btn.active {
-          background: rgba(196,144,152,0.15);
-          color: #f0ebe6;
+          background: rgba(196,144,152,0.12);
+          color: #1A1A1A;
         }
         .lp-ph-adapt {
-          background: #1a1815;
-          border: 1px solid #2a2722;
+          background: #FFF;
+          border: 1px solid #E8E8E8;
           border-radius: 14px;
           padding: 10px 12px;
         }
@@ -353,13 +381,13 @@ export default function LandingPage() {
           font-size: 6px;
           letter-spacing: 1px;
           text-transform: uppercase;
-          color: #8a847d;
+          color: #999;
           font-weight: 400;
         }
         .lp-ph-adapt-text {
           font-size: 8px;
           line-height: 1.5;
-          color: #c4bdb5;
+          color: #555;
           font-weight: 300;
         }
         .lp-ph-adapt-tags {
@@ -369,15 +397,15 @@ export default function LandingPage() {
         }
         .lp-ph-adapt-tag {
           font-size: 6px;
-          color: #8a847d;
-          border: 1px solid #2a2722;
+          color: #999;
+          border: 1px solid #E0E0E0;
           border-radius: 6px;
           padding: 2px 6px;
           letter-spacing: 0.3px;
         }
         .lp-ph-session {
-          background: #1a1815;
-          border: 1px solid #2a2722;
+          background: #FFF;
+          border: 1px solid #E8E8E8;
           border-radius: 14px;
           padding: 10px 12px;
           flex: 1;
@@ -391,7 +419,7 @@ export default function LandingPage() {
           letter-spacing: 0.5px;
           text-transform: uppercase;
           font-weight: 500;
-          background: rgba(196,144,152,0.1);
+          background: rgba(196,144,152,0.08);
           display: inline-block;
           padding: 2px 6px;
           border-radius: 4px;
@@ -413,11 +441,11 @@ export default function LandingPage() {
           flex: 1;
           font-size: 9px;
           font-weight: 400;
-          color: #f0ebe6;
+          color: #1A1A1A;
         }
         .lp-ph-ex-rx {
           font-size: 8px;
-          color: #8a847d;
+          color: #999;
           font-weight: 300;
           white-space: nowrap;
         }
@@ -428,7 +456,7 @@ export default function LandingPage() {
           border-radius: 12px;
           background: #c49098;
           border: none;
-          color: #13110f;
+          color: #FFF;
           font-size: 9px;
           font-weight: 500;
           letter-spacing: 0.5px;
@@ -439,7 +467,7 @@ export default function LandingPage() {
           display: flex;
           justify-content: space-around;
           padding-top: 8px;
-          border-top: 1px solid #2a2722;
+          border-top: 1px solid #E8E8E8;
         }
         .lp-ph-nav-item {
           display: flex;
@@ -447,7 +475,7 @@ export default function LandingPage() {
           align-items: center;
           gap: 2px;
           font-size: 7px;
-          color: #3a3530;
+          color: #CCC;
           letter-spacing: 0.3px;
         }
         .lp-ph-nav-item.active { color: #c49098; }
@@ -560,6 +588,11 @@ export default function LandingPage() {
             <a href="/access">Already have access? →</a>
           </div>
 
+          <a href="/why-kine" className="lp-why-kine-link">
+            Why Kine
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+
           <div className="lp-footer">
             <div className="lp-socials">
               <a href="https://www.instagram.com/_kinefitness" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
@@ -570,8 +603,6 @@ export default function LandingPage() {
               </a>
             </div>
             <div className="lp-footer-text">
-              <a href="/why-kine" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#CCC' }}>Why Kine</a>
-              {' · '}
               <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#CCC' }}>Terms</a>
               {' · '}
               <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', textDecorationColor: '#CCC' }}>Privacy</a>
