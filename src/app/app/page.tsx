@@ -500,8 +500,9 @@ function WeekView({
   // 2. No sessions for the new week yet
   // 3. Previous week's sessions are all complete (user actually finished the week)
   const prevWeekNum = Math.max((progressDB.currentWeek || 1) - 1, 1);
-  const prevWeekSessionCount = (progressDB.sessions as { weekNum?: number }[])
-    .filter((s) => s.weekNum === prevWeekNum).length;
+  const todayISO = appTodayISO();
+  const prevWeekSessionCount = (progressDB.sessions as { weekNum?: number; date?: string }[])
+    .filter((s) => s.weekNum === prevWeekNum && (!s.date || s.date <= todayISO)).length;
   const prevWeekData = weekHistory.find((w) => (w as WeekData)?._weekNum === prevWeekNum) as WeekData | undefined;
   const prevWeekTrainingDays = prevWeekData
     ? prevWeekData.days.filter((d) => !d.isRest).length
@@ -525,7 +526,6 @@ function WeekView({
   // reflects whichever week the user is actually viewing.
 
   // Sessions for the effective programme week, filtered to those logged up to "now"
-  const todayISO = appTodayISO();
   const currentWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
     .filter((s) => s.weekNum === effectiveWeekNum && (!s.date || s.date <= todayISO));
 
