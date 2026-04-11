@@ -126,7 +126,7 @@ export default function DevOverlay() {
       setDevDateOverride(null);
       setDateOverride("");
       toast("Date override cleared", "success");
-      if (reload) window.location.reload();
+      if (reload) reloadAfterPersist();
       return;
     }
     const d = new Date(dateStr + "T12:00:00");
@@ -172,7 +172,7 @@ export default function DevOverlay() {
     }
 
     toast(`App time → ${dateStr}`, "success");
-    if (reload) window.location.reload();
+    if (reload) reloadAfterPersist();
   }
 
   function jumpDays(n: number, reload = true) {
