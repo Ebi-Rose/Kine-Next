@@ -407,15 +407,44 @@ export default function LandingPage() {
           .lp-waitlist-form input { padding: 12px 14px; font-size: 13px; }
           .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 16px 16px; }
           .lp-waitlist-note { text-align: center; }
-          .lp-phones-wrapper { width: 280px; height: 420px; }
-          .lp-phone { width: 160px; height: 340px; border-radius: 24px; }
-          .lp-phone-inner { border-radius: 21px; }
-          .lp-phone-inner::before { width: 50px; height: 12px; top: 4px; border-radius: 8px; }
-          .lp-ph-screen { gap: 4px; }
-          .lp-ph-screen-dark, .lp-ph-screen-light { padding: 24px 10px 10px; }
-          .lp-ph-logo { font-size: 10px; }
-          .lp-ph-title { font-size: 13px; }
+          .lp-phones-wrapper { width: 260px; height: 380px; }
+          .lp-phone { width: 140px; height: 300px; border-radius: 22px; padding: 2px; }
+          .lp-phone-inner { border-radius: 20px; }
+          .lp-phone-inner::before { width: 44px; height: 10px; top: 4px; border-radius: 6px; }
+          .lp-phone-1 { left: 5px; top: 10px; }
+          .lp-phone-2 { right: -10px; top: 30px; }
+          .lp-ph-screen { gap: 3px; }
+          .lp-ph-screen-dark, .lp-ph-screen-light { padding: 20px 8px 8px; }
+          .lp-ph-logo { font-size: 8px; padding-bottom: 3px; }
+          .lp-ph-week { font-size: 5px; }
+          .lp-ph-title { font-size: 11px; margin: -1px 0 2px; }
+          .lp-ph-badge { font-size: 4px; padding: 1px 4px; margin-bottom: 2px; }
+          .lp-ph-toggle { border-radius: 6px; margin-bottom: 1px; }
+          .lp-ph-toggle-btn { font-size: 5px; padding: 2px 0; }
+          .lp-ph-adapt { padding: 5px 7px; border-radius: 8px; }
+          .lp-ph-adapt-label { font-size: 4px; }
+          .lp-ph-adapt-text { font-size: 5px; }
+          .lp-ph-adapt-tags { gap: 2px; margin-top: 3px; }
+          .lp-ph-adapt-tag { font-size: 4px; padding: 1px 3px; }
+          .lp-ph-session { padding: 5px 7px; border-radius: 8px; gap: 3px; }
+          .lp-ph-session-label { font-size: 4px; padding: 1px 4px; }
+          .lp-ph-ex-row { gap: 3px; }
+          .lp-ph-ex-dot { width: 2px; height: 2px; }
+          .lp-ph-ex-name { font-size: 6px; }
+          .lp-ph-ex-rx { font-size: 5px; }
+          .lp-ph-start { padding: 5px 0; border-radius: 7px; font-size: 6px; }
           .lp-ph-nav { display: none; }
+          .lp-edu-sheet { padding: 6px 8px 8px; gap: 5px; border-radius: 12px 12px 0 0; }
+          .lp-edu-handle { width: 20px; height: 2px; margin-bottom: 2px; }
+          .lp-edu-title { font-size: 10px; }
+          .lp-edu-tags { gap: 2px; }
+          .lp-edu-tag-p, .lp-edu-tag-s, .lp-edu-tag-r, .lp-edu-tag-c { font-size: 4px; padding: 1px 3px; }
+          .lp-edu-label { font-size: 4px; }
+          .lp-edu-text { font-size: 5px; }
+          .lp-edu-cycle { padding: 4px 6px; border-radius: 6px; }
+          .lp-edu-cue { font-size: 5px; gap: 3px; }
+          .lp-edu-prog { padding-top: 4px; gap: 2px; }
+          .lp-edu-prog-easier, .lp-edu-prog-harder, .lp-edu-prog-name { font-size: 4px; }
           .lp-footer { flex-direction: column; align-items: center; gap: 8px; }
         }
         @media (max-width: 390px) {
