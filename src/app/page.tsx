@@ -254,47 +254,68 @@ export default function LandingPage() {
           position: absolute;
           width: 200px;
           height: 420px;
-          border-radius: 30px;
-          overflow: visible;
-          background: linear-gradient(145deg, #d4a5ad, #c49098, #b8868e);
-          padding: 3px;
-          box-shadow:
-            /* depth shadow */
-            -4px 6px 0 -1px #b07880,
-            -5px 7px 0 -1px #a06a72,
-            /* ambient shadow */
-            0 20px 60px rgba(0,0,0,0.22),
-            0 8px 20px rgba(0,0,0,0.12),
-            /* glow */
-            0 0 40px rgba(196, 144, 152, 0.08);
+          transform-style: preserve-3d;
           z-index: 1;
         }
-        /* Side edge highlight — left edge visible from perspective */
-        .lp-phone::before {
-          content: '';
+        /* Front face — the visible phone */
+        .lp-phone-face {
           position: absolute;
-          left: -4px;
+          inset: 0;
+          border-radius: 30px;
+          background: linear-gradient(145deg, #dbb3ba, #c49098, #b8868e);
+          padding: 3px;
+          box-shadow:
+            0 20px 60px rgba(0,0,0,0.25),
+            0 8px 24px rgba(0,0,0,0.15),
+            0 0 40px rgba(196, 144, 152, 0.08);
+          /* Subtle frame highlight */
+          border: 1px solid rgba(255,255,255,0.12);
+        }
+        /* Left side edge — real 3D depth */
+        .lp-phone-edge-left {
+          position: absolute;
           top: 8px;
           bottom: 8px;
-          width: 4px;
-          background: linear-gradient(180deg, #d4a5ad 0%, #b8868e 50%, #a06a72 100%);
-          border-radius: 4px 0 0 4px;
-          z-index: -1;
+          left: 0;
+          width: 420px;
+          transform-origin: left center;
+          transform: rotateY(-90deg);
+          background: linear-gradient(180deg, #c49098 0%, #b07880 40%, #9e6a72 100%);
+          border-radius: 2px;
+          width: 8px;
         }
-        /* Side buttons on left edge */
-        .lp-phone::after {
-          content: '';
+        /* Bottom edge — visible from angle */
+        .lp-phone-edge-bottom {
           position: absolute;
-          left: -5px;
-          top: 100px;
+          bottom: 0;
+          left: 8px;
+          right: 8px;
+          height: 8px;
+          transform-origin: bottom center;
+          transform: rotateX(90deg);
+          background: linear-gradient(90deg, #b07880, #c49098, #b07880);
+          border-radius: 2px;
+        }
+        /* Side buttons — volume + power */
+        .lp-phone-buttons {
+          position: absolute;
+          left: -3px;
+          top: 95px;
           width: 3px;
-          height: 28px;
-          background: linear-gradient(180deg, #c49098, #a8747c);
+          height: 24px;
+          background: linear-gradient(180deg, #d4a5ad, #b8868e);
           border-radius: 2px 0 0 2px;
-          box-shadow:
-            0 36px 0 0 #b8868e,
-            0 36px 0 0 #b8868e;
-          z-index: -1;
+          box-shadow: 0 34px 0 0 #c49098, 0 48px 0 0 #c49098;
+        }
+        /* Power button — right side */
+        .lp-phone-power {
+          position: absolute;
+          right: -3px;
+          top: 120px;
+          width: 3px;
+          height: 30px;
+          background: linear-gradient(180deg, #d4a5ad, #b8868e);
+          border-radius: 0 2px 2px 0;
         }
         .lp-phone-inner {
           width: 100%; height: 100%;
@@ -302,8 +323,9 @@ export default function LandingPage() {
           overflow: hidden;
           position: relative;
           background: #111;
-          /* Screen bezel depth */
-          box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3);
+          box-shadow:
+            inset 0 0 0 1px rgba(0,0,0,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.08);
         }
         .lp-phone-inner::before {
           content: '';
@@ -315,14 +337,19 @@ export default function LandingPage() {
           border-radius: 10px;
           z-index: 10;
         }
-        /* Frame highlight — top edge catch light */
+        /* Screen glass reflection */
         .lp-phone-inner::after {
           content: '';
           position: absolute;
-          top: 0; left: 10%; right: 10%;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(135deg,
+            rgba(255,255,255,0.06) 0%,
+            transparent 40%,
+            transparent 60%,
+            rgba(255,255,255,0.03) 100%);
+          pointer-events: none;
           z-index: 11;
+          border-radius: 27px;
         }
         .lp-phone-inner-light { background: #E8E8E8; }
         .lp-phone-inner-light::before { background: #E8E8E8; }
@@ -451,7 +478,11 @@ export default function LandingPage() {
           .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 16px 16px; }
           .lp-waitlist-note { text-align: center; }
           .lp-phones-wrapper { width: 260px; height: 380px; }
-          .lp-phone { width: 140px; height: 300px; border-radius: 22px; padding: 2px; }
+          .lp-phone { width: 140px; height: 300px; }
+          .lp-phone-face { border-radius: 22px; padding: 2px; }
+          .lp-phone-buttons { top: 70px; height: 18px; }
+          .lp-phone-power { top: 90px; height: 22px; }
+          .lp-phone-edge-left { width: 6px; }
           .lp-phone-inner { border-radius: 20px; }
           .lp-phone-inner::before { width: 44px; height: 10px; top: 4px; border-radius: 6px; }
           .lp-phone-1 { left: 5px; top: 10px; }
@@ -575,6 +606,11 @@ export default function LandingPage() {
 
           {/* Phone 1 — Front, dark mode, glute day */}
           <div className="lp-phone lp-phone-1">
+            <div className="lp-phone-buttons"></div>
+            <div className="lp-phone-power"></div>
+            <div className="lp-phone-edge-left"></div>
+            <div className="lp-phone-edge-bottom"></div>
+            <div className="lp-phone-face">
             <div className="lp-phone-inner">
               <div className="lp-ph-screen lp-ph-screen-dark">
                 <div className="lp-ph-logo"><span className="lpk">K</span><span className="lpr">INĒ</span></div>
@@ -624,10 +660,16 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
 
           {/* Phone 2 — Back, light mode, Hip Thrust education sheet */}
           <div className="lp-phone lp-phone-2">
+            <div className="lp-phone-buttons"></div>
+            <div className="lp-phone-power"></div>
+            <div className="lp-phone-edge-left"></div>
+            <div className="lp-phone-edge-bottom"></div>
+            <div className="lp-phone-face">
             <div className="lp-phone-inner lp-phone-inner-light">
               <div className="lp-ph-screen lp-ph-screen-light lp-edu-screen">
                 <div className="lp-edu-backdrop">
@@ -686,6 +728,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
