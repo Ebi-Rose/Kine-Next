@@ -429,7 +429,7 @@ export default function WhyKinePage() {
         </section>
 
         {/* Built to a Standard */}
-        <div className="wk-section-label">Built to a Standard</div>
+        <div className="wk-section-label">Built to Leading Standards</div>
         <p className="wk-section-desc">Most fitness apps ship fast and fix later. Kine was built the way software should be &mdash; tested, reviewed, and held to account.</p>
 
         <div className="wk-trust-grid">
