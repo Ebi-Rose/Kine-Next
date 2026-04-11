@@ -9,6 +9,10 @@ import { getCurrentPhaseInfo } from "@/lib/periodisation";
 import Button from "@/components/Button";
 import { toast } from "@/components/Toast";
 
+const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const DURATION_OPTIONS = [30, 45, 60, 75, 90];
+
 const SOURCE_COLOURS: Record<AdaptationItem["source"], string> = {
   insight: "bg-blue-400",
   rating: "bg-amber-400",
@@ -26,33 +30,48 @@ const LOADING_MESSAGES = [
   "Finalising your programme…",
 ];
 
+interface DayConfig {
+  isGym: boolean;
+  duration: number; // minutes
+}
+
 export default function BuildWeekPage() {
   const router = useRouter();
   const store = useKineStore();
-  const { progressDB, setProgressDB, days } = store;
+  const { progressDB, trainingDays, dayDurations, duration } = store;
 
-  const [step, setStep] = useState<"review" | "prefs" | "building">("review");
+  const [step, setStep] = useState<"review" | "schedule" | "confirm" | "building">("review");
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [buildError, setBuildError] = useState<string | null>(null);
-
-  // Next week preferences
-  const plannedDays = parseInt(days || "3");
-  const [nwDays, setNwDays] = useState<number | null>(null);
-  const [nwSessionLength, setNwSessionLength] = useState<"shorter" | "same" | "longer">("same");
-  const [nwIntensity, setNwIntensity] = useState<"lighter" | "maintain" | "push">("maintain");
   const [nwFlagNote, setNwFlagNote] = useState("");
 
   const currentWeek = progressDB.currentWeek || 1;
-  const nextWeekNum = currentWeek + 1;
+  const allSessions = progressDB.sessions as { weekNum?: number }[];
+  const latestSessionWeek = allSessions.length > 0
+    ? allSessions[allSessions.length - 1].weekNum || currentWeek
+    : currentWeek;
+  const checkinWeek = latestSessionWeek;
+  const nextWeekNum = checkinWeek + 1;
   const nextPhase = getCurrentPhaseInfo(nextWeekNum, progressDB.phaseOffset);
 
-  // Get check-in data for the current week
+  // Default duration from profile
+  const defaultDuration = duration === "short" ? 30 : duration === "medium" ? 45 : duration === "long" ? 60 : duration === "extended" ? 90 : 60;
+
+  // Build initial day config from current profile settings
+  const buildInitialConfig = (): DayConfig[] =>
+    DAY_NAMES.map((_, i) => ({
+      isGym: trainingDays.includes(i),
+      duration: dayDurations[i] || defaultDuration,
+    }));
+
+  const [dayConfigs, setDayConfigs] = useState<DayConfig[]>(buildInitialConfig);
+
+  // Get check-in data
   const checkin = progressDB.weekFeedbackHistory.find(
-    (f) => f.weekNum === currentWeek
+    (f) => f.weekNum === checkinWeek
   );
 
-  // If no check-in exists, redirect back
   if (!checkin) {
     return (
       <div>
@@ -75,27 +94,50 @@ export default function BuildWeekPage() {
   const adaptations = checkin.adaptationPlan?.adaptations || [];
   const enabledAdaptations = adaptations.filter((a) => a.enabled);
 
+  // Derived stats for confirmation
+  const gymDays = dayConfigs.filter((d) => d.isGym);
+  const totalMinutes = gymDays.reduce((sum, d) => sum + d.duration, 0);
+  const scheduleChanged = JSON.stringify(dayConfigs) !== JSON.stringify(buildInitialConfig());
+
+  function toggleDay(idx: number) {
+    setDayConfigs((prev) =>
+      prev.map((d, i) => i === idx ? { ...d, isGym: !d.isGym } : d)
+    );
+  }
+
+  function setDuration(idx: number, mins: number) {
+    setDayConfigs((prev) =>
+      prev.map((d, i) => i === idx ? { ...d, duration: mins } : d)
+    );
+  }
+
   async function handleBuild() {
     setStep("building");
     setLoading(true);
     setBuildError(null);
     setLoadingMsg(0);
 
-    // Save next week prefs to the check-in
-    const hasPrefs = nwDays !== null || nwSessionLength !== "same" || nwIntensity !== "maintain" || nwFlagNote.trim();
-    if (hasPrefs) {
-      const prefs: NextWeekPrefs = {
-        daysOverride: nwDays ?? undefined,
-        sessionLength: nwSessionLength !== "same" ? nwSessionLength : undefined,
-        intensity: nwIntensity !== "maintain" ? nwIntensity : undefined,
-        flagNote: nwFlagNote.trim() || undefined,
-      };
-      // Update the check-in with prefs
-      const updated = progressDB.weekFeedbackHistory.map((f) =>
-        f.weekNum === currentWeek ? { ...f, nextWeekPrefs: prefs } : f
-      );
-      store.setProgressDB({ ...progressDB, weekFeedbackHistory: updated });
-    }
+    // Save schedule changes and prefs
+    const newTrainingDays = dayConfigs.map((d, i) => d.isGym ? i : -1).filter((i) => i >= 0);
+    const newDayDurations: Record<number, number> = {};
+    dayConfigs.forEach((d, i) => {
+      if (d.isGym) newDayDurations[i] = d.duration;
+    });
+
+    // Update profile with new schedule
+    store.setTrainingDays(newTrainingDays);
+    store.setDayDurations(newDayDurations);
+    store.setDays(String(newTrainingDays.length));
+
+    // Save prefs to check-in
+    const prefs: NextWeekPrefs = {
+      daysOverride: scheduleChanged ? newTrainingDays.length : undefined,
+      flagNote: nwFlagNote.trim() || undefined,
+    };
+    const updated = store.progressDB.weekFeedbackHistory.map((f) =>
+      f.weekNum === checkinWeek ? { ...f, nextWeekPrefs: prefs } : f
+    );
+    store.setProgressDB({ ...store.progressDB, weekFeedbackHistory: updated });
 
     // Advance week number
     store.setProgressDB({
@@ -109,7 +151,6 @@ export default function BuildWeekPage() {
     }, 3000);
 
     const result = await buildWeek();
-
     clearInterval(msgInterval);
 
     if (result.weekData) {
@@ -119,7 +160,7 @@ export default function BuildWeekPage() {
     if (!result.success && result.error) {
       setBuildError(result.error);
       setLoading(false);
-      setStep("prefs");
+      setStep("schedule");
     } else {
       if (result.repairsCount && result.repairsCount > 0) {
         toast(
@@ -176,18 +217,18 @@ export default function BuildWeekPage() {
             </div>
           )}
 
-          <Button className="w-full mt-6" size="lg" onClick={() => setStep("prefs")}>
+          <Button className="w-full mt-6" size="lg" onClick={() => setStep("schedule")}>
             Continue
           </Button>
         </div>
       )}
 
-      {/* Step 2: Quick schedule preferences */}
-      {step === "prefs" && (
+      {/* Step 2: Day-by-day schedule editor */}
+      {step === "schedule" && (
         <div className="animate-fade-up">
-          <h2 className="mt-4 font-display text-xl tracking-wide text-text">Anything changed?</h2>
+          <h2 className="mt-4 font-display text-xl tracking-wide text-text">Your schedule</h2>
           <p className="mt-1 text-xs text-muted2">
-            All optional — skip if everything stays the same.
+            Tap a day to toggle rest/gym. Adjust duration for gym days.
           </p>
 
           {buildError && (
@@ -196,69 +237,55 @@ export default function BuildWeekPage() {
             </div>
           )}
 
-          {/* Training days */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Training days</p>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setNwDays(nwDays === n ? null : n)}
-                  className={`flex-1 rounded-xl border py-3 text-sm font-medium transition-all ${
-                    nwDays === n
-                      ? "border-accent bg-accent-dim text-text"
-                      : n === plannedDays && nwDays === null
-                        ? "border-accent/30 bg-surface text-text"
-                        : "border-border bg-surface text-muted2 hover:border-border-active"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1 text-[10px] text-muted2">
-              {nwDays === null ? `Currently ${plannedDays} days` : nwDays === plannedDays ? `Same as usual (${plannedDays})` : `Changed from ${plannedDays} to ${nwDays}`}
-            </p>
-          </div>
+          <div className="mt-5 flex flex-col gap-2">
+            {dayConfigs.map((config, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-3 transition-all ${
+                  config.isGym ? "border-accent/40 bg-accent-dim" : "border-border bg-surface"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => toggleDay(i)}
+                    className="flex items-center gap-3 flex-1 text-left"
+                  >
+                    <span className={`text-sm font-medium ${config.isGym ? "text-text" : "text-muted2"}`}>
+                      {DAY_NAMES[i]}
+                    </span>
+                    <span className={`text-[10px] rounded-full px-2 py-0.5 ${
+                      config.isGym
+                        ? "bg-accent/20 text-accent"
+                        : "bg-surface2 text-muted2"
+                    }`}>
+                      {config.isGym ? "Gym" : "Rest"}
+                    </span>
+                  </button>
 
-          {/* Session length */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Session length</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([["shorter", "Shorter"], ["same", "Same"], ["longer", "Longer"]] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setNwSessionLength(val)}
-                  className={`rounded-xl border py-3 text-xs transition-all ${
-                    nwSessionLength === val ? "border-accent bg-accent-dim text-text" : "border-border bg-surface text-muted2 hover:border-border-active"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Intensity */}
-          <div className="mt-6">
-            <p className="mb-2 text-xs tracking-wider text-muted uppercase">Intensity</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([["lighter", "Lighter"], ["maintain", "Maintain"], ["push", "Push harder"]] as const).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setNwIntensity(val)}
-                  className={`rounded-xl border py-3 text-xs transition-all ${
-                    nwIntensity === val ? "border-accent bg-accent-dim text-text" : "border-border bg-surface text-muted2 hover:border-border-active"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+                  {config.isGym && (
+                    <div className="flex gap-1">
+                      {DURATION_OPTIONS.map((mins) => (
+                        <button
+                          key={mins}
+                          onClick={() => setDuration(i, mins)}
+                          className={`rounded-lg px-2 py-1 text-[10px] transition-all ${
+                            config.duration === mins
+                              ? "bg-accent text-bg font-medium"
+                              : "bg-surface2 text-muted2 hover:text-text"
+                          }`}
+                        >
+                          {mins}m
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Flag note */}
-          <div className="mt-6">
+          <div className="mt-5">
             <p className="mb-2 text-xs tracking-wider text-muted uppercase">Anything to flag?</p>
             <textarea
               value={nwFlagNote}
@@ -270,15 +297,66 @@ export default function BuildWeekPage() {
             />
           </div>
 
+          <Button className="w-full mt-6" size="lg" onClick={() => setStep("confirm")}>
+            Continue
+          </Button>
+        </div>
+      )}
+
+      {/* Step 3: Confirmation */}
+      {step === "confirm" && (
+        <div className="animate-fade-up">
+          <h2 className="mt-4 font-display text-xl tracking-wide text-text">Ready to build</h2>
+
+          <div className="mt-6 rounded-xl border border-border bg-surface p-4">
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p className="font-display text-2xl text-accent">{gymDays.length}</p>
+                <p className="text-[9px] text-muted uppercase tracking-wider mt-0.5">Sessions</p>
+              </div>
+              <div>
+                <p className="font-display text-2xl text-accent">{totalMinutes}</p>
+                <p className="text-[9px] text-muted uppercase tracking-wider mt-0.5">Total minutes</p>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {dayConfigs.map((config, i) => (
+                  <span
+                    key={i}
+                    className={`rounded-full px-2.5 py-1 text-[10px] ${
+                      config.isGym
+                        ? "bg-accent/15 text-accent font-medium"
+                        : "bg-surface2 text-muted2"
+                    }`}
+                  >
+                    {DAY_NAMES[i]}{config.isGym ? ` · ${config.duration}m` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {scheduleChanged && (
+              <p className="mt-3 text-[10px] text-accent text-center">Schedule updated for this week</p>
+            )}
+          </div>
+
+          {nwFlagNote.trim() && (
+            <div className="mt-3 border-l-2 border-accent/30 pl-3">
+              <p className="text-[10px] text-muted uppercase tracking-wider mb-1">Flagged</p>
+              <p className="text-xs text-muted2 font-light italic">{nwFlagNote}</p>
+            </div>
+          )}
+
           <Button className="w-full mt-6" size="lg" onClick={handleBuild} disabled={loading}>
             Build Week {nextWeekNum} →
           </Button>
           <button
-            onClick={handleBuild}
-            disabled={loading}
-            className="w-full mt-2 py-2 text-xs text-muted2 hover:text-text transition-colors disabled:opacity-50"
+            onClick={() => setStep("schedule")}
+            className="w-full mt-2 py-2 text-xs text-muted2 hover:text-text transition-colors"
           >
-            Skip — same as usual
+            ← Edit schedule
           </button>
         </div>
       )}
