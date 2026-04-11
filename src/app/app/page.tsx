@@ -912,6 +912,40 @@ function WeekView({
               })()}
             </>
           )}
+
+          {/* Check-in status — show on Today tab when check-in is done for the effective week */}
+          {(() => {
+            const checkin = progressDB.weekFeedbackHistory.find(
+              (f) => f.weekNum === effectiveWeekNum
+            );
+            if (!checkin) return null;
+            const effortLabels = ["", "Drained", "Low energy", "Normal", "High energy"];
+            const sorenessLabels = ["", "Fresh", "Mild aches", "Sore", "Beat up"];
+            const scheduleLabels: Record<string, string> = {
+              too_easy: "Too easy",
+              about_right: "Just right",
+              too_much: "Too much",
+            };
+            const summary = [
+              effortLabels[checkin.effort],
+              sorenessLabels[checkin.soreness],
+              checkin.scheduleFeeling ? scheduleLabels[checkin.scheduleFeeling] : null,
+            ].filter(Boolean).join(" · ");
+            return (
+              <div className="mt-4 rounded-[14px] border border-border/50 bg-surface/50 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-800/10 text-[11px] text-green-800">✓</span>
+                  <div>
+                    <p className="text-xs font-medium text-green-800">Week {effectiveWeekNum} check-in complete</p>
+                    {summary && <p className="text-[10px] text-muted2 mt-0.5">{summary}</p>}
+                  </div>
+                </div>
+                <Link href="/app/week-checkin" className="mt-2 inline-block text-[11px] text-muted2 hover:text-text transition-colors">
+                  Amend check-in →
+                </Link>
+              </div>
+            );
+          })()}
         </div>
       )}
 
