@@ -56,6 +56,7 @@ export default function ExerciseCard({
   lastFeedback?: { verdict: string; note: string };
 }) {
   const system = useKineStore((s) => s.measurementSystem) || "metric";
+  const coachingDetail = useKineStore((s) => s.coachingDetail);
   const unit = weightUnit(system);
   const unitPerSide = weightUnitPerSide(system);
   // Subscribe so this card re-renders when the Supabase video cache lands.
@@ -183,9 +184,9 @@ export default function ExerciseCard({
               )}
             </div>
           )}
-          {/* Rationale strip: whyForYou + expandable top factors. Only
-              renders when the indication pipeline has populated it. */}
-          {expanded && exercise.whyForYou && (
+          {/* Rationale strip: whyForYou + expandable top factors.
+              Quiet mode: hidden. Default: whyForYou + framing. Coach: + scoring factors. */}
+          {expanded && exercise.whyForYou && coachingDetail !== "quiet" && (
             <div className="mt-2 rounded-lg border border-border/60 bg-surface2/40 px-3 py-2">
               <p className="text-[11px] leading-snug text-muted font-light">
                 {exercise.whyForYou}
@@ -195,7 +196,7 @@ export default function ExerciseCard({
                   {exercise.framing}
                 </p>
               )}
-              {exercise.scoringFactors && exercise.scoringFactors.length > 0 && (
+              {coachingDetail === "coach" && exercise.scoringFactors && exercise.scoringFactors.length > 0 && (
                 <>
                   <button
                     type="button"

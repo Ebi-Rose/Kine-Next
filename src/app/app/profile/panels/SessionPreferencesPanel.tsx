@@ -1,7 +1,7 @@
 "use client";
 
 import { useKineStore } from "@/store/useKineStore";
-import type { EduMode, SessionMode, CheckInField } from "@/store/useKineStore";
+import type { EduMode, CoachingDetail, SessionMode, CheckInField } from "@/store/useKineStore";
 import Tile from "@/components/Tile";
 import { toast } from "@/components/Toast";
 import { BackButton } from "./_helpers";
@@ -26,7 +26,7 @@ const SESSION_MODES: { value: SessionMode; label: string; description: string }[
 ];
 
 export default function SessionPreferencesPanel({ onBack }: { onBack: () => void }) {
-  const { eduMode, setEduMode, sessionMode, setSessionMode, restConfig, setRestConfig, progressDB, checkinFields, setCheckinFields } = useKineStore();
+  const { eduMode, setEduMode, coachingDetail, setCoachingDetail, sessionMode, setSessionMode, restConfig, setRestConfig, progressDB, checkinFields, setCheckinFields } = useKineStore();
 
   const showSilentWarning = eduMode === "silent" && progressDB.sessions.length < 20;
   const restCompoundLow = restConfig.compound < 90;
@@ -61,6 +61,29 @@ export default function SessionPreferencesPanel({ onBack }: { onBack: () => void
           </p>
         </div>
       )}
+
+      {/* Coaching detail level */}
+      <p className="mt-5 mb-2 text-[10px] tracking-[0.15em] uppercase text-muted">How much do you want to know?</p>
+      <div className="flex rounded-xl border border-border overflow-hidden">
+        {([
+          { value: "quiet" as CoachingDetail, label: "Quiet", sub: "Just train" },
+          { value: "default" as CoachingDetail, label: "Default", sub: "Light context" },
+          { value: "coach" as CoachingDetail, label: "Coach", sub: "Tell me everything" },
+        ]).map((m) => (
+          <button
+            key={m.value}
+            onClick={() => { setCoachingDetail(m.value); toast(`Detail: ${m.label}`, "success"); }}
+            className={`flex-1 py-3 px-2 text-center transition-all ${
+              coachingDetail === m.value
+                ? "bg-accent text-bg"
+                : "bg-surface text-muted2 hover:text-text"
+            }`}
+          >
+            <p className="text-xs font-medium">{m.label}</p>
+            <p className={`text-[9px] mt-0.5 ${coachingDetail === m.value ? "text-bg/70" : "text-muted"}`}>{m.sub}</p>
+          </button>
+        ))}
+      </div>
 
       {/* Rest timers */}
       <p className="mt-5 mb-2 text-[10px] tracking-[0.15em] uppercase text-muted">Rest timers</p>

@@ -32,6 +32,8 @@ import {
   type UserContext,
 } from "./indication-pipeline";
 import { EXERCISE_INDICATIONS } from "@/data/exercise-indications";
+import { scoreExercise } from "@/lib/indication-pipeline";
+import type { OutsideActivityId } from "@/data/outside-activity-rules";
 import { WEEKLY_SPLITS } from "@/data/weekly-splits";
 import { SKILL_PATHS } from "@/data/skill-paths";
 import { loadRulesForSystem, weightUnit, kgToDisplay, type MeasurementSystem } from "./format";
@@ -702,7 +704,8 @@ export function buildFallbackPrescription(name: string, goal: string): Exercise 
 // envelope is neutral and no prescription changes.
 export function applyIndicationPostProcessing(weekData: WeekData): WeekData {
   const store = useKineStore.getState();
-  const { goal, cycleType, cycle } = store;
+  const { goal, exp, equip, injuries, conditions, cycleType, cycle,
+    outsideActivities, outsideActivityFocus } = store;
   const goalLabel = goal === "muscle" ? "muscle" : goal === "strength" ? "strength" : "consistency";
 
   // Resolve the user's current cycle phase (null if untracked or not
@@ -714,6 +717,18 @@ export function applyIndicationPostProcessing(weekData: WeekData): WeekData {
   }
   const phase = currentPhase?.phase ?? null;
 
+  // Build user context for scoring factors
+  const userCtx = {
+    goal: goal as "muscle" | "strength" | "general",
+    experience: exp as "new" | "developing" | "intermediate",
+    equipment: equip,
+    injuries,
+    conditions,
+    cyclePhase: currentPhase?.phase,
+    outsideActivities: outsideActivities as OutsideActivityId[],
+    outsideActivityFocus: (outsideActivityFocus as OutsideActivityId) || null,
+  };
+
   const days = weekData.days.map((day) => {
     if (day.isRest || !day.exercises.length) return day;
 
@@ -722,8 +737,15 @@ export function applyIndicationPostProcessing(weekData: WeekData): WeekData {
 
       // Rationale from the indication profile
       let whyForYou: string | undefined;
+      let scoringFactors: string[] | undefined;
       if (ind) {
         whyForYou = ind.whyForYou.replace(/\{goal\}/g, goalLabel);
+        // Compute scoring factors for "Why this?" transparency
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const scored = scoreExercise(ex as any, ind, userCtx);
+        if (scored.factors.length > 0) {
+          scoringFactors = scored.factors;
+        }
       }
 
       // Cycle envelope
@@ -734,6 +756,7 @@ export function applyIndicationPostProcessing(weekData: WeekData): WeekData {
         ...ex,
         sets: modulatedSets,
         ...(whyForYou !== undefined ? { whyForYou } : {}),
+        ...(scoringFactors ? { scoringFactors } : {}),
         workingLoadCap: env.workingLoadCap,
         heavyTopSetsAllowed: env.heavyTopSetsAllowed,
         ...(env.framing !== null ? { framing: env.framing } : {}),

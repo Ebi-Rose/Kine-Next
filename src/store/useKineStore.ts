@@ -27,6 +27,7 @@ export interface ProgressPreferences {
 }
 export type Duration = "short" | "medium" | "long" | "extended" | null;
 export type EduMode = "full" | "feel" | "silent";
+export type CoachingDetail = "quiet" | "default" | "coach";
 export type TrackingMode = "lifts" | "photos" | "measurements" | "bodyweight" | "feeling";
 export type SessionMode = "timed" | "stopwatch" | "off";
 export type CheckInField = "photos" | "weight" | "mood" | "notes";
@@ -162,6 +163,7 @@ interface KineState {
   dayDurations: Record<number, number>;
   cycle: { periodLog: PeriodLog[]; avgLength: number | null };
   eduMode: EduMode;
+  coachingDetail: CoachingDetail;
   sessionMode: SessionMode;
   restConfig: RestConfig;
   eduFlags: Record<string, boolean>;
@@ -226,6 +228,7 @@ interface KineState {
   setDayDurations: (durations: Record<number, number>) => void;
   setProgressDB: (db: KineState["progressDB"]) => void;
   setEduMode: (mode: EduMode) => void;
+  setCoachingDetail: (mode: CoachingDetail) => void;
   setUnits: (units: Units) => void;
   setMeasurementSystem: (system: MeasurementSystem) => void;
   setCurrency: (currency: SupportedCurrency) => void;
@@ -272,6 +275,7 @@ const initialOnboarding = {
   dayDurations: {} as Record<number, number>,
   cycle: { periodLog: [] as PeriodLog[], avgLength: null as number | null },
   eduMode: "full" as EduMode,
+  coachingDetail: "default" as CoachingDetail,
   sessionMode: "off" as SessionMode,
   restConfig: { compound: 150, isolation: 75 } as RestConfig,
   eduFlags: {} as Record<string, boolean>,
@@ -367,6 +371,7 @@ export const useKineStore = create<KineState>()(
       setDayDurations: (durations) => set({ dayDurations: durations, _lastModifiedAt: appNow().toISOString() }),
       setProgressDB: (db) => set({ progressDB: db, _lastModifiedAt: appNow().toISOString() }),
       setEduMode: (mode) => set({ eduMode: mode, _lastModifiedAt: appNow().toISOString() }),
+      setCoachingDetail: (mode) => set({ coachingDetail: mode, _lastModifiedAt: appNow().toISOString() }),
       setUnits: (units) => set({ units, _lastModifiedAt: appNow().toISOString() }),
       setMeasurementSystem: (system) => set({
         measurementSystem: system,

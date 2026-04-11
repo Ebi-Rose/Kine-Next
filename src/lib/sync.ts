@@ -118,6 +118,7 @@ async function doSync(retryCount = 0) {
         dayDurations: store.dayDurations,
         cycle: cycleToCloud ? store.cycle : { periodLog: [], cycleLength: 28, periodLength: 5 },
         eduMode: store.eduMode,
+        coachingDetail: store.coachingDetail,
         sessionMode: store.sessionMode,
         restConfig: store.restConfig,
         eduFlags: store.eduFlags,
@@ -243,12 +244,16 @@ export async function syncFromSupabase(): Promise<boolean> {
       if (s.duration !== undefined) store.setDuration(s.duration as typeof store.duration);
       if (s.injuries !== undefined) store.setInjuries(s.injuries as string[]);
       if (s.injuryNotes !== undefined) store.setInjuryNotes(s.injuryNotes as string);
+      if (s.outsideActivities !== undefined) store.setOutsideActivities(s.outsideActivities as typeof store.outsideActivities);
+      if (s.outsideActivityNotes !== undefined) store.setOutsideActivityNotes(s.outsideActivityNotes as string);
+      if (s.outsideActivityFocus !== undefined) store.setOutsideActivityFocus(s.outsideActivityFocus as typeof store.outsideActivityFocus);
       if (s.conditions !== undefined) store.setConditions(s.conditions as string[]);
       if (s.cycleType !== undefined) store.setCycleType(s.cycleType as typeof store.cycleType);
       if (s.cyclePhase !== undefined) store.setCyclePhase(s.cyclePhase as string | null);
       if (s.dayDurations !== undefined) store.setDayDurations(s.dayDurations as Record<number, number>);
       if (s.cycle !== undefined) store.setCycle(s.cycle as typeof store.cycle);
       if (s.eduMode !== undefined) store.setEduMode(s.eduMode as typeof store.eduMode);
+      if (s.coachingDetail !== undefined) store.setCoachingDetail(s.coachingDetail as typeof store.coachingDetail);
       if (s.sessionMode !== undefined) store.setSessionMode(s.sessionMode as typeof store.sessionMode);
       if (s.restConfig !== undefined) store.setRestConfig(s.restConfig as typeof store.restConfig);
       if (s.eduFlags !== undefined) store.setEduFlags(s.eduFlags as Record<string, boolean>);

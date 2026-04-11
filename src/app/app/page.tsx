@@ -16,6 +16,7 @@ import SessionRearrange from "@/components/SessionRearrange";
 import { findExercise } from "@/data/exercise-library";
 import { weightUnit, formatDateShortLocale, detectLocale } from "@/lib/format";
 import AdaptationCard from "@/components/AdaptationCard";
+import AdaptationRibbon from "@/components/AdaptationRibbon";
 import RestDayHome from "@/components/RestDayHome";
 import StreakMilestone from "@/components/StreakMilestone";
 import ForYouEducationStrip from "@/components/ForYouEducationStrip";
@@ -934,6 +935,9 @@ function WeekView({
             </div>
           )}
 
+          {/* Adaptation ribbon */}
+          {!isViewingPast && <AdaptationRibbon weekNum={thisWeekNum} />}
+
           {/* Session completion summary */}
           {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
@@ -982,6 +986,9 @@ function WeekView({
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
                   const dateLabel = dayDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+                  const dayHint = !day.isRest && store.coachingDetail !== "quiet"
+                    ? (day.sessionWhy || day.sessionContext || "")?.split(/\.\s/)[0] || undefined
+                    : undefined;
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
@@ -992,6 +999,7 @@ function WeekView({
                       readOnly={isViewingPast}
                       dateStr={dateLabel}
                       weekNum={viewWeekNum}
+                      hint={dayHint}
                     />
                   );
                 })}
@@ -1099,6 +1107,7 @@ function WeekView({
       {/* ── NEXT WEEK TAB ── */}
       {viewTab === "nextWeek" && nextWeekData && nextWeekNum && (
         <div>
+          <AdaptationRibbon weekNum={nextWeekNum} />
           {(() => {
             const monday = getProgrammeWeekMonday(nextWeekNum, progressDB.programStartDate);
             return (
@@ -1107,6 +1116,9 @@ function WeekView({
                   const dayDate = new Date(monday);
                   dayDate.setDate(monday.getDate() + i);
                   const dateLabel = dayDate.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+                  const dayHint = !day.isRest && store.coachingDetail !== "quiet"
+                    ? (day.sessionWhy || day.sessionContext || "")?.split(/\.\s/)[0] || undefined
+                    : undefined;
                   return (
                     <DayCard
                       key={i} day={day} dayIdx={i}
@@ -1117,6 +1129,7 @@ function WeekView({
                       readOnly={true}
                       dateStr={dateLabel}
                       weekNum={nextWeekNum!}
+                      hint={dayHint}
                     />
                   );
                 })}
@@ -1154,8 +1167,8 @@ function getRestMessage(dayIdx: number): string {
   return REST_DAY_MESSAGES[dayIdx % REST_DAY_MESSAGES.length];
 }
 
-function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false, dateStr, weekNum }: {
-  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean; dateStr?: string; weekNum?: number;
+function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, expanded = false, readOnly = false, dateStr, weekNum, hint }: {
+  day: WeekDay; dayIdx: number; isToday: boolean; isCompleted?: boolean; isPast?: boolean; expanded?: boolean; readOnly?: boolean; dateStr?: string; weekNum?: number; hint?: string;
 }) {
   const router = useRouter();
   const { progressDB, setProgressDB } = useKineStore();
@@ -1310,6 +1323,9 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
           </div>
           {day.coachNote && (
             <p className="mt-1.5 text-[10px] text-muted font-light leading-relaxed truncate">{day.coachNote}</p>
+          )}
+          {hint && (
+            <p className="mt-1 text-[10px] text-muted2 italic truncate">{hint}</p>
           )}
           <div className="mt-2 flex flex-wrap gap-1">
             {day.exercises.slice(0, 3).map((ex, i) => (
