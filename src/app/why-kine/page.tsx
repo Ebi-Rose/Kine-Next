@@ -347,17 +347,7 @@ export default function WhyKinePage() {
           <Link href="/"><span className="k">K</span><span className="rest">INĒ</span></Link>
         </nav>
 
-        <header className="wk-header">
-          <h2>What Makes</h2>
-          <h1>Kine Different</h1>
-          <div className="wk-accent-line" />
-          <p className="wk-subhead">
-            Most fitness apps were built for men, then painted pink. Others were vibe-coded over a weekend and shipped with no guardrails.<br /><br />
-            Kine was built from the ground up on women&apos;s physiology &mdash; shaped by professionals with deep expertise in enterprise architecture, governance, information security, data privacy, women&apos;s health, product strategy, content strategy, quality assurance, and software engineering.
-          </p>
-        </header>
-
-        {/* Founder */}
+        {/* Founder — leads with the personal story to establish trust */}
         <div className="wk-founder">
           <div className="wk-founder-label">Why I Built This</div>
           <Image
@@ -372,6 +362,16 @@ export default function WhyKinePage() {
           <p>People kept asking me the same questions. Women who wanted to train but didn&apos;t know where to start, or had a condition and didn&apos;t know if they even could. I&apos;d been in there long enough to know the answers, and I realised nobody was building what we actually needed. So I built it. Everything I&apos;ve learned over ten years, shaped by professionals across every discipline this thing needed. I&apos;m a working solution to my own problem.</p>
           <div className="wk-founder-name">Ebi-Rose <span>&mdash; Founder, Kine</span></div>
         </div>
+
+        <header className="wk-header">
+          <h2>What Makes</h2>
+          <h1>Kine Different</h1>
+          <div className="wk-accent-line" />
+          <p className="wk-subhead">
+            Most fitness apps were built for men, then painted pink. Others were vibe-coded over a weekend and shipped with no guardrails.<br /><br />
+            Kine was built from the ground up on women&apos;s physiology &mdash; shaped by professionals with deep expertise in Women&apos;s Health, Fitness, Data, AI, Security, Privacy, Product Strategy and Software Engineering.
+          </p>
+        </header>
 
         {/* vs Established */}
         <div className="wk-section-label">vs. Established Fitness Apps</div>
