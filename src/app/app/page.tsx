@@ -474,7 +474,8 @@ function WeekView({
   onAdvanceWeek: () => void;
   loading: boolean;
 }) {
-  const { cycleType, cycle, setCycle, progressDB, weekHistory, exp, personalProfile } = useKineStore();
+  const store = useKineStore();
+  const { cycleType, cycle, setCycle, progressDB, setProgressDB, weekHistory, exp, personalProfile } = store;
   const firstName = (personalProfile?.name || "").trim().split(/\s+/)[0];
   const [showRearrange, setShowRearrange] = useState(false);
   const [viewingPastIdx, setViewingPastIdx] = useState<number | null>(null);
@@ -494,16 +495,35 @@ function WeekView({
   const programmeAhead = programmeMonday.toISOString().slice(0, 10) > calendarMonday.toISOString().slice(0, 10);
   const hasCurrentWeekSessions = (progressDB.sessions as { weekNum?: number }[])
     .some((s) => s.weekNum === (progressDB.currentWeek || 1));
-  const isNextWeek = programmeAhead && !hasCurrentWeekSessions;
+  // When the programme is ahead of the calendar and no sessions exist
+  // for the new week, roll back: reset currentWeek, restore previous
+  // week's data, and stash the built-ahead week in history. This way
+  // the user can log more sessions for the current week and rebuild
+  // next week with updated inputs.
+  const programmeIsAhead = programmeAhead && !hasCurrentWeekSessions;
 
-  // When time-travelling back before the current programme week started,
-  // fall back to the previous week so the UI shows what was current then.
-  const effectiveWeekNum = isNextWeek
-    ? Math.max((progressDB.currentWeek || 1) - 1, 1)
-    : (progressDB.currentWeek || 1);
-  const effectiveWeek = isNextWeek && weekHistory.length > 0
-    ? (weekHistory[weekHistory.length - 1] as WeekData)
-    : week;
+  useEffect(() => {
+    if (!programmeIsAhead) return;
+    const prevWeekNum = Math.max((progressDB.currentWeek || 1) - 1, 1);
+    if (prevWeekNum === progressDB.currentWeek) return; // already at week 1
+
+    // Stash the built-ahead week into history before clearing it
+    if (week && !weekHistory.some((w) => (w as WeekData)?._weekNum === progressDB.currentWeek)) {
+      store.setWeekHistory([...weekHistory, week]);
+    }
+
+    // Restore previous week from history if available
+    const prevWeek = weekHistory.find((w) => (w as WeekData)?._weekNum === prevWeekNum) as WeekData | undefined;
+    if (prevWeek) {
+      store.setWeekData(prevWeek);
+    }
+
+    // Roll back currentWeek
+    setProgressDB({ ...progressDB, currentWeek: prevWeekNum });
+  }, [programmeIsAhead]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const effectiveWeekNum = progressDB.currentWeek || 1;
+  const effectiveWeek = week;
   const effectiveWeekStart = getWeekDateRange(effectiveWeekNum, progressDB.programStartDate);
   // trainingPhase is computed after displayWeekNum below so it
   // reflects whichever week the user is actually viewing.
@@ -514,14 +534,13 @@ function WeekView({
     .filter((s) => s.weekNum === effectiveWeekNum && (!s.date || s.date <= todayISO));
 
   // Week navigation: past weeks from history, current week is live
-  // When isNextWeek, the Week tab shows the newly built week, Today tab shows effective (previous) week
   const isViewingPast = viewingPastIdx !== null;
   const displayWeek = isViewingPast
     ? (weekHistory[viewingPastIdx] as WeekData)
-    : (isNextWeek && viewTab === "week") ? week : effectiveWeek;
+    : effectiveWeek;
   const displayWeekNum = isViewingPast
     ? (displayWeek?._weekNum || 1)
-    : (isNextWeek && viewTab === "week") ? (progressDB.currentWeek || 1) : effectiveWeekNum;
+    : effectiveWeekNum;
   const trainingPhase = getCurrentPhaseInfo(displayWeekNum, progressDB.phaseOffset);
   const hasPrev = isViewingPast ? viewingPastIdx > 0 : weekHistory.length > 0;
   const hasNext = isViewingPast; // can always go forward to current
