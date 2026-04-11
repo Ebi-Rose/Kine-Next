@@ -299,8 +299,13 @@ export default function WhyKinePage() {
         @media (max-width: 640px) {
           .wk-container { padding: 60px 24px 48px; }
           .wk-container::before { left: 8px; }
-          .wk-header h1 { font-size: 2.4rem; }
-          .wk-header h2 { font-size: 1.5rem; }
+          .wk-header { margin-bottom: 36px; }
+          .wk-header h1 { font-size: 1.6rem; }
+          .wk-header h2 { font-size: 1rem; }
+          .wk-subhead { font-size: 0.85rem; }
+          .wk-section-label { font-size: 1rem; }
+          .wk-section-desc { font-size: 0.78rem; }
+          .wk-cell-typical .wk-text, .wk-cell-kine .wk-text { font-size: 0.8rem; }
           .wk-comparison-header, .wk-row {
             grid-template-columns: 1fr;
             gap: 0;
@@ -308,9 +313,14 @@ export default function WhyKinePage() {
           .wk-comparison-header .wk-col-typical { display: none; }
           .wk-cell-typical { padding-bottom: 4px; opacity: 0.6; }
           .wk-cell-kine { padding-top: 4px; padding-bottom: 24px; }
-          .wk-cta h3 { font-size: 1.8rem; }
+          .wk-cta h3 { font-size: 1.4rem; }
           .wk-trust-grid { grid-template-columns: 1fr; }
+          .wk-trust-title { font-size: 0.72rem; }
+          .wk-trust-card p { font-size: 0.78rem; }
           .wk-founder { padding: 24px 20px; }
+          .wk-founder p { font-size: 0.82rem; }
+          .wk-founder-label { font-size: 0.68rem; }
+          .wk-closing { font-size: 0.82rem; }
           .wk-founder-img {
             float: none;
             display: block;
