@@ -928,8 +928,8 @@ function WeekView({
             </div>
           )}
 
-          {/* Session completion summary — current week only, compact on Week tab */}
-          {!isViewingPast && (() => {
+          {/* Session completion summary — current week only, not on Next Week preview */}
+          {!isViewingPast && !(isNextWeek && viewTab === "week") && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             if (displayWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
               return (
@@ -994,8 +994,8 @@ function WeekView({
             );
           })()}
 
-          {/* Next week preview — only on Sunday (last day of the programme week) or later when all sessions are done */}
-          {!isViewingPast && (() => {
+          {/* Next week preview — only on Sunday or later, not when already viewing next week */}
+          {!isViewingPast && !(isNextWeek && viewTab === "week") && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             // Show on Sunday or if we've rolled past the programme week into a new calendar week
             const effectiveMonday = getProgrammeWeekMonday(effectiveWeekNum, progressDB.programStartDate);
@@ -1018,8 +1018,8 @@ function WeekView({
             return null;
           })()}
 
-          {/* Actions — hidden when viewing past weeks (read-only) */}
-          {!isViewingPast && (() => {
+          {/* Actions — hidden when viewing past weeks or next week preview */}
+          {!isViewingPast && !(isNextWeek && viewTab === "week") && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
             const allDone = trainingDayCount > 0 && displayWeekSessions.length >= trainingDayCount;
             return (
