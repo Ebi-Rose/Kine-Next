@@ -625,7 +625,7 @@ function WeekView({
               viewTab === "week" ? "bg-accent text-bg" : "text-muted2 hover:text-text"
             }`}
           >
-            {isNextWeek ? "Next Week" : "Week"}
+            Week
           </button>
         </div>
       )}
