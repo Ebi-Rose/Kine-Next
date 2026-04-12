@@ -557,12 +557,12 @@ export default function DevOverlay() {
         {/* State tab */}
         {tab === "state" && (
           <div className="flex flex-col gap-1.5">
-            <Btn onClick={exportState}>Export to clipboard</Btn>
+            <Btn onClick={exportState}>📋 Copy full state JSON</Btn>
             <Btn onClick={importState}>Import from clipboard</Btn>
             <Btn onClick={() => setShowState(!showState)}>{showState ? "Hide" : "Show"} state</Btn>
             {showState && (
-              <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-surface p-2 text-[8px] text-muted2 leading-relaxed">
-                {JSON.stringify(store, null, 2).slice(0, 3000)}
+              <pre className="mt-1 max-h-60 overflow-auto rounded-lg bg-surface p-2 text-[8px] text-muted2 leading-relaxed select-all">
+                {JSON.stringify(store, null, 2)}
               </pre>
             )}
             <button onClick={resetAll} className="mt-2 rounded-lg border border-danger/30 px-2 py-1.5 text-[10px] text-danger hover:bg-danger/10 transition-all">
