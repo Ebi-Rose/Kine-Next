@@ -1316,7 +1316,36 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             <p className="text-[11px] text-muted2 font-light truncate flex-1">
               {day.exercises.length} exercises · {day.sessionDuration}
             </p>
-            {!readOnly && (
+            {!readOnly && !isCompleted && !isSkipped && (
+              <div className="flex items-center gap-3 shrink-0 ml-2">
+                <button onClick={(e) => { e.stopPropagation(); setShowSkipConfirm(true); }}
+                  className="text-[10px] text-muted hover:text-text">Skip</button>
+                <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
+                  className="text-[10px] text-accent hover:underline">View →</button>
+              </div>
+            )}
+            {isSkipped && !isCompleted && (
+              <button onClick={(e) => {
+                e.stopPropagation();
+                const skipDate = progressDB.skippedSessions.find(s => s.weekNum === wk && s.dayIdx === dayIdx)?.date;
+                if (skipDate === appTodayISO()) {
+                  setProgressDB({
+                    ...progressDB,
+                    skippedSessions: progressDB.skippedSessions.filter(s => !(s.weekNum === wk && s.dayIdx === dayIdx)),
+                  });
+                  toast("Skip undone", "success");
+                }
+              }}
+                className={`text-[10px] shrink-0 ml-2 ${
+                  progressDB.skippedSessions.find(s => s.weekNum === wk && s.dayIdx === dayIdx)?.date === appTodayISO()
+                    ? "text-accent hover:underline" : "text-muted cursor-default"
+                }`}
+                disabled={progressDB.skippedSessions.find(s => s.weekNum === wk && s.dayIdx === dayIdx)?.date !== appTodayISO()}
+              >
+                {progressDB.skippedSessions.find(s => s.weekNum === wk && s.dayIdx === dayIdx)?.date === appTodayISO() ? "Undo skip" : "Skipped"}
+              </button>
+            )}
+            {!readOnly && isCompleted && (
               <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
                 className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
             )}
@@ -1396,28 +1425,29 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
             </div>
           )}
 
-          {/* Skip confirmation */}
-          {showSkipConfirm && (
-            <div className="mt-3 rounded-xl border border-border bg-surface p-3">
-              <p className="text-xs text-text mb-2">Skip this session?</p>
-              <textarea
-                value={skipReason}
-                onChange={(e) => setSkipReason(e.target.value)}
-                placeholder="Reason (optional) — e.g. feeling unwell, schedule conflict..."
-                rows={2}
-                className="w-full rounded-lg border border-border bg-bg px-2 py-1.5 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none mb-2"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" variant="ghost" className="flex-1" onClick={() => setShowSkipConfirm(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" variant="secondary" className="flex-1" onClick={handleSkip}>
-                  Skip session
-                </Button>
-              </div>
-            </div>
-          )}
         </>
+      )}
+
+      {/* Skip confirmation — renders in both collapsed and expanded */}
+      {showSkipConfirm && (
+        <div className="mt-3 rounded-xl border border-border bg-surface p-3">
+          <p className="text-xs text-text mb-2">Skip this session?</p>
+          <textarea
+            value={skipReason}
+            onChange={(e) => setSkipReason(e.target.value)}
+            placeholder="Reason (optional) — e.g. feeling unwell, schedule conflict..."
+            rows={2}
+            className="w-full rounded-lg border border-border bg-bg px-2 py-1.5 text-xs text-text placeholder:text-muted outline-none focus:border-accent resize-none mb-2"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" className="flex-1" onClick={() => setShowSkipConfirm(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="secondary" className="flex-1" onClick={handleSkip}>
+              Skip session
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* #6: Session replay/amendment bottom sheet */}
