@@ -70,6 +70,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Glute Kickback Machine",muscle:"hinge",equip:["machines"],tags:["Isolation"],logType:"weighted"},
   {name:"Cable Glute Kickback",muscle:"hinge",equip:["machines"],tags:["Isolation"],logType:"weighted"},
   {name:"Single-Leg Hip Thrust",muscle:"hinge",equip:["bodyweight"],tags:["Compound"],logType:"bodyweight_unilateral"},
+  {name:"Dumbbell Single-Leg Hip Thrust",muscle:"hinge",equip:["dumbbells"],tags:["Compound"],logType:"weighted_unilateral",minExp:"developing"},
   {name:"Nordic Curl",muscle:"hinge",equip:["bodyweight"],tags:["Compound","Calisthenics"],logType:"bodyweight",minExp:"intermediate"},
   // PUSH
   {name:"Barbell Bench Press",muscle:"push",equip:["barbell"],tags:["Compound"],logType:"weighted"},
