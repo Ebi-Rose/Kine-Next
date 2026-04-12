@@ -22,7 +22,6 @@ export const CATEGORY_COLORS: Record<MuscleGroup, string> = {
  */
 export const LIFE_STAGE_OPTIONS: { value: NonNullable<LifeStage>; label: string; description: string }[] = [
   { value: "general", label: "General", description: "No specific life-stage adjustments" },
-  { value: "pregnancy", label: "Pregnancy", description: "Sessions tracked as showing-up; no PR or load deltas surfaced" },
   { value: "postpartum", label: "Postpartum", description: "Returning to training framing; rehab work and reintroduced exercises lead" },
   { value: "perimenopause", label: "Perimenopause", description: "12-week trend window; week-over-week dips contextualised, never punitive" },
   { value: "post_menopause", label: "Post-menopause", description: "Mobility and pattern balance promoted alongside strength" },
