@@ -30,6 +30,7 @@ import {
   OUTSIDE_ACTIVITY_RULES,
   type OutsideActivityId,
 } from "@/data/outside-activity-rules";
+import type { ProgressionSignal } from "./progression";
 import type { CyclePhase } from "./cycle";
 
 // ── Context types ──────────────────────────────────────────────────
@@ -48,6 +49,8 @@ export interface UserContext {
   outsideActivities?: OutsideActivityId[];
   /** The activity the user has marked as their primary training goal, if any. */
   outsideActivityFocus?: OutsideActivityId | null;
+  /** Detected skill-path advancement signals from session history. */
+  progressionSignals?: ProgressionSignal[];
 }
 
 export interface SlotRequirement {
@@ -220,6 +223,25 @@ export function scoreExercise(
           score -= rule.constraintRules.fatiguePenalty;
           factors.push({ pts: -rule.constraintRules.fatiguePenalty, label: rule.constraintRules.fatigueRationale });
         }
+      }
+    }
+  }
+
+  // ── Progression signals ──
+  // +10 if this exercise is the recommended next step in a chain the user is ready for
+  // −5 if this exercise is one the user is already graduating away from (encourage advancement)
+  if (ctx.progressionSignals && ctx.progressionSignals.length > 0) {
+    for (const signal of ctx.progressionSignals) {
+      if (ex.name === signal.nextExercise) {
+        const pts = signal.confidence === "ready" ? 10 : 5;
+        score += pts;
+        factors.push({ pts, label: `next step up from ${signal.exerciseName}` });
+        break;
+      }
+      if (ex.name === signal.exerciseName && signal.confidence === "ready") {
+        score -= 5;
+        factors.push({ pts: -5, label: `you're ready to advance beyond this` });
+        break;
       }
     }
   }

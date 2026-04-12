@@ -20,12 +20,11 @@ export const SKILL_PATHS: SkillPath[] = [
 
   // PULL
   { id: "pullup-chain", muscle: "pull", pattern: "vertical-pull",
-    chain: [["Band-Assisted Chin-Up", "Band-Assisted Neutral-Grip Pull-Up", "Assisted Pull-Up"],
+    chain: ["Dead Hang", "Scapular Pull-Up",
+            ["Band-Assisted Chin-Up", "Band-Assisted Neutral-Grip Pull-Up", "Assisted Pull-Up"],
             "Band-Assisted Pull-Up", "Chin-Up", "Neutral-Grip Pull-Up", "Pull-Up",
             ["Weighted Chin-Up", "Weighted Pull-Up"],
             "Archer Pull-Up", "Typewriter Pull-Up", "Muscle-Up"] },
-  { id: "hang-chain", muscle: "pull", pattern: "hang",
-    chain: ["Dead Hang", "Scapular Pull-Up"] },
   { id: "lever-chain", muscle: "calisthenics", pattern: "lever",
     chain: ["Scapular Pull-Up", "Back Lever", "Front Lever"] },
 
@@ -53,8 +52,14 @@ export const SKILL_PATHS: SkillPath[] = [
   { id: "hinge-bw", muscle: "hinge", pattern: "hip-hinge",
     chain: ["Bodyweight Glute Bridge", "Banded Hip Thrust", "Single-Leg Hip Thrust",
             "Weighted Single-Leg Hip Thrust"] },
+  { id: "hinge-weighted", muscle: "hinge", pattern: "hip-hinge", weighted: true,
+    chain: ["Bodyweight Glute Bridge", "Dumbbell Romanian Deadlift", "Romanian Deadlift"] },
   { id: "nordic", muscle: "hinge", pattern: "hamstring",
     chain: ["Bodyweight Back Extension", "Back Extension", "Nordic Curl", "Weighted Nordic Curl"] },
+
+  // CROSS-EQUIPMENT SQUAT
+  { id: "squat-progression", muscle: "legs", pattern: "squat", weighted: true,
+    chain: ["Bodyweight Squat", "Goblet Squat", "Dumbbell Sumo Squat", "Barbell Back Squat"] },
 ];
 
 export const SKILL_HINTS: Record<string, string> = {
@@ -114,6 +119,8 @@ export const SKILL_HINTS: Record<string, string> = {
   "Handstand Push-Up": "Full inverted press — wall-assisted at first",
   "Pistol Squat": "Single-leg squat to full depth — balance and strength",
   "Shrimp Squat": "Rear foot held behind — quad dominant single-leg",
+  "Dumbbell Sumo Squat": "Wide stance with a single dumbbell — inner thigh and glutes",
+  "Dumbbell Romanian Deadlift": "Dumbbells let you find your groove — great hinge teacher",
   "Toes-to-Bar": "Straight legs to the bar — full range core",
   "Hanging L-Sit": "Hold legs at 90° from a bar — hip flexor and core",
 };

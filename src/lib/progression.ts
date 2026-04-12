@@ -1,5 +1,6 @@
 import { useKineStore } from "@/store/useKineStore";
 import { findExercise } from "@/data/exercise-library";
+import { SKILL_PATHS } from "@/data/skill-paths";
 import { getPhase } from "./periodisation";
 import { kgToDisplay, formatWeight, weightUnit, getIncrementForEquip, calculatePlatesForSystem, type MeasurementSystem } from "./format";
 import { appNow } from "./dev-time";
@@ -236,6 +237,142 @@ export function getDaysSinceLastSession(exerciseName: string): number | null {
 export function isDetrained(exerciseName: string): boolean {
   const days = getDaysSinceLastSession(exerciseName);
   return days !== null && days > 14;
+}
+
+// ── Exercise Progression Signals ──────────────────────────────────────
+//
+// Detects when a user is ready to advance to the next exercise in a
+// skill-path chain, based on session log data. This is distinct from
+// weight progression — it's about switching exercises entirely.
+//
+// Uses a rep-count heuristic for bodyweight exercises:
+//   - "ready"      → logged ≥ REP_THRESHOLD reps per set in 2+ of last 3 sessions
+//   - "approaching" → logged ≥ REP_THRESHOLD reps per set in 1 of last 3 sessions
+//
+// For weighted cross-equipment chains (e.g. Goblet Squat → Barbell Back Squat),
+// relies on the user's equipment list — prompts advancement when they have
+// the next exercise's equipment already.
+//
+// Called by week-builder to inform the LLM prompt and to auto-advance
+// exercises after validation.
+
+/** Minimum reps per set that signals readiness to advance to the next chain step. */
+const REP_THRESHOLD = 12;
+
+/** Number of recent sessions to scan for each exercise. */
+const LOOK_BACK_SESSIONS = 6;
+
+export interface ProgressionSignal {
+  exerciseName: string;
+  nextExercise: string;
+  chainId: string;
+  confidence: "ready" | "approaching";
+  reason: string;
+}
+
+/**
+ * Scan recent session logs and return progression signals for any
+ * exercises that are in a SKILL_PATH chain and ready to advance.
+ */
+export function detectProgressionSignals(
+  sessions: Array<{ logs?: Record<string, unknown> }>,
+  userEquip: string[],
+): ProgressionSignal[] {
+  const signals: ProgressionSignal[] = [];
+
+  // Flatten all chains for fast lookup
+  const allFlat = (chainTiers: (string | string[])[]) =>
+    chainTiers.flatMap((t) => (Array.isArray(t) ? t : [t]));
+
+  // Collect per-exercise occurrences in recent sessions
+  // key: exerciseName, value: array of { highReps: boolean } per session
+  const exerciseOccurrences = new Map<string, boolean[]>();
+
+  for (const session of sessions.slice(-LOOK_BACK_SESSIONS)) {
+    if (!session.logs || typeof session.logs !== "object") continue;
+
+    // Track which exercises appeared in this session
+    const seenInSession = new Set<string>();
+
+    for (const entry of Object.values(session.logs)) {
+      if (!entry || typeof entry !== "object") continue;
+      const e = entry as Record<string, unknown>;
+      const name = typeof e.name === "string" ? e.name : null;
+      if (!name || seenInSession.has(name)) continue;
+      seenInSession.add(name);
+
+      // Check if in any chain
+      const inChain = SKILL_PATHS.some((path) => allFlat(path.chain).includes(name));
+      if (!inChain) continue;
+
+      // Determine if this session hit the rep threshold
+      const actual = Array.isArray(e.actual) ? e.actual : [];
+      let highReps = false;
+
+      if (actual.length > 0) {
+        // High reps = ALL completed sets hit REP_THRESHOLD or more
+        const completedSets = actual.filter((s: Record<string, unknown>) => {
+          const reps = parseInt(String(s.reps || "0"));
+          return reps > 0;
+        });
+        if (completedSets.length > 0) {
+          highReps = completedSets.every((s: Record<string, unknown>) => {
+            return parseInt(String(s.reps || "0")) >= REP_THRESHOLD;
+          });
+        }
+      }
+
+      if (!exerciseOccurrences.has(name)) exerciseOccurrences.set(name, []);
+      exerciseOccurrences.get(name)!.push(highReps);
+    }
+  }
+
+  // Evaluate each exercise against its chain
+  for (const [exerciseName, occurrences] of exerciseOccurrences) {
+    // Only look at the last 3 occurrences
+    const recent = occurrences.slice(-3);
+    const highRepCount = recent.filter(Boolean).length;
+    if (highRepCount === 0) continue;
+
+    const confidence: "ready" | "approaching" = highRepCount >= 2 ? "ready" : "approaching";
+
+    // Find the chain and next step
+    for (const path of SKILL_PATHS) {
+      const flat = allFlat(path.chain);
+      if (!flat.includes(exerciseName)) continue;
+
+      // Find tier index
+      const tiers = path.chain.map((t) => (Array.isArray(t) ? t : [t]));
+      const currentTierIdx = tiers.findIndex((t) => t.includes(exerciseName));
+      if (currentTierIdx < 0 || currentTierIdx >= tiers.length - 1) continue; // at end
+
+      // Find the next tier — pick the first exercise the user has equipment for
+      const nextTier = tiers[currentTierIdx + 1];
+      const nextExercise = nextTier.find((candidate) => {
+        const lib = findExercise(candidate);
+        if (!lib) return false;
+        return lib.equip.some((e) => userEquip.includes(e));
+      });
+
+      if (!nextExercise) continue; // user doesn't have equipment for next step
+
+      const reason =
+        confidence === "ready"
+          ? `You've been consistently hitting ${REP_THRESHOLD}+ reps on ${exerciseName} — time to try ${nextExercise}.`
+          : `You're approaching ${REP_THRESHOLD} reps on ${exerciseName} — ${nextExercise} will be in range soon.`;
+
+      signals.push({
+        exerciseName,
+        nextExercise,
+        chainId: path.id,
+        confidence,
+        reason,
+      });
+      break; // one signal per exercise
+    }
+  }
+
+  return signals;
 }
 
 function getEquipType(exerciseName: string, userEquip: string[]): string {

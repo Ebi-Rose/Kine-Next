@@ -12,9 +12,10 @@ jest.mock("@/data/exercise-library", () => ({
       "Barbell Back Squat": { equip: ["barbell"], tags: ["Compound"], logType: "weighted" },
       "Dumbbell Row": { equip: ["dumbbells"], tags: ["Compound"], logType: "weighted" },
       "Goblet Squat": { equip: ["dumbbells"], tags: ["Compound"], logType: "weighted" },
-      "Kettlebell Swing": { equip: ["dumbbells"], tags: ["Compound"], logType: "weighted" },
+      "Kettlebell Swing": { equip: ["kettlebell"], tags: ["Compound"], logType: "weighted" },
       "Leg Press": { equip: ["machines"], tags: ["Compound"], logType: "weighted" },
-      "Hip Thrust": { equip: ["barbell", "dumbbells", "machines"], tags: ["Compound"], logType: "weighted" },
+      "Hip Thrust": { equip: ["barbell"], tags: ["Compound"], logType: "weighted" },
+      "Dumbbell Hip Thrust": { equip: ["dumbbells"], tags: ["Compound"], logType: "weighted" },
     };
     return lib[name] || null;
   },

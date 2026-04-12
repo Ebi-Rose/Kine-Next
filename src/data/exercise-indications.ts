@@ -905,6 +905,25 @@ const OVERRIDES: Record<string, OverridePatch> = {
     whyForYou:
       "The most direct loaded glute exercise we have — easy to learn, extremely progressable, low injury risk.",
   },
+  "Dumbbell Hip Thrust": {
+    experience: { min: "new" },
+    technicalDemand: 2,
+    fatigueCost: 3,
+    loadability: "medium",
+    injuryAvoid: [],
+    whyForYou:
+      "A great starting point for loaded hip thrusts — dumbbells let you set up and reset easily while you build the movement.",
+  },
+  "Dumbbell Glute Bridge": {
+    experience: { min: "new" },
+    technicalDemand: 1,
+    fatigueCost: 2,
+    loadability: "medium",
+    injuryAvoid: [],
+    sessionRole: ["secondary", "accessory"],
+    whyForYou:
+      "The loaded step up from a bodyweight glute bridge — a dumbbell on your hips bridges bodyweight and full hip thrust.",
+  },
   "Good Morning": {
     experience: { min: "developing" },
     technicalDemand: 4,
@@ -1084,6 +1103,22 @@ const OVERRIDES: Record<string, OverridePatch> = {
     technicalDemand: 2,
     whyForYou:
       "A stepping stone toward unassisted pull-ups — lets you practice the pattern with progressively less help.",
+  },
+  "Band-Assisted Chin-Up": {
+    experience: { min: "new" },
+    sessionRole: ["secondary", "accessory"],
+    technicalDemand: 2,
+    fatigueCost: 2,
+    whyForYou:
+      "Supinated grip with band assistance — the biceps help more here, making it the most accessible pull-up entry point.",
+  },
+  "Band-Assisted Neutral-Grip Pull-Up": {
+    experience: { min: "new" },
+    sessionRole: ["secondary", "accessory"],
+    technicalDemand: 2,
+    fatigueCost: 2,
+    whyForYou:
+      "Neutral grip with band assistance — joint-friendly and a natural bridge to full pull-ups.",
   },
   "Barbell Row": {
     experience: { min: "developing" },
