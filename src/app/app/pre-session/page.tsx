@@ -6,6 +6,7 @@ import { useKineStore } from "@/store/useKineStore";
 import { getEffectiveWeek } from "@/lib/date-utils";
 import { appNow, appTimestamp } from "@/lib/dev-time";
 import type { WeekData } from "@/lib/week-builder";
+import { regenerateRemainingDays } from "@/lib/week-builder";
 import { findExercise } from "@/data/exercise-library";
 import { getCurrentPhase, type CyclePhase } from "@/lib/cycle";
 import CollapsibleSection from "@/components/CollapsibleSection";
@@ -80,9 +81,45 @@ export default function PreSessionPage() {
   const [isolationRest, setIsolationRest] = useState(restConfig.isolation);
   const [swapIdx, setSwapIdx] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   // Wait for client-side hydration
   useEffect(() => { setMounted(true); }, []);
+
+  // Check if remaining sessions need regeneration (a previous day was skipped)
+  useEffect(() => {
+    if (!mounted || !week || !day || day.isRest) return;
+
+    const currentWeekNum = progressDB.currentWeek || 1;
+    const skippedThisWeek = (progressDB.skippedSessions ?? [])
+      .filter((s) => s.weekNum === currentWeekNum && s.dayIdx < dayIdx);
+
+    if (skippedThisWeek.length === 0) return; // No skips before this day
+
+    // Check if we already regenerated for these skips
+    const lastRegenKey = `_regenForSkips_${currentWeekNum}`;
+    const lastRegenSkips = (week as WeekData & { [k: string]: unknown })[lastRegenKey] as string | undefined;
+    const currentSkipIds = skippedThisWeek.map(s => `${s.dayIdx}`).sort().join(",");
+    if (lastRegenSkips === currentSkipIds) return; // Already regenerated for these exact skips
+
+    const completedIdxs = new Set(
+      (progressDB.sessions ?? [])
+        .filter((s: { weekNum?: number }) => s.weekNum === currentWeekNum)
+        .map((s: { dayIdx?: number }) => s.dayIdx as number)
+    );
+    const skippedIdxs = new Set(skippedThisWeek.map(s => s.dayIdx));
+
+    setRegenerating(true);
+    regenerateRemainingDays(week, completedIdxs, skippedIdxs, dayIdx)
+      .then((result) => {
+        if (result.success && result.weekData) {
+          // Tag the week so we don't regenerate again for the same skips
+          const tagged = { ...result.weekData, [lastRegenKey]: currentSkipIds } as WeekData;
+          useKineStore.getState().setWeekData(tagged);
+        }
+      })
+      .finally(() => setRegenerating(false));
+  }, [mounted, week, day, dayIdx, progressDB]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (mounted && week && (!day || day.isRest)) {
@@ -326,6 +363,15 @@ export default function PreSessionPage() {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (regenerating) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <p className="text-sm text-muted2">Updating your session based on this week&apos;s changes...</p>
       </div>
     );
   }
@@ -1095,7 +1141,24 @@ export default function PreSessionPage() {
               </button>
 
               <button
-                onClick={() => router.back()}
+                onClick={() => {
+                  const { progressDB: pdb, setProgressDB: setPDB } = useKineStore.getState();
+                  const today = new Date().toISOString().slice(0, 10);
+                  setPDB({
+                    ...pdb,
+                    skippedSessions: [
+                      ...(pdb.skippedSessions ?? []),
+                      {
+                        sessionTitle: day?.sessionTitle || "Session",
+                        weekNum: pdb.currentWeek || 1,
+                        dayIdx,
+                        date: today,
+                        movedTo: null,
+                      },
+                    ],
+                  });
+                  router.replace("/app");
+                }}
                 className="w-full py-2 text-xs text-muted mt-1"
               >
                 Skip this session

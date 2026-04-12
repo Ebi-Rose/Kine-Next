@@ -958,3 +958,151 @@ export async function buildWeek(): Promise<BuildResult> {
     };
   }
 }
+
+/**
+ * Regenerate remaining (incomplete, non-skipped) sessions in the current week.
+ * Called when a user opens a pre-session page and a previous day was skipped.
+ * Only regenerates days that haven't been completed or skipped — preserves the rest.
+ */
+export async function regenerateRemainingDays(
+  currentWeek: WeekData,
+  completedDayIdxs: Set<number>,
+  skippedDayIdxs: Set<number>,
+  targetDayIdx: number,
+): Promise<BuildResult> {
+  const store = useKineStore.getState();
+
+  // Build context about what happened this week
+  const completedSummary = currentWeek.days
+    .filter((_, i) => completedDayIdxs.has(i) && !currentWeek.days[i].isRest)
+    .map((d) => `${d.sessionTitle}: ${d.exercises.map(e => e.name).join(", ")}`)
+    .join("\n");
+
+  const skippedSummary = currentWeek.days
+    .filter((_, i) => skippedDayIdxs.has(i) && !currentWeek.days[i].isRest)
+    .map((d) => `${d.sessionTitle} (SKIPPED): was ${d.exercises.map(e => e.name).join(", ")}`)
+    .join("\n");
+
+  const remainingIdxs = currentWeek.days
+    .map((d, i) => ({ d, i }))
+    .filter(({ d, i }) => !d.isRest && !completedDayIdxs.has(i) && !skippedDayIdxs.has(i))
+    .map(({ i }) => i);
+
+  if (remainingIdxs.length === 0) {
+    return { success: true, weekData: currentWeek };
+  }
+
+  // Build focused prompt
+  const equipStr = store.equip.map((e) => EQUIP_LABELS[e] || e).join(", ");
+  const goalLabel = store.goal === "muscle" ? "physique" : store.goal === "strength" ? "strength" : "consistency";
+  const injuryStr = store.injuries.length > 0
+    ? store.injuries.map((i) => INJURY_OPTIONS.find((o) => o.value === i)?.label || i).join(", ")
+    : "None";
+
+  let exCount = 4;
+  if (store.duration === "medium") exCount = 5;
+  else if (store.duration === "long") exCount = 6;
+  else if (store.duration === "extended") exCount = 7;
+
+  const prompt = `You are regenerating ${remainingIdxs.length} remaining session(s) for a training week.
+
+TRAINEE:
+- Goal: ${goalLabel}
+- Experience: ${store.exp || "new"}
+- Equipment: ${equipStr}
+- Injuries: ${injuryStr}
+
+WEEK CONTEXT:
+Sessions completed so far:
+${completedSummary || "None yet"}
+
+Sessions SKIPPED:
+${skippedSummary || "None"}
+
+The skipped sessions' muscle groups were NOT trained. Redistribute that work across the remaining sessions where it makes sense. Don't overload — just ensure coverage.
+
+REMAINING SESSIONS TO GENERATE (${remainingIdxs.length}):
+${remainingIdxs.map(i => `- Day ${i + 1} (${DAY_LABELS[currentWeek.days[i].dayNumber - 1] || `Day ${i + 1}`})`).join("\n")}
+
+Generate ${exCount} exercises per session. Use ONLY exercises from the user's equipment. Return valid JSON:
+{
+  "days": [
+    {
+      "dayIndex": <0-based index>,
+      "sessionTitle": "...",
+      "sessionDuration": "... min",
+      "coachNote": "...",
+      "exercises": [
+        { "name": "...", "sets": "...", "reps": "...", "rest": "... sec", "whyForYou": "..." }
+      ]
+    }
+  ]
+}`;
+
+  try {
+    const data = await apiFetchStreaming(
+      {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        system: SYSTEM_PROMPT.replace("{{LOAD_RULES}}", loadRulesForSystem(store.measurementSystem || "metric")),
+        messages: [{ role: "user", content: prompt }],
+      },
+      { timeoutMs: 45000 }
+    );
+
+    const text = data.content.map((b) => b.text || "").join("").trim();
+
+    // Parse the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON found in response");
+    const parsed = JSON.parse(jsonMatch[0]) as { days: Array<{ dayIndex: number; sessionTitle: string; sessionDuration: string; coachNote: string; exercises: Exercise[] }> };
+
+    // Merge: keep completed + skipped days, replace remaining days
+    const mergedDays = currentWeek.days.map((day, i) => {
+      if (day.isRest || completedDayIdxs.has(i) || skippedDayIdxs.has(i)) return day;
+
+      const regenerated = parsed.days.find((d) => d.dayIndex === i);
+      if (!regenerated) return day;
+
+      return {
+        ...day,
+        sessionTitle: regenerated.sessionTitle || day.sessionTitle,
+        sessionDuration: regenerated.sessionDuration || day.sessionDuration,
+        coachNote: regenerated.coachNote || day.coachNote,
+        exercises: regenerated.exercises || day.exercises,
+      };
+    });
+
+    const mergedWeek: WeekData = { ...currentWeek, days: mergedDays };
+
+    // Validate + repair the regenerated days
+    const validation = validateWeek(
+      mergedWeek,
+      store.equip,
+      store.injuries,
+      store.exp || "new",
+      exCount,
+      null,
+    );
+
+    const withSkills = applySkillPreferences(validation.weekData, store.skillPreferences);
+    const signals = detectProgressionSignals(
+      store.progressDB.sessions as Array<{ logs?: Record<string, unknown> }>,
+      store.equip,
+    );
+    const withProgressions = applyProgressionAdvancements(withSkills, signals, store.equip, store.exp || "new");
+    const finalWeek = applyIndicationPostProcessing(withProgressions);
+
+    // Restore completed + skipped days (validation may have modified them)
+    finalWeek.days = finalWeek.days.map((day, i) => {
+      if (completedDayIdxs.has(i) || skippedDayIdxs.has(i)) return currentWeek.days[i];
+      return day;
+    });
+
+    return { success: true, weekData: finalWeek, repairsCount: validation.issues.filter(i => i.repaired).length };
+  } catch (err) {
+    console.error("regenerateRemainingDays failed:", err);
+    // On failure, keep current week unchanged
+    return { success: false, weekData: currentWeek, error: apiErrorMessage(err) };
+  }
+}
