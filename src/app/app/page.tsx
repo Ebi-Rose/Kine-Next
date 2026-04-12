@@ -557,6 +557,36 @@ function WeekView({
   const thisWeekSessions = (progressDB.sessions as { weekNum?: number; date?: string; dayIdx?: number }[])
     .filter((s) => s.weekNum === thisWeekNum && (!s.date || s.date <= todayISO));
 
+  // Auto-mark past training days as skipped if no session was logged
+  useEffect(() => {
+    if (!displayWeek || !displayWeek.days) return;
+    const existing = progressDB.skippedSessions ?? [];
+    const completedIdxs = new Set(thisWeekSessions.map((s) => s.dayIdx as number));
+    const skippedIdxs = new Set(existing.filter((s) => s.weekNum === thisWeekNum).map((s) => s.dayIdx));
+
+    const newSkips: typeof existing = [];
+    displayWeek.days.forEach((day, i) => {
+      if (day.isRest) return;
+      if (i >= todayIdx) return; // not past yet
+      if (completedIdxs.has(i)) return; // logged
+      if (skippedIdxs.has(i)) return; // already skipped
+      newSkips.push({
+        sessionTitle: day.sessionTitle || "Session",
+        weekNum: thisWeekNum,
+        dayIdx: i,
+        date: todayISO,
+        movedTo: null,
+      });
+    });
+
+    if (newSkips.length > 0) {
+      setProgressDB({
+        ...progressDB,
+        skippedSessions: [...existing, ...newSkips],
+      });
+    }
+  }, [todayIdx, thisWeekNum]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-switch to "nextWeek" tab when returning from check-in after building
   const didAutoSwitchTab = useRef(false);
   useEffect(() => {
