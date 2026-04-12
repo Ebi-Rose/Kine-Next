@@ -40,7 +40,7 @@ export function validateWeek(
     if (day.isRest) continue;
 
     validateExerciseNames(day, issues);
-    validateEquipment(day, userEquip, issues);
+    validateEquipment(day, userEquip, userExp, issues);
     validateExperience(day, userExp, userEquip, issues);
     validateInjuries(day, userInjuries, userEquip, issues);
     validateDuplicates(day, issues);
@@ -177,6 +177,7 @@ function fuzzyMatchExercise(aiName: string): string | null {
 function validateEquipment(
   day: WeekDay,
   userEquip: string[],
+  userExp: string,
   issues: ValidationIssue[],
 ): void {
   for (let i = day.exercises.length - 1; i >= 0; i--) {
@@ -187,7 +188,7 @@ function validateEquipment(
     const hasEquip = libEx.equip.some((e) => userEquip.includes(e));
     if (hasEquip) continue;
 
-    const replacement = findEquipmentAlternative(libEx, userEquip, day.exercises);
+    const replacement = findEquipmentAlternative(libEx, userEquip, userExp, day.exercises);
     if (replacement) {
       issues.push({
         type: "equipment_mismatch",
@@ -213,17 +214,20 @@ function validateEquipment(
 function findEquipmentAlternative(
   original: LibExercise,
   userEquip: string[],
+  userExp: string,
   currentExercises: Exercise[],
 ): LibExercise | null {
   const currentNames = new Set(currentExercises.map((e) => e.name));
+  const userRank = EXPERIENCE_RANK[userExp] ?? 0;
 
-  const candidates = EXERCISE_LIBRARY.filter(
-    (e) =>
-      e.muscle === original.muscle &&
-      e.name !== original.name &&
-      !currentNames.has(e.name) &&
-      e.equip.some((eq) => userEquip.includes(eq)),
-  );
+  const candidates = EXERCISE_LIBRARY.filter((e) => {
+    if (e.muscle !== original.muscle || e.name === original.name) return false;
+    if (currentNames.has(e.name)) return false;
+    if (!e.equip.some((eq) => userEquip.includes(eq))) return false;
+    const ind = EXERCISE_INDICATIONS[e.name];
+    if (ind?.experience?.min && (EXPERIENCE_RANK[ind.experience.min] ?? 0) > userRank) return false;
+    return true;
+  });
 
   if (candidates.length === 0) return null;
 

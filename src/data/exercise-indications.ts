@@ -923,10 +923,11 @@ const OVERRIDES: Record<string, OverridePatch> = {
       "One of the best hamstring exercises in existence — and one of the hardest.",
   },
   "Bulgarian Split Squat": {
+    experience: { min: "developing", ideal: "intermediate" },
     technicalDemand: 3,
     fatigueCost: 4,
     whyForYou:
-      "Brutal and effective. Unilateral loading exposes weakness you can't hide with a barbell.",
+      "A challenging single-leg squat that builds glute and quad strength while improving balance. Great once you've built a base with goblet squats and lunges.",
   },
   "Pistol Squat": {
     experience: { min: "developing" },
@@ -1044,6 +1045,7 @@ const OVERRIDES: Record<string, OverridePatch> = {
       "A vertical bodyweight press that demands real shoulder strength and stability.",
   },
   "Pike Push-Up": {
+    experience: { min: "developing", ideal: "intermediate" },
     technicalDemand: 3,
     movementPattern: "verticalPush",
     whyForYou:
