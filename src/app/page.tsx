@@ -461,65 +461,71 @@ export default function LandingPage() {
         .lp-edu-prog-name { font-size: 6px; color: #8a847d; font-weight: 300; }
 
         @media (max-width: 768px) {
-          .landing-page { padding: 16px; justify-content: flex-start; padding-top: 4vh; }
-          .lp-layout { flex-direction: column; gap: 24px; text-align: center; }
-          .lp-content { align-items: center; gap: 8px; }
-          .lp-logo { font-size: 48px; letter-spacing: 6px; }
-          .lp-headline { font-size: 17px; max-width: 360px; text-align: center; }
-          .lp-subline { font-size: 12px; max-width: 360px; text-align: center; }
-          .lp-body { font-size: 13px; max-width: 300px; text-align: center; }
+          .landing-page { padding: 12px 16px; justify-content: flex-start; padding-top: 2vh; }
+          .lp-layout { flex-direction: column; gap: 12px; text-align: center; }
+          .lp-content { align-items: center; gap: 6px; }
+          .lp-logo { font-size: 36px; letter-spacing: 5px; }
+          .lp-headline { font-size: 16px; max-width: 320px; text-align: center; line-height: 1.4; }
+          .lp-subline { font-size: 12px; max-width: 320px; text-align: center; }
+          .lp-body { font-size: 12px; max-width: 280px; text-align: center; line-height: 1.5; }
           .lp-waitlist { align-items: center; }
-          .lp-waitlist-form { max-width: 320px; flex-direction: column; border-radius: 16px; }
-          .lp-waitlist-form input { padding: 12px 14px; font-size: 13px; }
-          .lp-waitlist-form button { padding: 12px 20px; font-size: 12px; border-radius: 0 0 16px 16px; }
-          .lp-waitlist-note { text-align: center; }
-          .lp-phones-wrapper { width: 260px; height: 380px; }
-          .lp-phone { width: 140px; height: 300px; }
-          .lp-phone-face { border-radius: 22px; padding: 2px; }
-          .lp-phone-buttons { top: 70px; height: 18px; }
-          .lp-phone-power { top: 90px; height: 22px; }
-          .lp-phone-edge-left { width: 6px; }
-          .lp-phone-inner { border-radius: 20px; }
-          .lp-phone-inner::before { width: 44px; height: 10px; top: 4px; border-radius: 6px; }
-          .lp-phone-1 { left: 5px; top: 10px; }
-          .lp-phone-2 { right: -10px; top: 30px; }
-          .lp-ph-screen { gap: 3px; }
-          .lp-ph-screen-dark, .lp-ph-screen-light { padding: 20px 8px 8px; }
-          .lp-ph-logo { font-size: 8px; padding-bottom: 3px; }
-          .lp-ph-week { font-size: 5px; }
-          .lp-ph-title { font-size: 11px; margin: -1px 0 2px; }
-          .lp-ph-badge { font-size: 4px; padding: 1px 4px; margin-bottom: 2px; }
-          .lp-ph-toggle { border-radius: 6px; margin-bottom: 1px; }
-          .lp-ph-toggle-btn { font-size: 5px; padding: 2px 0; }
-          .lp-ph-adapt { padding: 5px 7px; border-radius: 8px; }
-          .lp-ph-adapt-label { font-size: 4px; }
-          .lp-ph-adapt-text { font-size: 5px; }
-          .lp-ph-adapt-tags { gap: 2px; margin-top: 3px; }
-          .lp-ph-adapt-tag { font-size: 4px; padding: 1px 3px; }
-          .lp-ph-session { padding: 5px 7px; border-radius: 8px; gap: 3px; }
-          .lp-ph-session-label { font-size: 4px; padding: 1px 4px; }
-          .lp-ph-ex-row { gap: 3px; }
+          .lp-waitlist-form { max-width: 300px; flex-direction: column; border-radius: 14px; }
+          .lp-waitlist-form input { padding: 10px 14px; font-size: 13px; }
+          .lp-waitlist-form button { padding: 10px 20px; font-size: 12px; border-radius: 0 0 14px 14px; }
+          .lp-waitlist-note { text-align: center; font-size: 10px; }
+          .lp-access a { font-size: 11px; }
+          .lp-why-kine-link { font-size: 12px; padding: 4px 0; }
+          .lp-phones-wrapper { width: 240px; height: 340px; }
+          .lp-phone { width: 130px; height: 280px; }
+          .lp-phone-face { border-radius: 20px; padding: 2px; }
+          .lp-phone-buttons { top: 65px; height: 16px; }
+          .lp-phone-power { top: 85px; height: 20px; }
+          .lp-phone-edge-left { width: 5px; }
+          .lp-phone-inner { border-radius: 18px; }
+          .lp-phone-inner::before { width: 40px; height: 9px; top: 4px; border-radius: 6px; }
+          .lp-phone-1 { left: 5px; top: 5px; }
+          .lp-phone-2 { right: -10px; top: 20px; }
+          .lp-ph-screen { gap: 2px; }
+          .lp-ph-screen-dark, .lp-ph-screen-light { padding: 18px 7px 7px; }
+          .lp-ph-logo { font-size: 7px; padding-bottom: 2px; }
+          .lp-ph-week { font-size: 4px; }
+          .lp-ph-title { font-size: 10px; margin: -1px 0 2px; }
+          .lp-ph-badge { font-size: 3.5px; padding: 1px 3px; margin-bottom: 1px; }
+          .lp-ph-toggle { border-radius: 5px; margin-bottom: 1px; }
+          .lp-ph-toggle-btn { font-size: 4.5px; padding: 2px 0; }
+          .lp-ph-adapt { padding: 4px 6px; border-radius: 7px; }
+          .lp-ph-adapt-label { font-size: 3.5px; }
+          .lp-ph-adapt-text { font-size: 4.5px; }
+          .lp-ph-adapt-tags { gap: 2px; margin-top: 2px; }
+          .lp-ph-adapt-tag { font-size: 3.5px; padding: 1px 3px; }
+          .lp-ph-session { padding: 4px 6px; border-radius: 7px; gap: 2px; }
+          .lp-ph-session-label { font-size: 3.5px; padding: 1px 3px; }
+          .lp-ph-ex-row { gap: 2px; }
           .lp-ph-ex-dot { width: 2px; height: 2px; }
-          .lp-ph-ex-name { font-size: 6px; }
-          .lp-ph-ex-rx { font-size: 5px; }
-          .lp-ph-start { padding: 5px 0; border-radius: 7px; font-size: 6px; }
+          .lp-ph-ex-name { font-size: 5px; }
+          .lp-ph-ex-rx { font-size: 4px; }
+          .lp-ph-start { padding: 4px 0; border-radius: 6px; font-size: 5px; }
           .lp-ph-nav { display: none; }
-          .lp-edu-sheet { padding: 6px 8px 8px; gap: 5px; border-radius: 12px 12px 0 0; }
-          .lp-edu-handle { width: 20px; height: 2px; margin-bottom: 2px; }
-          .lp-edu-title { font-size: 10px; }
+          .lp-edu-sheet { padding: 5px 7px 7px; gap: 4px; border-radius: 10px 10px 0 0; }
+          .lp-edu-handle { width: 18px; height: 2px; margin-bottom: 1px; }
+          .lp-edu-title { font-size: 9px; }
           .lp-edu-tags { gap: 2px; }
-          .lp-edu-tag-p, .lp-edu-tag-s, .lp-edu-tag-r, .lp-edu-tag-c { font-size: 4px; padding: 1px 3px; }
-          .lp-edu-label { font-size: 4px; }
-          .lp-edu-text { font-size: 5px; }
-          .lp-edu-cycle { padding: 4px 6px; border-radius: 6px; }
-          .lp-edu-cue { font-size: 5px; gap: 3px; }
-          .lp-edu-prog { padding-top: 4px; gap: 2px; }
-          .lp-edu-prog-easier, .lp-edu-prog-harder, .lp-edu-prog-name { font-size: 4px; }
-          .lp-footer { flex-direction: column; align-items: center; gap: 8px; }
+          .lp-edu-tag-p, .lp-edu-tag-s, .lp-edu-tag-r, .lp-edu-tag-c { font-size: 3.5px; padding: 1px 3px; }
+          .lp-edu-label { font-size: 3.5px; }
+          .lp-edu-text { font-size: 4.5px; }
+          .lp-edu-cycle { padding: 3px 5px; border-radius: 5px; }
+          .lp-edu-cue { font-size: 4.5px; gap: 2px; }
+          .lp-edu-prog { padding-top: 3px; gap: 2px; }
+          .lp-edu-prog-easier, .lp-edu-prog-harder, .lp-edu-prog-name { font-size: 3.5px; }
+          .lp-footer { flex-direction: column; align-items: center; gap: 6px; }
+          .lp-socials a { width: 26px; height: 26px; }
+          .lp-socials svg { width: 11px; height: 11px; }
         }
         @media (max-width: 390px) {
-          .lp-logo { font-size: 40px; }
-          .lp-headline { font-size: 19px; max-width: 300px; }
+          .lp-logo { font-size: 32px; }
+          .lp-headline { font-size: 15px; max-width: 280px; }
+          .lp-phones-wrapper { width: 220px; height: 310px; }
+          .lp-phone { width: 120px; height: 260px; }
         }
       `}</style>
 
