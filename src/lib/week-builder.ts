@@ -463,6 +463,7 @@ Trainee:
 - Goal: ${goalLabel}
 - Level: ${exp}
 - Equipment: ${equipStr}
+- Equipment usage: When multiple equipment types are available, spread exercises across all of them — do not default to bodyweight-only. If the user has dumbbells, at least 2–3 exercises per session should use dumbbells.
 - Schedule: ${daysCount} days/week (${dayNames}), ${durationLabel}
 - Injuries: ${injuryStr}${conditionCtx}
 - Outside activities: ${activityStr}${activityCtx}
