@@ -82,6 +82,7 @@ export default function PreSessionPage() {
   const [swapIdx, setSwapIdx] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [regenNote, setRegenNote] = useState<string | null>(null);
 
   // Wait for client-side hydration
   useEffect(() => { setMounted(true); }, []);
@@ -110,12 +111,13 @@ export default function PreSessionPage() {
     const skippedIdxs = new Set(skippedThisWeek.map(s => s.dayIdx));
 
     setRegenerating(true);
+    const skippedTitles = skippedThisWeek.map(s => s.sessionTitle).join(", ");
     regenerateRemainingDays(week, completedIdxs, skippedIdxs, dayIdx)
       .then((result) => {
         if (result.success && result.weekData) {
-          // Tag the week so we don't regenerate again for the same skips
           const tagged = { ...result.weekData, [lastRegenKey]: currentSkipIds } as WeekData;
           useKineStore.getState().setWeekData(tagged);
+          setRegenNote(`Updated to account for skipped session${skippedThisWeek.length > 1 ? "s" : ""} (${skippedTitles}). Exercises adjusted to cover missed muscle groups.`);
         }
       })
       .finally(() => setRegenerating(false));
@@ -441,6 +443,14 @@ export default function PreSessionPage() {
       >
         ← Back
       </button>
+
+      {regenNote && (
+        <div className="mb-4 rounded-[10px] border border-accent/30 bg-accent-dim/30 p-3">
+          <p className="text-[10px] tracking-[0.15em] uppercase text-accent font-medium mb-1">Session updated</p>
+          <p className="text-xs text-muted2 font-light leading-relaxed">{regenNote}</p>
+          <button onClick={() => setRegenNote(null)} className="mt-1.5 text-[10px] text-muted hover:text-text">Dismiss</button>
+        </div>
+      )}
 
       <ConstraintsBanner
         exercises={exercises}
