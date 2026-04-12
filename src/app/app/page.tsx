@@ -819,10 +819,17 @@ function WeekView({
             const parts: string[] = [];
 
             // Session progress
-            if (ws.length >= trainingDayCount) {
-              parts.push(`All ${ws.length} sessions done this week.`);
+            const skippedCount = (progressDB.skippedSessions ?? []).filter(
+              (s) => s.weekNum === thisWeekNum
+            ).length;
+            if (ws.length + skippedCount >= trainingDayCount) {
+              parts.push(skippedCount > 0
+                ? `${ws.length} sessions done, ${skippedCount} skipped.`
+                : `All ${ws.length} sessions done this week.`);
             } else {
-              parts.push(`${ws.length} of ${trainingDayCount} sessions done so far.`);
+              parts.push(skippedCount > 0
+                ? `${ws.length} of ${trainingDayCount} sessions done so far, ${skippedCount} skipped.`
+                : `${ws.length} of ${trainingDayCount} sessions done so far.`);
             }
 
             // Effort
