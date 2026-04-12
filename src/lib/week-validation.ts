@@ -42,7 +42,7 @@ export function validateWeek(
     validateExerciseNames(day, issues);
     validateEquipment(day, userEquip, userExp, issues);
     validateExperience(day, userExp, userEquip, issues);
-    validateInjuries(day, userInjuries, userEquip, issues);
+    validateInjuries(day, userInjuries, userEquip, userExp, issues);
     validateDuplicates(day, issues);
     validateExerciseCount(day, expectedExCount, issues);
   }
@@ -307,6 +307,7 @@ function validateInjuries(
   day: WeekDay,
   injuries: string[],
   userEquip: string[],
+  userExp: string,
   issues: ValidationIssue[],
 ): void {
   if (injuries.length === 0) return;
@@ -340,7 +341,7 @@ function validateInjuries(
 
       const libEx = exerciseByName.get(ex.name);
       if (libEx) {
-        const alt = findEquipmentAlternative(libEx, userEquip, day.exercises);
+        const alt = findEquipmentAlternative(libEx, userEquip, userExp, day.exercises);
         if (alt) {
           let altConflicts = false;
           for (const inj of injuries) {
