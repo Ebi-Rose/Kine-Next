@@ -165,8 +165,8 @@ Duration: ${durationLabel}
 Week: ${(progressDB.sessions as { weekNum?: number }[]).reduce((m, s) => Math.max(m, s.weekNum || 1), progressDB.currentWeek)}
 Total sessions completed: ${progressDB.sessions.length}
 
-Effort rating: ${effort}/4 (${effortLabels[effort]})
-Body feel: ${soreness}/4 (${sorenessLabels[soreness]})
+Effort: ${effortLabels[effort]}
+Body feel: ${sorenessLabels[soreness]}
 
 Exercises logged:
 ${exerciseSummary}
