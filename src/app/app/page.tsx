@@ -7,7 +7,7 @@ import { appNow, appTodayISO, appTimestamp } from "@/lib/dev-time";
 import { buildWeek } from "@/lib/week-builder";
 import type { WeekData, WeekDay } from "@/lib/week-builder";
 import { DAY_LABELS, CATEGORY_COLORS } from "@/data/constants";
-import { getCurrentPhase } from "@/lib/cycle";
+import { getCurrentPhase, getPhaseTrainingNote } from "@/lib/cycle";
 import { getCurrentPhaseInfo } from "@/lib/periodisation";
 import { isProgrammeStarted } from "@/lib/date-utils";
 import Button from "@/components/Button";
@@ -734,7 +734,7 @@ function WeekView({
                 </button>
               </div>
               <CycleArc cycleDay={phase.day} cycleLength={cycle.avgLength || 28} logCount={cycle.periodLog.filter(p => p.type === "start").length} />
-              <p className="mt-3 text-[10px] text-muted2 font-light leading-relaxed">{phase.trainingNote}</p>
+              <p className="mt-3 text-[10px] text-muted2 font-light leading-relaxed">{getPhaseTrainingNote(phase.phase, { exp, sessionsLogged: progressDB.sessions?.length ?? 0 })}</p>
             </div>
           )}
           {cycleType === "regular" && !phase && (

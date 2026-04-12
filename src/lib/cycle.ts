@@ -99,6 +99,14 @@ const BEGINNER_OVERRIDES: Partial<Record<CyclePhase, string>> = {
 };
 
 /**
+ * Get the appropriate training note for a cycle phase, considering experience.
+ */
+export function getPhaseTrainingNote(phase: CyclePhase, opts?: { exp?: string | null; sessionsLogged?: number }): string {
+  const isBeginner = opts?.exp === "new" || (opts?.sessionsLogged ?? 0) < 6;
+  return (isBeginner && BEGINNER_OVERRIDES[phase]) || PHASE_CONFIG[phase].trainingNote;
+}
+
+/**
  * Get cycle context string for AI prompts.
  */
 export function getCycleContext(
