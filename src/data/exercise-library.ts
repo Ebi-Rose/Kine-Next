@@ -55,7 +55,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Hip Thrust",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted"},
   {name:"Dumbbell Hip Thrust",muscle:"hinge",equip:["dumbbells"],tags:["Compound"],logType:"weighted"},
   {name:"Good Morning",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted",minExp:"developing"},
-  {name:"Single-Leg Deadlift",muscle:"hinge",equip:["dumbbells","barbell"],tags:["Compound"],logType:"weighted_unilateral"},
+  {name:"Dumbbell Single-Leg Deadlift",muscle:"hinge",equip:["dumbbells"],tags:["Compound"],logType:"weighted_unilateral"},
   {name:"Glute Bridge",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted"},
   {name:"Dumbbell Glute Bridge",muscle:"hinge",equip:["dumbbells"],tags:["Compound"],logType:"weighted"},
   {name:"Banded Hip Thrust",muscle:"hinge",equip:["bands"],tags:["Compound"],logType:"bodyweight"},
