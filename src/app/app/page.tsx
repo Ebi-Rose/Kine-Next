@@ -941,17 +941,28 @@ function WeekView({
           {/* Session completion summary */}
           {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            if (thisWeekSessions.length < trainingDayCount && trainingDayCount > 0) {
+            const skippedThisWeek = (progressDB.skippedSessions ?? []).filter(
+              (s) => s.weekNum === thisWeekNum
+            ).length;
+            const remaining = trainingDayCount - thisWeekSessions.length - skippedThisWeek;
+
+            if (remaining > 0 && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-muted2">
                   {thisWeekSessions.length}/{trainingDayCount} sessions done this week
+                  {skippedThisWeek > 0 && (
+                    <span className="text-muted"> · {skippedThisWeek} skipped</span>
+                  )}
                 </p>
               );
             }
-            if (thisWeekSessions.length >= trainingDayCount && trainingDayCount > 0) {
+            if (remaining <= 0 && trainingDayCount > 0) {
               return (
                 <p className="mb-3 text-xs text-accent/70">
-                  All {thisWeekSessions.length} sessions complete this week
+                  {skippedThisWeek > 0
+                    ? `${thisWeekSessions.length} sessions complete · ${skippedThisWeek} skipped`
+                    : `All ${thisWeekSessions.length} sessions complete this week`
+                  }
                 </p>
               );
             }
