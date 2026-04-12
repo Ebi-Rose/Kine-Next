@@ -17,6 +17,11 @@ const TOOLS_KEY = process.env.KINE_TOOLS_SUPABASE_SERVICE_KEY ?? process.env.KIN
 const ALLOWED_CATEGORIES = ["bug", "idea", "confusion", "love", "ux", "onboarding", "general"];
 const ALLOWED_SEVERITIES = ["low", "medium", "high", "critical"];
 
+const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const ALLOWED_AUDIO_TYPES = ["audio/webm", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav"];
+
 const ratelimit = createRatelimit("feedback", 10, "60 s");
 
 export const maxDuration = 30;
@@ -33,12 +38,31 @@ function parseContext(raw: string | undefined): unknown {
   }
 }
 
+function validateFile(
+  file: File,
+  allowedTypes: string[],
+  maxBytes: number,
+): string | null {
+  if (!allowedTypes.includes(file.type)) {
+    return `File type "${file.type}" not allowed`;
+  }
+  if (file.size > maxBytes) {
+    return `File exceeds ${Math.round(maxBytes / 1024 / 1024)}MB limit`;
+  }
+  return null;
+}
+
 async function uploadToBucket(
   client: SupabaseClient,
   file: File,
   prefix: string,
 ): Promise<{ path: string; publicUrl: string }> {
-  const ext = file.name.split(".").pop() ?? "bin";
+  // Derive extension from MIME type rather than trusting client filename
+  const MIME_EXT: Record<string, string> = {
+    "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif",
+    "audio/webm": "webm", "audio/mp4": "m4a", "audio/mpeg": "mp3", "audio/ogg": "ogg", "audio/wav": "wav",
+  };
+  const ext = MIME_EXT[file.type] ?? "bin";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const path = `${prefix}/${filename}`;
 
@@ -101,9 +125,24 @@ export async function POST(req: NextRequest) {
   }
 
   const content = (fields.content ?? "").trim();
-  const email = (fields.email ?? "").trim().toLowerCase();
-  if (!content || !email) {
-    return NextResponse.json({ error: "missing content or email" }, { status: 400 });
+  if (!content) {
+    return NextResponse.json({ error: "missing content" }, { status: 400 });
+  }
+
+  // Use authenticated user's email — never trust client-supplied email
+  const email = (user.email ?? "").toLowerCase();
+  if (!email) {
+    return NextResponse.json({ error: "user has no email on file" }, { status: 400 });
+  }
+
+  // Validate file uploads before processing
+  if (screenshot) {
+    const err = validateFile(screenshot, ALLOWED_IMAGE_TYPES, MAX_SCREENSHOT_BYTES);
+    if (err) return NextResponse.json({ error: `screenshot: ${err}` }, { status: 400 });
+  }
+  if (audio) {
+    const err = validateFile(audio, ALLOWED_AUDIO_TYPES, MAX_AUDIO_BYTES);
+    if (err) return NextResponse.json({ error: `audio: ${err}` }, { status: 400 });
   }
 
   const category = ALLOWED_CATEGORIES.includes(fields.category) ? fields.category : "general";

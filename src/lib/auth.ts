@@ -1,7 +1,10 @@
 import { supabase } from "./supabase";
 
-/** True only when explicitly opted in during local development */
+/** True only when explicitly opted in during local development.
+ * Double-checked at runtime — build rejects DEV_BYPASS in production
+ * (next.config.ts) but this guard prevents any runtime circumvention. */
 export function isDevBypass(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   return process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
 }
 

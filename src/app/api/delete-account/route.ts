@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   );
 
   try {
-    // 1. Cancel Stripe subscription if active
+    // 1. Cancel Stripe subscription (best-effort — external service)
     if (process.env.STRIPE_SECRET_KEY) {
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -45,20 +45,37 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (sub?.stripe_subscription_id) {
-        await fetch(`${STRIPE_API}/subscriptions/${sub.stripe_subscription_id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-          },
-        }).catch(() => {});
+        try {
+          const res = await fetch(`${STRIPE_API}/subscriptions/${sub.stripe_subscription_id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+          });
+          if (!res.ok) console.warn("[delete-account] stripe cancel returned", res.status);
+        } catch (e) {
+          console.warn("[delete-account] stripe cancel failed (best-effort):", e);
+        }
       }
     }
 
-    // 2. Delete user data (training_data, subscriptions cascade via ON DELETE CASCADE on profiles)
-    // Delete training_data explicitly since it references auth.users, not profiles
-    await supabase.from("training_data").delete().eq("user_id", user.id);
-    await supabase.from("subscriptions").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("id", user.id);
+    // 2. Delete user data atomically via RPC transaction
+    const { error: rpcError } = await supabase.rpc("delete_user_data", {
+      target_user_id: user.id,
+    });
+
+    if (rpcError) {
+      // Fallback: sequential deletes if RPC not yet deployed
+      if (rpcError.message.includes("does not exist")) {
+        console.warn("[delete-account] RPC not found, using sequential deletes");
+        const { error: e1 } = await supabase.from("training_data").delete().eq("user_id", user.id);
+        if (e1) throw new Error(`training_data delete failed: ${e1.message}`);
+        const { error: e2 } = await supabase.from("subscriptions").delete().eq("user_id", user.id);
+        if (e2) throw new Error(`subscriptions delete failed: ${e2.message}`);
+        const { error: e3 } = await supabase.from("profiles").delete().eq("id", user.id);
+        if (e3) throw new Error(`profiles delete failed: ${e3.message}`);
+      } else {
+        throw new Error(`delete_user_data RPC failed: ${rpcError.message}`);
+      }
+    }
 
     // 3. Delete the Supabase auth user (requires service role)
     const { error: authError } = await supabase.auth.admin.deleteUser(user.id);

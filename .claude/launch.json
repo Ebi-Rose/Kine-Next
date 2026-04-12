@@ -1,1 +1,12 @@
-{"version":"0.0.1","configurations":[{"name":"kine-dev","runtimeExecutable":"pnpm","runtimeArgs":["dev","--port","3003"],"port":3003}]}
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kine-next",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000,
+      "cwd": "/Users/ebi-rose/Developer/Kine/kine-next"
+    }
+  ]
+}
