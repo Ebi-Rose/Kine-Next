@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useKineStore, type CoachingDetail } from "@/store/useKineStore";
-import { getCurrentPhase } from "@/lib/cycle";
+import { getCurrentPhase, getPhaseTrainingNote } from "@/lib/cycle";
 import { getCurrentPhaseInfo } from "@/lib/periodisation";
 import { getConditionCoachNote } from "@/lib/condition-context";
 import { getActivityCoachNote } from "@/lib/outside-activity-context";
@@ -38,6 +38,7 @@ function useAdaptationFactors(weekNum: number): AdaptationFactor[] {
     cycleType,
     cycle,
     progressDB,
+    exp,
   } = useKineStore();
 
   const factors: AdaptationFactor[] = [];
@@ -82,25 +83,30 @@ function useAdaptationFactors(weekNum: number): AdaptationFactor[] {
     }
   }
 
-  // Cycle phase
-  if (cycleType === "regular") {
+  const sessionsLogged = progressDB.sessions?.length ?? 0;
+  const isFirstWeek = weekNum === 1 && sessionsLogged === 0;
+
+  // Cycle phase — use beginner-aware note
+  if (cycleType === "regular" && !isFirstWeek) {
     const phase = getCurrentPhase(cycle.periodLog, cycle.avgLength);
     if (phase) {
       factors.push({
         source: "cycle",
         label: `${phase.label} phase · Day ${phase.day}`,
-        detail: phase.trainingNote,
+        detail: getPhaseTrainingNote(phase.phase, { exp, sessionsLogged }),
       });
     }
   }
 
-  // Periodisation
-  const phaseInfo = getCurrentPhaseInfo(weekNum, progressDB.phaseOffset);
-  factors.push({
-    source: "periodisation",
-    label: phaseInfo.label,
-    detail: phaseInfo.description,
-  });
+  // Periodisation — skip for week 1 (no baseline to periodise against)
+  if (!isFirstWeek) {
+    const phaseInfo = getCurrentPhaseInfo(weekNum, progressDB.phaseOffset);
+    factors.push({
+      source: "periodisation",
+      label: phaseInfo.label,
+      detail: phaseInfo.description,
+    });
+  }
 
   // Check-in feedback (for the previous week)
   const prevWeekFeedback = progressDB.weekFeedbackHistory.find(
