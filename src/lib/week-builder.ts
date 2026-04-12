@@ -463,7 +463,7 @@ PRESCRIPTION GUIDE (female-optimised — women recover faster between sets and t
 
 SPLIT STRUCTURE — posterior chain priority means more lower body than upper body:
 - 2 days: Full Body A, Full Body B (both sessions include squat + hinge)
-- 3 days: Lower Body, Upper Body, Lower Body (2:1 lower-to-upper ratio). Or Full Body x3 for beginners.
+- 3 days: Lower Body, Upper Body, Lower Body (2:1 lower-to-upper ratio). Or Full Body x3 for beginners (each full body session must include at least one squat pattern AND one hinge pattern).
 - 4 days: Legs (quads/glutes), Push (chest/shoulders), Legs (glutes/hamstrings), Pull (back/biceps). 2:2 lower:upper split.
 - 5 days: Legs, Push, Legs, Pull, Full Body or Conditioning. 2-3 lower body sessions minimum.
 - 6 days: Push/Pull/Legs x2. Equal coverage.
