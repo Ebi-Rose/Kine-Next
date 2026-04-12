@@ -298,11 +298,10 @@ export default function DevOverlay() {
   }
 
   function exportState() {
-    const state = localStorage.getItem("kine_v2");
-    if (state) {
-      navigator.clipboard.writeText(state);
-      toast("Copied", "success");
-    }
+    // Export the decrypted in-memory store (not the encrypted localStorage blob)
+    const decrypted = JSON.stringify(store, null, 2);
+    navigator.clipboard.writeText(decrypted);
+    toast("Copied (decrypted JSON)", "success");
   }
 
   function importState() {
