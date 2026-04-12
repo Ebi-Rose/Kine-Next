@@ -580,8 +580,9 @@ function WeekView({
     });
 
     if (newSkips.length > 0) {
-      setProgressDB({
-        ...progressDB,
+      const store = useKineStore.getState();
+      store.setProgressDB({
+        ...store.progressDB,
         skippedSessions: [...existing, ...newSkips],
       });
     }
