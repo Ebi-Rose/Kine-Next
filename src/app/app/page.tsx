@@ -1365,8 +1365,7 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
               </button>
             )}
             {!readOnly && isCompleted && (
-              <button onClick={() => router.push(`/app/pre-session?day=${dayIdx}`)}
-                className="text-[10px] text-accent hover:underline shrink-0 ml-2">View →</button>
+              <span className="text-[10px] text-accent/60 shrink-0 ml-2">Done ✓</span>
             )}
           </div>
           {day.coachNote && (
