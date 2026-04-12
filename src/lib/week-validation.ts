@@ -4,7 +4,7 @@ import { INJURY_SWAPS } from "@/data/injury-swaps";
 import type { WeekData, WeekDay, Exercise } from "./week-builder";
 
 export interface ValidationIssue {
-  type: "unknown_exercise" | "equipment_mismatch" | "injury_conflict" | "exercise_count" | "structural" | "duplicate_exercise";
+  type: "unknown_exercise" | "equipment_mismatch" | "injury_conflict" | "experience_mismatch" | "exercise_count" | "structural" | "duplicate_exercise";
   dayNumber: number;
   exercise?: string;
   detail: string;
@@ -41,6 +41,7 @@ export function validateWeek(
 
     validateExerciseNames(day, issues);
     validateEquipment(day, userEquip, issues);
+    validateExperience(day, userExp, userEquip, issues);
     validateInjuries(day, userInjuries, userEquip, issues);
     validateDuplicates(day, issues);
     validateExerciseCount(day, expectedExCount, issues);
@@ -229,6 +230,72 @@ function findEquipmentAlternative(
   const sameTag = candidates.find((c) =>
     c.tags.some((t) => original.tags.includes(t)),
   );
+  return sameTag || candidates[0];
+}
+
+const EXPERIENCE_RANK: Record<string, number> = { new: 0, developing: 1, intermediate: 2 };
+
+function validateExperience(
+  day: WeekDay,
+  userExp: string,
+  userEquip: string[],
+  issues: ValidationIssue[],
+): void {
+  const userRank = EXPERIENCE_RANK[userExp] ?? 0;
+  for (let i = day.exercises.length - 1; i >= 0; i--) {
+    const ex = day.exercises[i];
+    const ind = EXERCISE_INDICATIONS[ex.name];
+    if (!ind || !ind.experience?.min) continue;
+    const minRank = EXPERIENCE_RANK[ind.experience.min] ?? 0;
+    if (userRank >= minRank) continue;
+
+    const libEx = exerciseByName.get(ex.name);
+    if (!libEx) continue;
+
+    const replacement = findExperienceAlternative(libEx, userExp, userEquip, day.exercises);
+    if (replacement) {
+      issues.push({
+        type: "experience_mismatch",
+        dayNumber: day.dayNumber,
+        exercise: ex.name,
+        detail: `"${ex.name}" requires ${ind.experience.min} — swapped to "${replacement.name}"`,
+        repaired: true,
+      });
+      ex.name = replacement.name;
+    } else {
+      issues.push({
+        type: "experience_mismatch",
+        dayNumber: day.dayNumber,
+        exercise: ex.name,
+        detail: `"${ex.name}" requires ${ind.experience.min} — no alternative found, removed`,
+        repaired: true,
+      });
+      day.exercises.splice(i, 1);
+    }
+  }
+}
+
+function findExperienceAlternative(
+  original: LibExercise,
+  userExp: string,
+  userEquip: string[],
+  currentExercises: Exercise[],
+): LibExercise | null {
+  const userRank = EXPERIENCE_RANK[userExp] ?? 0;
+  const currentNames = new Set(currentExercises.map((e) => e.name));
+
+  const candidates = EXERCISE_LIBRARY.filter((e) => {
+    if (e.muscle !== original.muscle || e.name === original.name) return false;
+    if (currentNames.has(e.name)) return false;
+    if (!e.equip.some((eq) => userEquip.includes(eq))) return false;
+    const ind = EXERCISE_INDICATIONS[e.name];
+    if (!ind) return true; // no indication = no restriction
+    if (ind.experience?.min && (EXPERIENCE_RANK[ind.experience.min] ?? 0) > userRank) return false;
+    return true;
+  });
+
+  if (candidates.length === 0) return null;
+  const sameTag = candidates.find((c) => c.tags.some((t) => original.tags.includes(t)));
   return sameTag || candidates[0];
 }
 
