@@ -86,6 +86,9 @@ export default function OnboardingPage() {
         currentWeek: 1,
       });
     }
+    // Auto-grant health data consent — the old Consent step was removed
+    // from onboarding, so we grant by default. Users can revoke in Profile.
+    store.recordConsent("health_data", true);
     // Mark user as permanently onboarded in their auth metadata.
     // Once this flag is set, AuthGuard never sends them back to onboarding,
     // regardless of local storage state or cloud sync failures.
