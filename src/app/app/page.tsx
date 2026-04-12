@@ -1275,7 +1275,8 @@ function DayCard({ day, dayIdx, isToday, isCompleted = false, isPast = false, ex
   return (
     <div
       className={`rounded-[14px] border p-[18px] transition-all active:scale-[0.98] ${
-        isCompleted ? "border-accent/30 bg-accent-dim/30"
+        isSkipped ? "border-border/40 bg-surface/40 opacity-50"
+        : isCompleted ? "border-accent/30 bg-accent-dim/30"
         : isToday ? "border-accent bg-surface"
         : isPast ? "border-border/50 bg-surface/50 opacity-60"
         : "border-border bg-surface hover:border-border-active"
