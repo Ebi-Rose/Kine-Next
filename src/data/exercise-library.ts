@@ -30,7 +30,8 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Calf Raises",muscle:"legs",equip:["machines","dumbbells","bodyweight"],tags:["Isolation"],logType:"weighted"},
   {name:"Seated Calf Raises",muscle:"legs",equip:["machines"],tags:["Isolation"],logType:"weighted"},
   {name:"Box Squat",muscle:"legs",equip:["barbell"],tags:["Compound"],logType:"weighted"},
-  {name:"Sumo Squat",muscle:"legs",equip:["dumbbells","barbell"],tags:["Compound"],logType:"weighted"},
+  {name:"Barbell Sumo Squat",muscle:"legs",equip:["barbell"],tags:["Compound"],logType:"weighted"},
+  {name:"Dumbbell Sumo Squat",muscle:"legs",equip:["dumbbells"],tags:["Compound"],logType:"weighted"},
   {name:"Wall Sit",muscle:"legs",equip:["bodyweight"],tags:["Isometric"],logType:"timed"},
   {name:"Bodyweight Squat",muscle:"legs",equip:["bodyweight"],tags:["Compound","Calisthenics"],logType:"bodyweight"},
   {name:"Leg Press (Single Leg)",muscle:"legs",equip:["machines"],tags:["Compound"],logType:"weighted_unilateral"},
@@ -122,7 +123,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Band Pull-Apart",muscle:"pull",equip:["bands"],tags:["Activation"],logType:"bodyweight"},
   {name:"Dead Hang",muscle:"pull",equip:["bodyweight"],tags:["Isometric","Calisthenics"],logType:"timed"},
   {name:"Shrugs",muscle:"pull",equip:["dumbbells","barbell"],tags:["Isolation"],logType:"weighted"},
-  {name:"Reverse Fly",muscle:"pull",equip:["dumbbells"],tags:["Isolation"],logType:"weighted"},
+  {name:"Dumbbell Reverse Fly",muscle:"pull",equip:["dumbbells"],tags:["Isolation"],logType:"weighted"},
   {name:"Rear Delt Fly Machine",muscle:"pull",equip:["machines"],tags:["Isolation"],logType:"weighted"},
   // CORE
   {name:"Plank",muscle:"core",equip:["bodyweight"],tags:["Isometric","Calisthenics"],logType:"timed"},

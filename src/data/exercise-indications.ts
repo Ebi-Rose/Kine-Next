@@ -1244,9 +1244,13 @@ const OVERRIDES: Record<string, OverridePatch> = {
     whyForYou:
       "Squatting to a box sets depth and builds starting strength out of the hole — useful for learning the pattern or managing knee load.",
   },
-  "Sumo Squat": {
+  "Barbell Sumo Squat": {
     whyForYou:
       "A wider stance squat that shifts more work to the inner thighs and glutes.",
+  },
+  "Dumbbell Sumo Squat": {
+    whyForYou:
+      "A wider stance squat with a dumbbell held at your chest — targets inner thighs and glutes with a comfortable setup.",
   },
   "Bodyweight Squat": {
     whyForYou:

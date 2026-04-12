@@ -45,7 +45,8 @@ export const INJURY_SWAPS: Record<string, Record<string, string>> = {
     "Bulgarian Split Squat": "Leg Extension",
     "Walking Lunges": "Leg Press (Single Leg)",
     "Hip Thrust": "Glute Kickback Machine",
-    "Sumo Squat": "Goblet Squat",
+    "Barbell Sumo Squat": "Goblet Squat",
+    "Dumbbell Sumo Squat": "Goblet Squat",
     "Conventional Deadlift": "Trap Bar Deadlift",
   },
   neck: {
