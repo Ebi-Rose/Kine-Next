@@ -21,8 +21,19 @@ const PHASE_COPY: Record<CyclePhase, string> = {
     "Your body is prioritising recovery this week. We've kept intensity moderate and leaned into form cues over load increases.",
 };
 
+const PHASE_COPY_BEGINNER: Record<CyclePhase, string> = {
+  menstrual:
+    "Go at your own pace today. Showing up is what counts — movement quality over everything.",
+  follicular:
+    "Energy is rising. A good window for building confidence with your movements and finding your rhythm.",
+  ovulatory:
+    "Energy is high this week. Focus on nailing your technique and enjoying the session.",
+  luteal:
+    "Take it steady this week. Consistency matters more than intensity right now.",
+};
+
 export default function AdaptationCard() {
-  const { cycleType, cycle, progressDB } = useKineStore();
+  const { cycleType, cycle, progressDB, exp } = useKineStore();
 
   const { currentWeek, phaseOffset, weekFeedbackHistory, sessions } =
     progressDB;
@@ -43,8 +54,9 @@ export default function AdaptationCard() {
 
   // Build the adaptation message
   let message: string;
+  const isBeginner = exp === "new" || (progressDB.sessions?.length ?? 0) < 6;
   if (cyclePhase) {
-    message = PHASE_COPY[cyclePhase.phase];
+    message = isBeginner ? PHASE_COPY_BEGINNER[cyclePhase.phase] : PHASE_COPY[cyclePhase.phase];
   } else if (phaseInfo.phase.name === "Deload") {
     message =
       "Your body is asking for recovery. Same movements, significantly lighter. This is based on your recent effort and soreness — not a fixed schedule.";

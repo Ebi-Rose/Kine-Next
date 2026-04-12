@@ -88,12 +88,24 @@ export function getCurrentPhase(
 }
 
 /**
+ * Reframe cycle training note for beginners / week 1.
+ * "Go for PRs" makes no sense when the user has zero history.
+ */
+const BEGINNER_OVERRIDES: Partial<Record<CyclePhase, string>> = {
+  follicular: "A good window for learning new movements and building confidence with form.",
+  ovulatory: "Energy is high — focus on nailing your technique and enjoying the session.",
+  luteal: "Take it steady. Consistency matters more than intensity right now.",
+  menstrual: "Go at your own pace. Showing up is what counts this week.",
+};
+
+/**
  * Get cycle context string for AI prompts.
  */
 export function getCycleContext(
   cycleType: string | null,
   periodLog: PeriodLog[],
-  avgLength: number | null
+  avgLength: number | null,
+  opts?: { exp?: string | null; sessionsLogged?: number }
 ): string {
   if (!cycleType || cycleType === "na") return "";
   if (cycleType === "hormonal") return "Cycle: hormonal contraception. Programme consistently.";
@@ -103,5 +115,10 @@ export function getCycleContext(
   const phase = getCurrentPhase(periodLog, avgLength);
   if (!phase) return "Cycle: regular but no tracking data yet.";
 
-  return `Cycle: ${phase.label} phase (day ${phase.day}). ${phase.trainingNote}`;
+  const isBeginner = opts?.exp === "new" || (opts?.sessionsLogged ?? 0) < 6;
+  const note = isBeginner && BEGINNER_OVERRIDES[phase.phase]
+    ? BEGINNER_OVERRIDES[phase.phase]
+    : phase.trainingNote;
+
+  return `Cycle: ${phase.label} phase (day ${phase.day}). ${note}`;
 }

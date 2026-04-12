@@ -36,6 +36,7 @@ import { scoreExercise } from "@/lib/indication-pipeline";
 import type { OutsideActivityId } from "@/data/outside-activity-rules";
 import { WEEKLY_SPLITS } from "@/data/weekly-splits";
 import { SKILL_PATHS } from "@/data/skill-paths";
+import { detectProgressionSignals, type ProgressionSignal } from "./progression";
 import { loadRulesForSystem, weightUnit, kgToDisplay, type MeasurementSystem } from "./format";
 
 // ── Types ──
@@ -186,7 +187,9 @@ function buildUserPrompt(): string {
   const weekNum = progressDB.currentWeek || 1;
 
   // Cycle context
-  const cycleCtx = getCycleContext(cycleType, cycle.periodLog, cycle.avgLength);
+  const cycleCtx = getCycleContext(cycleType, cycle.periodLog, cycle.avgLength, {
+    exp, sessionsLogged: progressDB.sessions?.length ?? 0,
+  });
 
   // Phase context
   const phaseCtx = getPhaseContext(weekNum, progressDB.phaseOffset);
@@ -415,6 +418,12 @@ function buildUserPrompt(): string {
     }
   }
 
+  // Detect exercise progression signals from recent session history
+  const progressionSignals = detectProgressionSignals(
+    progressDB.sessions as Array<{ logs?: Record<string, unknown> }>,
+    equip,
+  );
+
   const userCtx: UserContext = {
     goal: (goal || "general") as UserContext["goal"],
     experience: (exp || "new") as UserContext["experience"],
@@ -424,6 +433,7 @@ function buildUserPrompt(): string {
     recentlyProgrammed: recentNames,
     outsideActivities,
     outsideActivityFocus,
+    progressionSignals,
     // lifeStage is deliberately not sourced here — pregnancy / postpartum
     // are out of scope per spec v0.2 §9 until physio review. Peri /
     // post-menopause can be surfaced through cycleType later.
@@ -431,6 +441,15 @@ function buildUserPrompt(): string {
 
   const scoredPool = filterPool(userCtx);
   const poolStr = formatPoolForPrompt(scoredPool);
+
+  // Build progression signal prompt context
+  const progressionCtx = progressionSignals.length > 0
+    ? `\n\nPROGRESSION SIGNALS — user is ready to advance on the following exercises. Prefer the next-step exercise over the current one:\n` +
+      progressionSignals
+        .filter((s) => s.confidence === "ready")
+        .map((s) => `- ${s.exerciseName} → ${s.nextExercise} (${s.reason})`)
+        .join("\n")
+    : "";
 
   // Note: injury / condition avoidance is now enforced by the pipeline
   // hard filters above, not by a separate DO NOT USE list. We keep an
@@ -450,7 +469,7 @@ Trainee:
 - Program: ${prog}
 - Sex: Female. Posterior chain priority. Unilateral work. Higher volume tolerance — especially upper body (prescribe +1 set on upper body accessories vs lower body). Women recover faster between sets — rest periods can be shorter than male-derived defaults.${bodyCtx}${dayDurCtx}
 ${cycleCtx}
-${phaseCtx}${historyCtx}${sorenessCtx}${weekFeedbackCtx}${injuryAvoidCtx}
+${phaseCtx}${historyCtx}${sorenessCtx}${weekFeedbackCtx}${injuryAvoidCtx}${progressionCtx}
 
 EXERCISE POOL — only use exercises from this list. Each entry is tagged with [role, f=fatigueCost 1-5, L=loadability h/m/l]. Prefer "primary" role exercises for the first slot of each session, "secondary" or "accessory" for follow-ups. High fatigueCost lifts (f4-5) should appear once per session, never twice on consecutive days. Exercises contra-indicated by the user's injuries, conditions, equipment, and experience have already been filtered out — everything below is safe to prescribe:
 ${poolStr}
@@ -810,6 +829,51 @@ function applySkillPreferences(weekData: WeekData, prefs: Record<string, string>
   return updated;
 }
 
+/**
+ * Apply progression advancements — if the AI didn't pick up on a "ready"
+ * signal, swap the current exercise for the next step in the chain.
+ * Only swaps if the next exercise passes the user's hard filters.
+ */
+function applyProgressionAdvancements(
+  weekData: WeekData,
+  signals: ProgressionSignal[],
+  userEquip: string[],
+  userExp: string,
+): WeekData {
+  const readySignals = signals.filter((s) => s.confidence === "ready");
+  if (readySignals.length === 0) return weekData;
+
+  const expRank: Record<string, number> = { new: 0, developing: 1, intermediate: 2 };
+
+  return {
+    ...weekData,
+    days: weekData.days.map((day) => {
+      if (day.isRest || !day.exercises.length) return day;
+
+      const exercises = day.exercises.map((ex) => {
+        const signal = readySignals.find((s) => s.exerciseName === ex.name);
+        if (!signal) return ex;
+
+        // Verify the next exercise exists in the library with matching equipment
+        const nextEx = findExercise(signal.nextExercise);
+        if (!nextEx) return ex;
+        const hasKit = nextEx.equip.some((e) => userEquip.includes(e));
+        if (!hasKit) return ex;
+
+        // Verify experience gate
+        const nextInd = EXERCISE_INDICATIONS[signal.nextExercise];
+        if (nextInd) {
+          if ((expRank[userExp] ?? 0) < (expRank[nextInd.experience.min] ?? 0)) return ex;
+        }
+
+        return { ...ex, name: signal.nextExercise };
+      });
+
+      return { ...day, exercises };
+    }),
+  };
+}
+
 export async function buildWeek(): Promise<BuildResult> {
   const store = useKineStore.getState();
 
@@ -861,8 +925,15 @@ export async function buildWeek(): Promise<BuildResult> {
     // Apply skill preferences — swap exercises to user's preferred variants
     const withSkills = applySkillPreferences(validation.weekData, store.skillPreferences);
 
+    // Apply progression advancements — if AI missed a "ready" signal, swap in the next step
+    const progressionSignalsForBuild = detectProgressionSignals(
+      store.progressDB.sessions as Array<{ logs?: Record<string, unknown> }>,
+      store.equip,
+    );
+    const withProgressions = applyProgressionAdvancements(withSkills, progressionSignalsForBuild, store.equip, store.exp || "new");
+
     // Apply indication post-processing — whyForYou rationale + cycle envelope
-    const finalWeek = applyIndicationPostProcessing(withSkills);
+    const finalWeek = applyIndicationPostProcessing(withProgressions);
 
     const repairsCount = validation.issues.filter((i) => i.repaired).length;
     return { success: true, weekData: finalWeek, repairsCount };
@@ -872,7 +943,12 @@ export async function buildWeek(): Promise<BuildResult> {
     fallback._weekNum = store.progressDB.currentWeek || 1;
 
     const withSkills = applySkillPreferences(fallback, store.skillPreferences);
-    const finalWeek = applyIndicationPostProcessing(withSkills);
+    const fallbackProgressionSignals = detectProgressionSignals(
+      store.progressDB.sessions as Array<{ logs?: Record<string, unknown> }>,
+      store.equip,
+    );
+    const withProgressions = applyProgressionAdvancements(withSkills, fallbackProgressionSignals, store.equip, store.exp || "new");
+    const finalWeek = applyIndicationPostProcessing(withProgressions);
 
     return {
       success: false,
