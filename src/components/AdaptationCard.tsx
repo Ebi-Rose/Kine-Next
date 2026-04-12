@@ -54,15 +54,18 @@ export default function AdaptationCard() {
 
   // Build the adaptation message
   let message: string;
-  const isBeginner = exp === "new" || (progressDB.sessions?.length ?? 0) < 6;
-  if (cyclePhase) {
-    message = isBeginner ? PHASE_COPY_BEGINNER[cyclePhase.phase] : PHASE_COPY[cyclePhase.phase];
+  const sessionsLogged = progressDB.sessions?.length ?? 0;
+  const isBeginner = exp === "new" || sessionsLogged < 6;
+  const isFirstWeek = currentWeek === 1 && sessionsLogged === 0;
+
+  if (isFirstWeek) {
+    // Week 1 with no sessions: don't pretend to adapt — there's no baseline yet
+    message = "Your first week — we're learning your baseline. Focus on form and finding your rhythm.";
   } else if (phaseInfo.phase.name === "Deload") {
     message =
       "Your body is asking for recovery. Same movements, significantly lighter. This is based on your recent effort and soreness — not a fixed schedule.";
-  } else if (currentWeek === 1) {
-    message =
-      "Your first week — we're learning your baseline. Expect moderate loads and a chance to settle into the movements.";
+  } else if (cyclePhase) {
+    message = isBeginner ? PHASE_COPY_BEGINNER[cyclePhase.phase] : PHASE_COPY[cyclePhase.phase];
   } else {
     message = phaseInfo.description;
   }
