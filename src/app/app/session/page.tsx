@@ -403,9 +403,20 @@ export default function SessionPage() {
       }
     });
 
+    // Replace existing session for this day (prevent duplicates) or append
+    const existingIdx = store.progressDB.sessions.findIndex(
+      (s: { weekNum?: number; dayIdx?: number }) => s.weekNum === sessionRecord.weekNum && s.dayIdx === sessionRecord.dayIdx
+    );
+    const updatedSessions = [...store.progressDB.sessions];
+    if (existingIdx >= 0) {
+      updatedSessions[existingIdx] = sessionRecord;
+    } else {
+      updatedSessions.push(sessionRecord);
+    }
+
     store.setProgressDB({
       ...store.progressDB,
-      sessions: [...store.progressDB.sessions, sessionRecord],
+      sessions: updatedSessions,
       lifts: updatedLifts,
     });
 
