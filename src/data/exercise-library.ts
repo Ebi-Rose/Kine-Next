@@ -48,7 +48,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
   {name:"Pendulum Squat",muscle:"legs",equip:["machines"],tags:["Compound"],logType:"weighted"},
   // HINGE
   {name:"Conventional Deadlift",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted"},
-  {name:"Romanian Deadlift",muscle:"hinge",equip:["barbell","dumbbells"],tags:["Compound"],logType:"weighted"},
+  {name:"Romanian Deadlift",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted"},
   {name:"Sumo Deadlift",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted"},
   {name:"Hip Thrust",muscle:"hinge",equip:["barbell","dumbbells","machines"],tags:["Compound"],logType:"weighted"},
   {name:"Good Morning",muscle:"hinge",equip:["barbell"],tags:["Compound"],logType:"weighted",minExp:"developing"},

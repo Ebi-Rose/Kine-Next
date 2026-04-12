@@ -1004,6 +1004,7 @@ const OVERRIDES: Record<string, OverridePatch> = {
       "A standing overhead press — builds shoulder strength, trunk stability, and real-world pressing ability.",
   },
   "Push-Up": {
+    experience: { min: "developing", ideal: "developing" },
     goal: ["muscle", "strength", "general"],
     sessionRole: ["secondary", "accessory"],
     loadability: "low",
