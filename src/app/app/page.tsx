@@ -1059,7 +1059,8 @@ function WeekView({
           {/* Check-in + Build Next Week section */}
           {!isViewingPast && !showNextWeekTab && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            const allDone = trainingDayCount > 0 && thisWeekSessions.length >= trainingDayCount;
+            const skippedCount = (progressDB.skippedSessions ?? []).filter(s => s.weekNum === thisWeekNum).length;
+            const allDone = trainingDayCount > 0 && (thisWeekSessions.length + skippedCount) >= trainingDayCount;
             const checkin = progressDB.weekFeedbackHistory.find(
               (f) => f.weekNum === thisWeekNum
             );
@@ -1135,7 +1136,8 @@ function WeekView({
           {/* Actions */}
           {!isViewingPast && (() => {
             const trainingDayCount = displayWeek.days.filter((d) => !d.isRest).length;
-            const allDone = trainingDayCount > 0 && thisWeekSessions.length >= trainingDayCount;
+            const skippedCount2 = (progressDB.skippedSessions ?? []).filter(s => s.weekNum === thisWeekNum).length;
+            const allDone = trainingDayCount > 0 && (thisWeekSessions.length + skippedCount2) >= trainingDayCount;
             return (
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Button variant="ghost" size="sm" onClick={() => setShowRearrange(true)} disabled={allDone}>
