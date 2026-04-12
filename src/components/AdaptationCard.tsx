@@ -70,6 +70,23 @@ export default function AdaptationCard() {
     message = phaseInfo.description;
   }
 
+  // First week with no sessions: simple card, no tags
+  if (isFirstWeek) {
+    return (
+      <div className="mb-4 rounded-[10px] border border-border bg-surface p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+          <span className="text-[10px] tracking-[0.2em] uppercase text-accent font-medium">
+            Your first week
+          </span>
+        </div>
+        <p className="text-sm font-light leading-relaxed text-text">
+          {message}
+        </p>
+      </div>
+    );
+  }
+
   // Build tags
   const tags: AdaptationTag[] = [];
 
@@ -93,24 +110,6 @@ export default function AdaptationCard() {
     } else if (latestFeedback.scheduleFeeling === "too_much") {
       tags.push({ label: "Schedule feeling heavy", variant: "feedback" });
     }
-  }
-
-  // Don't show card if no meaningful context (week 1, no cycle, no feedback)
-  if (currentWeek === 1 && !cyclePhase && !latestFeedback) {
-    return (
-      <div className="mb-4 rounded-[10px] border border-border bg-surface p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
-          <span className="text-[10px] tracking-[0.2em] uppercase text-accent font-medium">
-            Adapted for you
-          </span>
-        </div>
-        <p className="text-sm font-light leading-relaxed text-text">
-          Your first week — we&apos;re learning your baseline. Expect moderate
-          loads and a chance to settle into the movements.
-        </p>
-      </div>
-    );
   }
 
   const TAG_STYLES: Record<AdaptationTag["variant"], string> = {
